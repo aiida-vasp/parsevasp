@@ -4,6 +4,8 @@ import os
 import numpy as np
 import logging
 
+import constants
+
 # Try to import lxml, if not present fall back to
 # intrinsic ElementTree
 lxml = False
@@ -33,6 +35,7 @@ except ImportError:
 
 
 class XmlParser(object):
+
     def __init__(self, logger, file_path):
         """Initialize the XmlParser by first trying the lxml and
         fall back to the standard ElementTree if that is not present.
@@ -97,6 +100,12 @@ class XmlParser(object):
         self._projectors = None
         self._proj_state = [0, 0, 0]
 
+        # dictionaries
+        self._parameters = {"symprec": None}
+        self._lattice = {"unitcell": None,
+                         "species": None,
+                         "positions:": None}
+
         # parse
         self._parse()
 
@@ -109,8 +118,8 @@ class XmlParser(object):
         # perform event driven parsing. For smaller files this is
         # not necessary and is too slow.
         if self._file_size(self._file_path) < self._sizecutoff:
-            # self._parsew()
-            self._parsee()
+            self._parsew()
+            # self._parsee()
         else:
             self._parsee()
 
@@ -128,7 +137,8 @@ class XmlParser(object):
         vaspxml = etree.parse(self._file_path)
 
         # let us start to parse the content
-        self._fetch_symprecw(logger, vaspxml)
+        self._fetch_symprecw(vaspxml)
+        self._fetch_latticew(vaspxml)
 
     def _parsee(self):
         """Performs parsing in an event driven fashion on the XML file.
@@ -136,21 +146,32 @@ class XmlParser(object):
 
         """
 
-        for event, element in etree.iterparse(self._file_path, events=("start", "end")):
-            print("%s, %4s, %s" %
-                  (event, element.values, element.text))
-            # print(event)
-            # print(dir(element))
+        # set logger
+        logger = logging.getLogger(sys._getframe().f_code.co_name)
+        logger.debug("Running parsee.")
 
-            # if event == "start" and element.tag == "dos":
-            #    print("%s, %4s, %s" %
-            #          (event, element.tag, element.text))
-            # if event == "end" and element.tag == "dos":
-            #    print("%s, %4s, %s" %
-            #          (event, element.tag, element.text))
+        # bool to control extraction of content
+        extract_parameters = False
+
+        for event, element in etree.iterparse(self._file_path, events=("start", "end")):
+            # first we detect sections that we want to read
+
+            # parameter section
+            if event == "start" and element.tag == "parameters":
+                extract_parameters = True
+            if event == "end" and element.tag == "parameters":
+                extract_parameters = False
+
+            if extract_parameters:
+                try:
+                    if element.attrib["name"] == "SYMPREC":
+                        self._parameters[
+                            "symprec"] = self._convert_symprec(element.text)
+                except KeyError:
+                    pass
 
     def _fetch_symprecw(self, xml):
-        """Fetch SYMPREC
+        """Fetch and set symprec using etree
 
         Parameters
         ----------
@@ -162,17 +183,98 @@ class XmlParser(object):
         symprec : float
             If SYMPREC is found it is returned.
 
+        Notes
+        -----
+        Used when detecting symmetry.
+
         """
 
-        data = xml.find('.//parameters/separator[@name="symmetry"]/'
-                        'i[@name="SYMPREC"]')
-
-        if data is not None:
-            symprec = float(data.text)
-        else:
-            symprec = None
+        entry = xml.find('.//parameters/separator[@name="symmetry"]/'
+                         'i[@name="SYMPREC"]')
+        symprec = self._convert_symprec(entry)
 
         return symprec
+
+    def _fetch_latticew(self, xml, status="final"):
+        """Fetch and set the lattice
+
+        Parameters
+        ----------
+        xml : object
+            An ElementTree object to be used for parsing.
+        status : {"initial", "final"}
+            Determines which lattice to get. Defaults to the
+            final positions.
+
+        Returns
+        -------
+        lattice : dict
+            A dictionary containing the lattice requested
+
+        """
+
+        # first fetch and set the unitcell
+        status = status + "pos"
+        print './/structure[@name="' + status + '"] / crystal/varray[@name="basis"]/v'
+        entry = xml.findall(
+            './/structure[@name="' + status + '"] / crystal/'
+            'varray[@name="basis"]/v')
+
+        self._lattice["unitcell"] = self._convert_unitcell(entry)
+
+        # then the atomic positions and species
+        entry = xml.findall(
+            './/structure[@name="finalpos"]/'
+            'varray[@name="positions"]/v')
+        entryspec = xml.findall('.//atominfo/'
+                                'array[@name="atoms"]/set/rc')
+
+        pos, spec = self._convert_positions_species(entry, entryspec)
+        self._lattice["positions"] = pos
+        self._lattice["species"] = spec
+
+    def _convert_symprec(self, entry):
+        """Set the symprec to correct value
+
+        """
+
+        symprec = None
+        if entry.text is not None:
+            symprec = float(entry.text)
+
+        return symprec
+
+    def _convert_unitcell(self, entry):
+        """Set the unitcell to the correct value
+
+        """
+
+        unitcell = None
+        if entry is not None:
+            unitcell = np.zeros((3, 3))
+            for index, unitcell_vector in enumerate(entry):
+                unitcell[index] = np.fromstring(entry.text, sep=' ')
+
+        return unitcell
+
+    def _convert_positions_species(self, entrypos, entryspec):
+        """Set the atomic positions to the correct value
+
+        """
+
+        positions = None
+        species = None
+        if entrypos is not None:
+            positions = np.zeros((len(entrypos), 3),
+                                 dtype='double')
+        if entryspec is not None:
+            species = np.zeros(len(entrypos), dtype='intc', order='C')
+        for index, position in enumerate(entrypos):
+            positions[index] = np.fromstring(position.text, sep=' ')
+            species[index] = constants.elements[
+                entryspec[index][0].text.split()[0].lower()]
+
+        return positions
 
     def get_forces(self):
         return np.array(self._all_forces)
