@@ -103,13 +103,16 @@ class XmlParser(object):
         # set logger
         self._logger = logger
 
-        # dictionaries
+        # dictionaries that contain the output of the parsing
         self._parameters = {"symprec": None}
         self._lattice = {"unitcell": None,
                          "species": None,
-                         "positions": None}
+                         "positions": None,
+                         "kpoints": None,
+                         "kpointsw": None,
+                         "kpointdiv": None}
 
-        # parse
+        # parse parse parse
         self._parse()
 
     def _parse(self):
@@ -121,10 +124,12 @@ class XmlParser(object):
         # perform event driven parsing. For smaller files this is
         # not necessary and is too slow.
         if self._file_size(self._file_path) < self._sizecutoff:
-            self._parsew()
-            # self._parsee()
+            #self._parsew()
+            self._parsee()
         else:
             self._parsee()
+
+        print self._lattice
 
     def _parsew(self):
         """Performs parsing on the whole XML files. For smaller files
@@ -139,10 +144,13 @@ class XmlParser(object):
 
         # let us start to parse the content
         self._parameters["symprec"] = self._fetch_symprecw(vaspxml)
-        self._lattice["unitcell"], \
-            self._lattice["species"], \
-            self._lattice["positions"] = self._fetch_latticew(vaspxml)
-
+        self._lattice["unitcell"] = self._fetch_unitcellw(vaspxml)
+        self._lattice["species"] = self._fetch_speciesw(vaspxml)
+        self._lattice["positions"] = self._fetch_positionsw(vaspxml)
+        self._lattice["kpoints"] = self._fetch_kpointsw(vaspxml)
+        self._lattice["kpointsw"] = self._fetch_kpointsww(vaspxml)
+        self._lattice["kpointdiv"] = self._fetch_kpointdiv(vaspxml)
+        
     def _parsee(self):
         """Performs parsing in an event driven fashion on the XML file.
         Slower, but suitable for bigger files.
@@ -152,36 +160,37 @@ class XmlParser(object):
         # set logger
         self._logger.debug("Running parsee.")
 
-        # helper lists
+        # helper list
         data = []
-        data2 = []
 
         # bool to control extraction of content
         extract_parameters = False
-        extract_lattice = False
+        extract_latticedata = False
         extract_unitcell = False
         extract_positions = False
         extract_species = False
+        extract_kpointdata = False
+        extract_kpoints = False
+        extract_kpointsw = False
+        extract_kpointdiv = False
 
-        #
+        # need to feed this in later
         status = "finalpos"
 
         for event, element in etree.iterparse(self._file_path, events=("start", "end")):
-            # first we detect sections that we want to read
-
-            # parameter section
+            # set extraction points (what to read and when to read it)
+            # here we also set the relevant data elements when the tags
+            # close when they contain more than one element
             if event == "start" and element.tag == "parameters":
                 extract_parameters = True
             if event == "end" and element.tag == "parameters":
                 extract_parameters = False
-            # need to use get for the dictionaries here as some of
-            # the structure tags does not have a name attribute
             if event == "start" and element.tag == "structure" \
                and element.attrib.get("name") == status:
-                extract_lattice = True
+                extract_latticedata = True
             if event == "end" and element.tag == "structure" \
                and element.attrib.get("name") == status:
-                extract_lattice = False
+                extract_latticedata = False
             if event == "start" and element.tag == "array" \
                and element.attrib.get("name") == "atoms":
                 extract_species = True
@@ -191,31 +200,35 @@ class XmlParser(object):
                 self._lattice["species"] = self._convert_species(data[::2])
                 data = []
                 extract_species = False
+            if event == "start" and element.tag == "kpoints":
+                extract_kpointdata = True
+            if event == "end" and element.tag == "kpoints":
+                extract_kpointdata = False
 
+            # now fetch the data
             if extract_parameters:
                 try:
                     if event == "start" and element.attrib["name"] == "SYMPREC":
-                        self._parameters[
-                            "symprec"] = self._convert_symprec(element)
+                        self._parameters["symprec"] = self._convert_f(element)
                 except KeyError:
                     pass
 
-            if extract_lattice:
+            if extract_latticedata:
                 # print event, element.tag, element.text, element.attrib
                 if event == "start" and element.tag == "varray" \
-                   and element.attrib["name"] == "basis":
+                   and element.attrib.get("name") == "basis":
                     extract_unitcell = True
                 if event == "end" and element.tag == "varray" \
-                   and element.attrib["name"] == "basis":
-                    self._lattice["unitcell"] = self._convert_unitcell(data)
+                   and element.attrib.get("name") == "basis":
+                    self._lattice["unitcell"] = self._convert_array2D_f(data)
                     data = []
                     extract_unitcell = False
                 if event == "start" and element.tag == "varray" \
-                   and element.attrib["name"] == "positions":
+                   and element.attrib.get("name") == "positions":
                     extract_positions = True
                 if event == "end" and element.tag == "varray" \
-                   and element.attrib["name"] == "positions":
-                    self._lattice["positions"] = self._convert_positions(data)
+                   and element.attrib.get("name") == "positions":
+                    self._lattice["positions"] = self._convert_array2D_f(data)
                     data = []
                     extract_positions = False
 
@@ -229,6 +242,37 @@ class XmlParser(object):
             if extract_species:
                 if event == "start" and element.tag == "c":
                     data.append(element)
+
+            if extract_kpointdata:
+                try:
+                    if event == "start" and element.tag == "v" and element.attrib["name"] == "divisions":
+                        self._lattice["kpointdiv"] = self._convert_array_i(element)
+                except KeyError:
+                    pass
+
+                if event == "start" and element.tag == "varray" \
+                   and element.attrib.get("name") == "kpointlist":
+                    extract_kpoints = True
+                if event == "end" and element.tag == "varray" \
+                   and element.attrib.get("name") == "kpointlist":
+                    self._lattice["kpoints"] = self._convert_array2D_f(data)
+                    data = []
+                    extract_kpoints = False
+                if event == "start" and element.tag == "varray" \
+                   and element.attrib.get("name") == "weights":
+                    extract_kpointsw = True
+                if event == "end" and element.tag == "varray" \
+                   and element.attrib.get("name") == "weights":
+                    self._lattice["kpointsw"] = self._convert_array1D_f(data)
+                    data = []
+                    extract_kpointsw = False
+                if extract_kpoints:
+                    if event == "start" and element.tag == "v":
+                        data.append(element)
+                if extract_kpointsw:
+                    if event == "start" and element.tag == "v":
+                        data.append(element)
+                    
 
     def _fetch_symprecw(self, xml):
         """Fetch and set symprec using etree
@@ -251,127 +295,321 @@ class XmlParser(object):
 
         entry = xml.find('.//parameters/separator[@name="symmetry"]/'
                          'i[@name="SYMPREC"]')
-        symprec = self._convert_symprec(entry)
+        symprec = self._convert_f(entry)
 
         return symprec
 
-    def _fetch_latticew(self, xml, status="final"):
-        """Fetch and set the lattice
+    def _fetch_unitcellw(self, xml, status="final"):
+        """Fetch the unitcell
 
         Parameters
         ----------
         xml : object
             An ElementTree object to be used for parsing.
         status : {"initial", "final"}
-            Determines which lattice to get. Defaults to the
+            Determines which unitcell to get. Defaults to the
+            final unitcell.
+
+        Returns
+        -------
+        cell : ndarray
+            An array containing the unitcell vectors as rows in
+            units of AA.
+
+        """
+
+        entry = xml.findall(
+            './/structure[@name="' + status + 'pos"]/crystal/'
+            'varray[@name="basis"]/v')
+
+        cell = self._convert_array2D_f(entry)
+
+        return cell
+
+    def _fetch_positionsw(self, xml, status="final"):
+        """Fetch the atomic positions.
+
+        Parameters
+        ----------
+        xml : object
+            An ElementTree object to be used for parsing.
+        status : {"initial", "final"}
+            Determines which atomic positions to get. Defaults to the
             final positions.
 
         Returns
         -------
-        lattice : dict
-            A dictionary containing the lattice requested
+        pos : ndarray
+            An array containing the atomic positions in direct coordinates.
+
+        """
+        
+        entry = xml.findall(
+            './/structure[@name="' + status + 'pos"]/'
+            'varray[@name="positions"]/v')
+
+        pos = self._convert_array2D_f(entry)
+
+        return pos
+    
+    def _fetch_speciesw(self, xml):
+        """Fetch the atomic species
+
+        Parameters
+        ----------
+        xml : object
+            An ElementTree object to be used for parsing.
+
+        Returns
+        -------
+        spec : ndarray
+            An array containing the atomic species as a number.
+            Organized in the same order as the atomic positions.
 
         """
 
-        # first fetch and set the unitcell
-        status = status + "pos"
-        entry = xml.findall(
-            './/structure[@name="' + status + '"]/crystal/'
-            'varray[@name="basis"]/v')
-
-        cell = self._convert_unitcell(entry)
-
-        # then the atomic positions
-        entry = xml.findall(
-            './/structure[@name="finalpos"]/'
-            'varray[@name="positions"]/v')
-
-        pos = self._convert_positions(entry)
-
-        # then the atomic species (only ever other c element
-        # is needed, e.g. the element and not atomtype)
         entry = xml.findall('.//atominfo/'
                             'array[@name="atoms"]/set/rc/c')[::2]
 
         spec = self._convert_species(entry)
 
-        return cell, spec, pos
+        return spec
 
-    def _fetch
-
-    def _convert_symprec(self, entry):
-        """Set the symprec to the correct value
+    def _fetch_kpointsw(self, xml):
+        """Fetch the kpoints.
 
         Parameters
         ----------
-        entry : object
-            An Element object containing the symprec
-            value.
+        xml : object
+            An ElementTree object to be used for parsing.
 
         Returns
         -------
-        symprec : float
-            The symprec value.
+        kpoints : ndarray
+            An array containing the kpoints used in the calculation 
+            in direct coordinates.
 
         """
 
-        symprec = None
-        if entry.text is not None:
-            symprec = float(entry.text)
+        entry = xml.findall(
+            'kpoints/varray[@name="kpointlist"]/v')
+                
+        kpoints = self._convert_array2D_f(entry)
 
-        return symprec
+        return kpoints
 
-    def _convert_unitcell(self, entry):
-        """Set the unitcell to the correct value
+    def _fetch_kpointsww(self, xml):
+        """Fetch the kpoint weights.
 
         Parameters
         ----------
-        entry : list
-            A list containing Element objects.
+        xml : object
+            An ElementTree object to be used for parsing.
 
         Returns
         -------
-        unitcell : ndarray
-            | Dimension: (3,3)
-            An array containing the lattice basis vectors as rows in
-            units of AA.
+        kpointw : ndarray
+            An array containing the kpoint weights used in the 
+            calculation.
 
         """
 
-        unitcell = None
+        entry = xml.findall(
+            'kpoints/varray[@name="weights"]/v')
+                
+        kpointsw = self._convert_array1D_f(entry)
+
+        return kpointsw
+
+    def _fetch_kpointdiv(self, xml):
+        """Fetch the number of kpoints in each direction.
+
+        Parameters
+        ----------
+        xml : object
+            An ElementTree object to be used for parsing.
+
+        Returns
+        -------
+        kpointdiv : list
+            An list containing the kpoint divisions used in the 
+            calculation for the full BZ.
+        
+        """
+
+        entry = xml.find(
+            'kpoints/generation/v[@name="divisions"]')
+
+        kpointdiv = self._convert_array_i(entry)
+
+        return kpointdiv
+
+    def _convert_array_i(self, entry):
+        """Convert the input entry to numpy array
+
+        Parameters
+        ----------
+        entry : string
+            A string containing N integer elements separated by
+            blank spaces.
+
+        Returns
+        -------
+        data : ndarray
+            | Dimension: (N)
+            An array containing N integers.
+
+        """
+
+        data = None
         if entry is not None:
-            unitcell = np.zeros((3, 3))
-            for index, latvec in enumerate(entry):
-                unitcell[index] = np.fromstring(latvec.text, sep=' ')
+            data = np.fromstring(entry.text, sep=' ', dtype='intc')
 
-        return unitcell
+        return data
 
-    def _convert_positions(self, entry):
-        """Set the atomic positions to the correct value
+    def _convert_array_f(self, entry):
+        """Convert the input entry to numpy array
+
+        Parameters
+        ----------
+        entry : string
+            A string containing N float elements separated by
+            blank spaces.
+
+        Returns
+        -------
+        data : ndarray
+            | Dimension: (N)
+            An array containing N floats.
+
+        """
+
+        data = None
+        if entry is not None:
+            data = np.fromstring(entry.text, sep=' ', dtype='double')
+
+        return data
+    
+    def _convert_array1D_i(self, entry):
+        """Convert the input entry to numpy array
 
         Parameters
         ----------
         entry : list
             A list containing Element objects where each
-            element is an atomic position.
+            element is an integer
 
         Returns
         -------
-        unitcell : ndarray
-            | Dimension: (N,3)
-            An array containing the positions of N atoms in
-            direct units.
+        data : ndarray
+            | Dimension: (N)
+            An array containing N integers.
 
         """
 
-        positions = None
+        data = None
         if entry is not None:
-            positions = np.zeros((len(entry), 3),
-                                 dtype='double')
-        for index, position in enumerate(entry):
-            positions[index] = np.fromstring(position.text, sep=' ')
+            data = np.zeros(len(entry),dtype='intc')
+        for index, element in enumerate(entry):
+            data[index] = np.fromstring(element.text, sep=' ')
 
-        return positions
+        return data
+
+    def _convert_array1D_f(self, entry):
+        """Convert the input entry to numpy array
+
+        Parameters
+        ----------
+        entry : list
+            A list containing Element objects where each
+            element is a float
+
+        Returns
+        -------
+        data : ndarray
+            | Dimension: (N)
+            An array containing N double elements.
+
+        """
+
+        data = None
+        if entry is not None:
+            data = np.zeros(len(entry),dtype='double')
+        for index, element in enumerate(entry):
+            data[index] = np.fromstring(element.text, sep=' ')
+
+        return data
+
+    def _convert_array2D_f(self, entry):
+        """Convert the input entry to numpy array
+
+        Parameters
+        ----------
+        entry : list
+            A list containing Element objects where each
+            element is a float
+
+        Returns
+        -------
+        data : ndarray
+            | Dimension: (N,3)
+            An array containing N elements with three float
+            elements.
+
+        """
+
+        data = None
+        if entry is not None:
+            data = np.zeros((len(entry), 3),
+                                 dtype='double')
+
+        for index, element in enumerate(entry):
+            data[index] = np.fromstring(element.text, sep=' ')
+
+        return data
+
+    
+    def _convert_f(self, entry):
+        """Convert the input entry to a float.
+
+        Parameters
+        ----------
+        entry : object
+            An Element object containing an integer value.
+
+        Returns
+        -------
+        data : float
+            The float value.
+
+        """
+
+        data = None
+        if entry.text is not None:
+            data = float(entry.text)
+
+        return data
+
+    def _convert_i(self, entry):
+        """Convert the input entry to an integer.
+
+        Parameters
+        ----------
+        entry : object
+            An Element object containing an integer value.
+
+        Returns
+        -------
+        data : int
+            The integer value.
+
+        """
+
+        data = None
+        if entry.text is not None:
+            data = int(entry.text)
+
+        return data
 
     def _convert_species(self, entry):
         """Set the atomic species to the correct value

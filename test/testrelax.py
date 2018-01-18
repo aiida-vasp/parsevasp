@@ -11,4 +11,4 @@ import parsevaspxml
 logging.basicConfig()
 logger = logging.getLogger('Testing')
 
-vaspxml = parsevaspxml.XmlParser(logger, testdir + "/vasprunbasic.xml")
+vaspxml = parsevaspxml.XmlParser(logger, testdir + "/vasprunrelax.xml")
