@@ -100,11 +100,14 @@ class XmlParser(object):
         self._projectors = None
         self._proj_state = [0, 0, 0]
 
+        # set logger
+        self._logger = logger
+
         # dictionaries
         self._parameters = {"symprec": None}
         self._lattice = {"unitcell": None,
                          "species": None,
-                         "positions:": None}
+                         "positions": None}
 
         # parse
         self._parse()
@@ -128,30 +131,40 @@ class XmlParser(object):
 
         """
 
-        # set logger
-        logger = logging.getLogger(sys._getframe().f_code.co_name)
-        logger.debug("Running parsew.")
+        self._logger.debug("Running parsew.")
 
         # now open the complete file
         self._check_file(self._file_path)
         vaspxml = etree.parse(self._file_path)
 
         # let us start to parse the content
-        self._fetch_symprecw(vaspxml)
-        self._fetch_latticew(vaspxml)
+        self._parameters["symprec"] = self._fetch_symprecw(vaspxml)
+        self._lattice["unitcell"], \
+            self._lattice["species"], \
+            self._lattice["positions"] = self._fetch_latticew(vaspxml)
 
     def _parsee(self):
         """Performs parsing in an event driven fashion on the XML file.
-        For bigger files.
+        Slower, but suitable for bigger files.
 
         """
 
         # set logger
-        logger = logging.getLogger(sys._getframe().f_code.co_name)
-        logger.debug("Running parsee.")
+        self._logger.debug("Running parsee.")
+
+        # helper lists
+        data = []
+        data2 = []
 
         # bool to control extraction of content
         extract_parameters = False
+        extract_lattice = False
+        extract_unitcell = False
+        extract_positions = False
+        extract_species = False
+
+        #
+        status = "finalpos"
 
         for event, element in etree.iterparse(self._file_path, events=("start", "end")):
             # first we detect sections that we want to read
@@ -161,14 +174,61 @@ class XmlParser(object):
                 extract_parameters = True
             if event == "end" and element.tag == "parameters":
                 extract_parameters = False
+            # need to use get for the dictionaries here as some of
+            # the structure tags does not have a name attribute
+            if event == "start" and element.tag == "structure" \
+               and element.attrib.get("name") == status:
+                extract_lattice = True
+            if event == "end" and element.tag == "structure" \
+               and element.attrib.get("name") == status:
+                extract_lattice = False
+            if event == "start" and element.tag == "array" \
+               and element.attrib.get("name") == "atoms":
+                extract_species = True
+            if event == "end" and element.tag == "array" \
+               and element.attrib.get("name") == "atoms":
+                # only need every other element (element, not atomtype)
+                self._lattice["species"] = self._convert_species(data[::2])
+                data = []
+                extract_species = False
 
             if extract_parameters:
                 try:
-                    if element.attrib["name"] == "SYMPREC":
+                    if event == "start" and element.attrib["name"] == "SYMPREC":
                         self._parameters[
-                            "symprec"] = self._convert_symprec(element.text)
+                            "symprec"] = self._convert_symprec(element)
                 except KeyError:
                     pass
+
+            if extract_lattice:
+                # print event, element.tag, element.text, element.attrib
+                if event == "start" and element.tag == "varray" \
+                   and element.attrib["name"] == "basis":
+                    extract_unitcell = True
+                if event == "end" and element.tag == "varray" \
+                   and element.attrib["name"] == "basis":
+                    self._lattice["unitcell"] = self._convert_unitcell(data)
+                    data = []
+                    extract_unitcell = False
+                if event == "start" and element.tag == "varray" \
+                   and element.attrib["name"] == "positions":
+                    extract_positions = True
+                if event == "end" and element.tag == "varray" \
+                   and element.attrib["name"] == "positions":
+                    self._lattice["positions"] = self._convert_positions(data)
+                    data = []
+                    extract_positions = False
+
+                if extract_unitcell:
+                    if event == "start" and element.tag == "v":
+                        data.append(element)
+                if extract_positions:
+                    if event == "start" and element.tag == "v":
+                        data.append(element)
+
+            if extract_species:
+                if event == "start" and element.tag == "c":
+                    data.append(element)
 
     def _fetch_symprecw(self, xml):
         """Fetch and set symprec using etree
@@ -215,26 +275,43 @@ class XmlParser(object):
 
         # first fetch and set the unitcell
         status = status + "pos"
-        print './/structure[@name="' + status + '"] / crystal/varray[@name="basis"]/v'
         entry = xml.findall(
-            './/structure[@name="' + status + '"] / crystal/'
+            './/structure[@name="' + status + '"]/crystal/'
             'varray[@name="basis"]/v')
 
-        self._lattice["unitcell"] = self._convert_unitcell(entry)
+        cell = self._convert_unitcell(entry)
 
-        # then the atomic positions and species
+        # then the atomic positions
         entry = xml.findall(
             './/structure[@name="finalpos"]/'
             'varray[@name="positions"]/v')
-        entryspec = xml.findall('.//atominfo/'
-                                'array[@name="atoms"]/set/rc')
 
-        pos, spec = self._convert_positions_species(entry, entryspec)
-        self._lattice["positions"] = pos
-        self._lattice["species"] = spec
+        pos = self._convert_positions(entry)
+
+        # then the atomic species (only ever other c element
+        # is needed, e.g. the element and not atomtype)
+        entry = xml.findall('.//atominfo/'
+                            'array[@name="atoms"]/set/rc/c')[::2]
+
+        spec = self._convert_species(entry)
+
+        return cell, spec, pos
+
+    def _fetch
 
     def _convert_symprec(self, entry):
-        """Set the symprec to correct value
+        """Set the symprec to the correct value
+
+        Parameters
+        ----------
+        entry : object
+            An Element object containing the symprec
+            value.
+
+        Returns
+        -------
+        symprec : float
+            The symprec value.
 
         """
 
@@ -247,34 +324,86 @@ class XmlParser(object):
     def _convert_unitcell(self, entry):
         """Set the unitcell to the correct value
 
+        Parameters
+        ----------
+        entry : list
+            A list containing Element objects.
+
+        Returns
+        -------
+        unitcell : ndarray
+            | Dimension: (3,3)
+            An array containing the lattice basis vectors as rows in
+            units of AA.
+
         """
 
         unitcell = None
         if entry is not None:
             unitcell = np.zeros((3, 3))
-            for index, unitcell_vector in enumerate(entry):
-                unitcell[index] = np.fromstring(entry.text, sep=' ')
+            for index, latvec in enumerate(entry):
+                unitcell[index] = np.fromstring(latvec.text, sep=' ')
 
         return unitcell
 
-    def _convert_positions_species(self, entrypos, entryspec):
+    def _convert_positions(self, entry):
         """Set the atomic positions to the correct value
+
+        Parameters
+        ----------
+        entry : list
+            A list containing Element objects where each
+            element is an atomic position.
+
+        Returns
+        -------
+        unitcell : ndarray
+            | Dimension: (N,3)
+            An array containing the positions of N atoms in
+            direct units.
 
         """
 
         positions = None
-        species = None
-        if entrypos is not None:
-            positions = np.zeros((len(entrypos), 3),
+        if entry is not None:
+            positions = np.zeros((len(entry), 3),
                                  dtype='double')
-        if entryspec is not None:
-            species = np.zeros(len(entrypos), dtype='intc', order='C')
-        for index, position in enumerate(entrypos):
+        for index, position in enumerate(entry):
             positions[index] = np.fromstring(position.text, sep=' ')
-            species[index] = constants.elements[
-                entryspec[index][0].text.split()[0].lower()]
 
         return positions
+
+    def _convert_species(self, entry):
+        """Set the atomic species to the correct value
+
+        Parameters
+        ----------
+        entry : list
+            A list containing Element objects, where each
+            element is one atomic species.
+
+        Returns
+        -------
+        unitcell : ndarray
+            | Dimension: (N,3)
+            An array containing the positions of N atoms in
+            direct units.
+
+        """
+
+        species = None
+        if entry is not None:
+            species = np.zeros(len(entry), dtype='intc')
+        for index, spec in enumerate(entry):
+            try:
+                species[index] = constants.elements[
+                    entry[index].text.split()[0].lower()]
+            except KeyError:
+                self._logger.error("There is an atomic element present in the "
+                                   "XML file that is unknown. Exiting.")
+                sys.exit(1)
+
+        return species
 
     def get_forces(self):
         return np.array(self._all_forces)
