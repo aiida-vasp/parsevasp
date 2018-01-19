@@ -111,6 +111,7 @@ class XmlParser(object):
                          "kpoints": None,
                          "kpointsw": None,
                          "kpointdiv": None}
+        self._calculations = {}
 
         # parse parse parse
         self._parse()
@@ -128,8 +129,7 @@ class XmlParser(object):
             self._parsee()
         else:
             self._parsee()
-
-        print self._lattice
+        print self._lattice["unitcell"]
 
     def _parsew(self):
         """Performs parsing on the whole XML files. For smaller files
@@ -141,7 +141,7 @@ class XmlParser(object):
         # now open the complete file
         self._check_file(self._file_path)
         vaspxml = etree.parse(self._file_path)
-
+        
         # let us start to parse the content
         self._parameters["symprec"] = self._fetch_symprecw(vaspxml)
         self._lattice["unitcell"] = self._fetch_unitcellw(vaspxml)
@@ -163,6 +163,10 @@ class XmlParser(object):
         # helper list
         data = []
 
+        # helper dicts
+        cell = {}
+        pos = {}
+
         # bool to control extraction of content
         extract_parameters = False
         extract_latticedata = False
@@ -174,9 +178,11 @@ class XmlParser(object):
         extract_kpointsw = False
         extract_kpointdiv = False
 
-        # need to feed this in later
-        status = "finalpos"
-
+        # need to be parsed to this method
+        all = True
+        
+        # index that control the calculation step (e.g. ionic step)
+        calc = 0
         for event, element in etree.iterparse(self._file_path, events=("start", "end")):
             # set extraction points (what to read and when to read it)
             # here we also set the relevant data elements when the tags
@@ -185,12 +191,16 @@ class XmlParser(object):
                 extract_parameters = True
             if event == "end" and element.tag == "parameters":
                 extract_parameters = False
-            if event == "start" and element.tag == "structure" \
-               and element.attrib.get("name") == status:
-                extract_latticedata = True
-            if event == "end" and element.tag == "structure" \
-               and element.attrib.get("name") == status:
-                extract_latticedata = False
+            if all:
+                if event == "start" and element.tag == "structure":
+                    extract_latticedata = True
+                if event == "end" and element.tag == "structure":
+                    extract_latticedata = False
+            else:
+                if event == "start" and element.tag == "structure":
+                    extract_latticedata = True
+                if event == "end" and element.tag == "structure":
+                    extract_latticedata = False                    
             if event == "start" and element.tag == "array" \
                and element.attrib.get("name") == "atoms":
                 extract_species = True
@@ -220,7 +230,11 @@ class XmlParser(object):
                     extract_unitcell = True
                 if event == "end" and element.tag == "varray" \
                    and element.attrib.get("name") == "basis":
-                    self._lattice["unitcell"] = self._convert_array2D_f(data)
+                    if calc == 0:
+                        attribute = "initial"
+                    else:
+                        attribute = "step_"+str(calc)
+                    cell[attribute] = self._convert_array2D_f(data)
                     data = []
                     extract_unitcell = False
                 if event == "start" and element.tag == "varray" \
@@ -228,8 +242,16 @@ class XmlParser(object):
                     extract_positions = True
                 if event == "end" and element.tag == "varray" \
                    and element.attrib.get("name") == "positions":
-                    self._lattice["positions"] = self._convert_array2D_f(data)
+                    if calc == 0:
+                        attribute = "initial"
+                    else:
+                        attribute = "step_"+str(calc)
+                    pos[attribute] = self._convert_array2D_f(data)
                     data = []
+                    # if we do multiple calculations (e.g. ionic) the
+                    # position data is always updated? we assume this for now
+                    # otherwise this needs to be more fancy
+                    calc = calc + 1
                     extract_positions = False
 
                 if extract_unitcell:
@@ -272,7 +294,34 @@ class XmlParser(object):
                 if extract_kpointsw:
                     if event == "start" and element.tag == "v":
                         data.append(element)
-                    
+
+        # now we need to update some elements
+        last_element = len(pos) - 1
+        # the two last and two first elements should be the same,
+        # so remove them
+        for element in cell:
+            print element
+        del cell["step_1"]
+        del pos["step_1"]
+        if last_element > 2:
+            # in cases where a static run is done, we will have
+            # initial, step_1 and final so we only have to delete
+            # step_1, which is done above, here we delete the next
+            # last item for the other cases
+            del cell["step_"+str(last_element-1)]
+            del pos["step_"+str(last_element-1)]            
+        cell["final"] = cell.pop("step_"+str(last_element))
+        pos["final"] = pos.pop("step_"+str(last_element))
+        if not all:
+            # only save initial and final
+            self._lattice["unitcell"] = {key: cell[key] for key in {"initial","final"}}
+            self._lattice["positions"] = {key: cell[key] for key in {"initial","final"}}
+        else:
+            # save all
+            self._lattice["unitcell"] = cell
+            self._lattice["positions"] = pos
+        
+        
 
     def _fetch_symprecw(self, xml):
         """Fetch and set symprec using etree
@@ -299,56 +348,84 @@ class XmlParser(object):
 
         return symprec
 
-    def _fetch_unitcellw(self, xml, status="final"):
+    def _fetch_unitcellw(self, xml, all = False):
         """Fetch the unitcell
 
         Parameters
         ----------
         xml : object
             An ElementTree object to be used for parsing.
-        status : {"initial", "final"}
-            Determines which unitcell to get. Defaults to the
-            final unitcell.
+        all : bool 
+            Determines which unitcell to get. Defaults to the initial
+            and final. If True, extract all.
 
         Returns
         -------
-        cell : ndarray
-            An array containing the unitcell vectors as rows in
-            units of AA.
+        cell : dict
+            An dictionary containing ndarrays of the unitcell with 
+            vectors as rows in units of AA for each calculation.
 
         """
 
-        entry = xml.findall(
-            './/structure[@name="' + status + 'pos"]/crystal/'
-            'varray[@name="basis"]/v')
-
-        cell = self._convert_array2D_f(entry)
+        cell = {}
+        if not all:
+            entry = xml.findall(
+                './/structure[@name="finalpos"]/crystal/varray[@name="basis"]/v')
+            cell["final"] = self._convert_array2D_f(entry)
+            entry = xml.findall(
+                './/structure[@name="initialpos"]/crystal/varray[@name="basis"]/v')
+            cell["initial"] = self._convert_array2D_f(entry)
+        else:
+            entry = xml.findall(
+                './/calculation/structure/crystal/varray[@name="basis"]/v')
+            entries = len(entry)
+            num_calcs = entries / 3
+            cell["initial"] = self._convert_array2D_f(entry[0:3])
+            cell["final"] = self._convert_array2D_f(entry[-3:])
+            for calc in range(1,num_calcs-1):
+                base = calc*3
+                cell["step_"+str(calc+1)] = self._convert_array2D_f(entry[base:base+3])
 
         return cell
-
-    def _fetch_positionsw(self, xml, status="final"):
+    
+    def _fetch_positionsw(self, xml, all = False):
         """Fetch the atomic positions.
 
         Parameters
         ----------
         xml : object
             An ElementTree object to be used for parsing.
-        status : {"initial", "final"}
+        all : bool
             Determines which atomic positions to get. Defaults to the
-            final positions.
+            initial and final. If True, extract all.
 
         Returns
         -------
-        pos : ndarray
-            An array containing the atomic positions in direct coordinates.
+        pos : dict
+            An dictionary containing ndarrays of the positions with 
+            each position as rows in direct coordinates for each calculation.
 
         """
         
-        entry = xml.findall(
-            './/structure[@name="' + status + 'pos"]/'
-            'varray[@name="positions"]/v')
-
-        pos = self._convert_array2D_f(entry)
+        pos = {}
+        if not all:
+            entry = xml.findall(
+                './/structure[@name="finalpos"]/varray[@name="positions"]/v')
+            pos["final"] = self._convert_array2D_f(entry)
+            entry = xml.findall(
+                './/structure[@name="initialpos"]/varray[@name="positions"]/v')
+            pos["initial"] = self._convert_array2D_f(entry)
+        else:
+            entry = xml.findall(
+                './/calculation/structure/varray[@name="positions"]/v')
+            entries = len(entry)
+            num_atoms = self._lattice["species"].shape[0]
+            num_calcs = entries / num_atoms
+            pos["initial"] = self._convert_array2D_f(entry[0:num_atoms])
+            pos["final"] = self._convert_array2D_f(entry[-num_atoms:])
+            for calc in range(1,num_calcs-1):
+                base = calc*num_atoms
+                pos["step_"+str(calc+1)] = self._convert_array2D_f(entry[base:base+num_atoms])
 
         return pos
     
