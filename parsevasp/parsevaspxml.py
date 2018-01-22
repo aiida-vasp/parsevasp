@@ -109,7 +109,7 @@ class XmlParser(object):
         # kpoint index before band index (for instance for the ordering
         # of the eigenvalue data etc.)?
         self._k_before_band = False
-        
+
         # dictionaries that contain the output of the parsing
         self._parameters = {"symprec": None,
                             "ismear": None,
@@ -148,9 +148,11 @@ class XmlParser(object):
         # not necessary and is too slow.
         if self._file_size(self._file_path) < self._sizecutoff:
             self._parsew()
-            #self._parsee()
+            # self._parsee()
         else:
             self._parsee()
+
+        print self._data["dos"]
 
     def _parsew(self):
         """Performs parsing on the whole XML files. For smaller files
@@ -178,9 +180,10 @@ class XmlParser(object):
         self._lattice["kpoints"] = self._fetch_kpointsw(vaspxml)
         self._lattice["kpointsw"] = self._fetch_kpointsww(vaspxml)
         self._lattice["kpointdiv"] = self._fetch_kpointdivw(vaspxml)
-        self._data["eigenvalues"], self._data["occupancies"] = self._fetch_eigenvaluesw(vaspxml)
-        self._data["dos"] = self._fetch_dos(vaspxml)
-        
+        self._data["eigenvalues"], self._data[
+            "occupancies"] = self._fetch_eigenvaluesw(vaspxml)
+        self._data["dos"] = self._fetch_dosw(vaspxml)
+
     def _parsee(self):
         """Performs parsing in an event driven fashion on the XML file.
         Slower, but suitable for bigger files.
@@ -193,7 +196,7 @@ class XmlParser(object):
         # helper list
         data = []
         data2 = []
-        
+
         # helper dicts
         cell = {}
         pos = {}
@@ -214,7 +217,7 @@ class XmlParser(object):
 
         # do we want to extract data from all calculations (e.g. ionic steps)
         all = self._extract_all
-        
+
         # index that control the calculation step (e.g. ionic step)
         calc = 0
         for event, element in etree.iterparse(self._file_path, events=("start", "end")):
@@ -234,7 +237,7 @@ class XmlParser(object):
                 if event == "start" and element.tag == "structure":
                     extract_latticedata = True
                 if event == "end" and element.tag == "structure":
-                    extract_latticedata = False                    
+                    extract_latticedata = False
             if event == "start" and element.tag == "array" \
                and element.attrib.get("name") == "atoms":
                 extract_species = True
@@ -251,12 +254,13 @@ class XmlParser(object):
             if event == "start" and element.tag == "eigenvalues":
                 extract_eigenvalues = True
             if event == "end" and element.tag == "eigenvalues":
-                eigenvalues, occupancies = self._extract_eigenvalues(data,data2)
+                eigenvalues, occupancies = self._extract_eigenvalues(
+                    data, data2)
                 self._data["eigenvalues"] = eigenvalues
                 self._data["occupancies"] = occupancies
                 data = []
                 data2 = []
-                extract_eigenvalues = False                
+                extract_eigenvalues = False
 
             # now fetch the data
             if extract_parameters:
@@ -265,27 +269,27 @@ class XmlParser(object):
                         self._parameters["symprec"] = self._convert_f(element)
                 except KeyError:
                     pass
-                try: 
+                try:
                     if event == "start" and element.attrib["name"] == "ISPIN":
                         self._parameters["ispin"] = self._convert_i(element)
                 except KeyError:
                     pass
-                try: 
+                try:
                     if event == "start" and element.attrib["name"] == "ISMEAR":
                         self._parameters["ismear"] = self._convert_i(element)
                 except KeyError:
                     pass
-                try: 
+                try:
                     if event == "start" and element.attrib["name"] == "SIGMA":
                         self._parameters["sigma"] = self._convert_f(element)
                 except KeyError:
                     pass
-                try: 
+                try:
                     if event == "start" and element.attrib["name"] == "NBANDS":
                         self._parameters["nbands"] = self._convert_i(element)
                 except KeyError:
                     pass
-                
+
             if extract_latticedata:
                 # print event, element.tag, element.text, element.attrib
                 if event == "start" and element.tag == "varray" \
@@ -296,7 +300,7 @@ class XmlParser(object):
                     if calc == 0:
                         attribute = "initial"
                     else:
-                        attribute = "step_"+str(calc)
+                        attribute = "step_" + str(calc)
                     cell[attribute] = self._convert_array2D3_f(data)
                     data = []
                     extract_unitcell = False
@@ -308,7 +312,7 @@ class XmlParser(object):
                     if calc == 0:
                         attribute = "initial"
                     else:
-                        attribute = "step_"+str(calc)
+                        attribute = "step_" + str(calc)
                     pos[attribute] = self._convert_array2D3_f(data)
                     data = []
                     # if we do multiple calculations (e.g. ionic) the
@@ -331,7 +335,8 @@ class XmlParser(object):
             if extract_kpointdata:
                 try:
                     if event == "start" and element.tag == "v" and element.attrib["name"] == "divisions":
-                        self._lattice["kpointdiv"] = self._convert_array_i(element)
+                        self._lattice[
+                            "kpointdiv"] = self._convert_array_i(element)
                 except KeyError:
                     pass
 
@@ -371,7 +376,7 @@ class XmlParser(object):
                 if event == "end" and element.tag == "set" \
                    and element.attrib.get("comment") == "spin 2":
                     extract_eigenvalues_spin2 = False
-                    
+
                 if extract_eigenvalues_spin1:
                     if event == "start" and element.tag == "r":
                         data.append(element)
@@ -379,8 +384,6 @@ class XmlParser(object):
                 if extract_eigenvalues_spin2:
                     if event == "start" and element.tag == "r":
                         data2.append(element)
-
-                
 
         # now we need to update some elements
         last_element = len(pos) - 1
@@ -393,20 +396,20 @@ class XmlParser(object):
             # initial, step_1 and final so we only have to delete
             # step_1, which is done above, here we delete the next
             # last item for the other cases
-            del cell["step_"+str(last_element-1)]
-            del pos["step_"+str(last_element-1)]            
-        cell["final"] = cell.pop("step_"+str(last_element))
-        pos["final"] = pos.pop("step_"+str(last_element))
+            del cell["step_" + str(last_element - 1)]
+            del pos["step_" + str(last_element - 1)]
+        cell["final"] = cell.pop("step_" + str(last_element))
+        pos["final"] = pos.pop("step_" + str(last_element))
         if not all:
             # only save initial and final
-            self._lattice["unitcell"] = {key: cell[key] for key in {"initial","final"}}
-            self._lattice["positions"] = {key: cell[key] for key in {"initial","final"}}
+            self._lattice["unitcell"] = {key: cell[key]
+                                         for key in {"initial", "final"}}
+            self._lattice["positions"] = {key: cell[key]
+                                          for key in {"initial", "final"}}
         else:
             # save all
             self._lattice["unitcell"] = cell
             self._lattice["positions"] = pos
-        
-        
 
     def _fetch_symprecw(self, xml):
         """Fetch and set symprec using etree
@@ -426,7 +429,7 @@ class XmlParser(object):
         Used when detecting symmetry.
 
         """
-        
+
         symprec = None
         entry = xml.find('.//parameters/separator[@name="symmetry"]/'
                          'i[@name="SYMPREC"]')
@@ -458,7 +461,7 @@ class XmlParser(object):
         entry = xml.find('.//parameters/separator[@name="electronic"]/'
                          'separator[@name="electronic smearing"]/'
                          'i[@name="SIGMA"]')
-                
+
         if entry is not None:
             sigma = self._convert_f(entry)
 
@@ -547,8 +550,7 @@ class XmlParser(object):
 
         return nbands
 
-    
-    def _fetch_unitcellw(self, xml, all = False):
+    def _fetch_unitcellw(self, xml, all=False):
         """Fetch the unitcell
 
         Parameters
@@ -582,13 +584,14 @@ class XmlParser(object):
             num_calcs = entries / 3
             cell["initial"] = self._convert_array2D3_f(entry[0:3])
             cell["final"] = self._convert_array2D3_f(entry[-3:])
-            for calc in range(1,num_calcs-1):
-                base = calc*3
-                cell["step_"+str(calc+1)] = self._convert_array2D3_f(entry[base:base+3])
+            for calc in range(1, num_calcs - 1):
+                base = calc * 3
+                cell[
+                    "step_" + str(calc + 1)] = self._convert_array2D3_f(entry[base:base + 3])
 
         return cell
-    
-    def _fetch_positionsw(self, xml, all = False):
+
+    def _fetch_positionsw(self, xml, all=False):
         """Fetch the atomic positions.
 
         Parameters
@@ -606,7 +609,7 @@ class XmlParser(object):
             each position as rows in direct coordinates for each calculation.
 
         """
-        
+
         pos = {}
         if not all:
             entry = xml.findall(
@@ -623,12 +626,13 @@ class XmlParser(object):
             num_calcs = entries / num_atoms
             pos["initial"] = self._convert_array2D3_f(entry[0:num_atoms])
             pos["final"] = self._convert_array2D3_f(entry[-num_atoms:])
-            for calc in range(1,num_calcs-1):
-                base = calc*num_atoms
-                pos["step_"+str(calc+1)] = self._convert_array2D3_f(entry[base:base+num_atoms])
+            for calc in range(1, num_calcs - 1):
+                base = calc * num_atoms
+                pos["step_" + str(calc + 1)
+                    ] = self._convert_array2D3_f(entry[base:base + num_atoms])
 
         return pos
-    
+
     def _fetch_speciesw(self, xml):
         """Fetch the atomic species
 
@@ -670,7 +674,7 @@ class XmlParser(object):
 
         entry = xml.findall(
             'kpoints/varray[@name="kpointlist"]/v')
-                
+
         kpoints = self._convert_array2D3_f(entry)
 
         return kpoints
@@ -693,7 +697,7 @@ class XmlParser(object):
 
         entry = xml.findall(
             'kpoints/varray[@name="weights"]/v')
-                
+
         kpointsw = self._convert_array1D_f(entry)
 
         return kpointsw
@@ -711,7 +715,7 @@ class XmlParser(object):
         kpointdiv : list
             An list containing the kpoint divisions used in the 
             calculation for the full BZ.
-        
+
         """
 
         entry = xml.find(
@@ -734,7 +738,7 @@ class XmlParser(object):
         eigenvalues, occupancies : tupple
             An tupple of two ndarrays containing the eigenvalues
             for each spin, band and kpoint index.
-        
+
         """
 
         # spin 1
@@ -747,7 +751,7 @@ class XmlParser(object):
 
         eigenvalues, occupancies = self._extract_eigenvalues(entry_ispin1,
                                                              entry_ispin2)
-        
+
         return eigenvalues, occupancies
 
     def _extract_eigenvalues(self, data1, data2):
@@ -767,7 +771,7 @@ class XmlParser(object):
         eigenvalues, occupancies : tupple
             An tupple of two ndarrays containing the eigenvalues
             for each spin, band and kpoint index.
-        
+
         """
 
         # first check if we have extracted the kpoints
@@ -777,17 +781,16 @@ class XmlParser(object):
             sys.exit(1)
 
         # then check if we have asigned ispin
-        if self._parameters["ispin"] is None: 
+        if self._parameters["ispin"] is None:
             self._logger.error("Before extracting the eigenvalues, please"
                                "extract ISPIN. Exiting.")
             sys.exit(1)
 
         # then check if we have asigned nbands
-        if self._parameters["nbands"] is None: 
+        if self._parameters["nbands"] is None:
             self._logger.error("Before extracting the eigenvalues, please"
                                "extract NBANDS. Exiting.")
             sys.exit(1)
-           
 
         # number of kpoints to disect the eigenvalue sets later
         num_kpoints = self._lattice["kpoints"].shape[0]
@@ -799,17 +802,17 @@ class XmlParser(object):
         num_bands = self._parameters["nbands"]
 
         data = []
-        
-        if len(data1) != num_bands*num_kpoints:
+
+        if len(data1) != num_bands * num_kpoints:
             self._logger.error("The number of eigenvalues found does not match "
                                "the number of located kpoints and NBANDS. "
                                "Exiting.")
             sys.exit(1)
 
         data.append([])
-        
+
         if data2:
-            if len(data2) != num_bands*num_kpoints:
+            if len(data2) != num_bands * num_kpoints:
                 self._logger.error("The number of eigenvalues found does not match "
                                    "the number of located kpoints and NBANDS. "
                                    "Exiting.")
@@ -818,27 +821,68 @@ class XmlParser(object):
 
         # a bit of a nasty and explicit loop, improve performance later
         for kpoint in range(num_kpoints):
-            base = kpoint*num_bands
+            base = kpoint * num_bands
             data[0].append(
-                self._convert_array2D2_f(data1[base:base+num_bands]))
+                self._convert_array2D2_f(data1[base:base + num_bands]))
             if data2:
                 data[1].append(
-                    self._convert_array2D2_f(data2[base:base+num_bands]))
+                    self._convert_array2D2_f(data2[base:base + num_bands]))
 
         # convert to numpy array
         data = np.asarray(data)
 
         # swap axis if the band index should be before the kpoint index
         if not self._k_before_band:
-            data = np.swapaxes(data,1,2)
-        
-        # set data and make sure it is continues in memory
-        eigenvalues = np.ascontiguousarray(data[:,:,:,0])
-        occupancies = np.ascontiguousarray(data[:,:,:,1])
+            data = np.swapaxes(data, 1, 2)
 
-        
+        # set data and make sure it is continues in memory
+        eigenvalues = np.ascontiguousarray(data[:, :, :, 0])
+        occupancies = np.ascontiguousarray(data[:, :, :, 1])
+
         return eigenvalues, occupancies
-    
+
+    def _fetch_dosw(self, xml):
+        """Fetch the density of states.
+
+        Parameters
+        ----------
+        xml : object
+            An ElementTree object to be used for parsing.
+
+        Returns
+        -------
+        dos : dict
+            A dict of ndarrays containing the energies, total and
+            integrated density of states.
+
+        """
+
+        # spin 1
+        entry_total_ispin1 = xml.findall(
+            './/calculation/dos/total/array/set/set[@comment="spin 1"]/r')
+
+        # spin 2
+        entry_total_ispin2 = xml.findall(
+            './/calculation/dos/total/array/set/set[@comment="spin 2"]/r')
+
+        dos_ispin1 = self._convert_array2D3_f(entry_total_ispin1)
+
+        if entry_total_ispin2:
+            dos_ispin2 = self._convert_array2D3_f(entry_total_ispin2)
+            _dos = np.concatenate((dos_ispin1, dos_ispin2), axis=0)
+        else:
+            _dos = dos_ispin1
+
+        _dos = np.ascontiguousarray(_dos)
+
+        # now make a dict
+        dos = {}
+        dos["energy"] = _dos[:, 0]
+        dos["total"] = _dos[:, 1]
+        dos["integrated"] = _dos[:, 2]
+
+        return dos
+
     def _convert_array_i(self, entry):
         """Convert the input entry to numpy array
 
@@ -884,7 +928,7 @@ class XmlParser(object):
             data = np.fromstring(entry.text, sep=' ', dtype='double')
 
         return data
-    
+
     def _convert_array1D_i(self, entry):
         """Convert the input entry to numpy array
 
@@ -904,7 +948,7 @@ class XmlParser(object):
 
         data = None
         if entry is not None:
-            data = np.zeros(len(entry),dtype='intc')
+            data = np.zeros(len(entry), dtype='intc')
         for index, element in enumerate(entry):
             data[index] = np.fromstring(element.text, sep=' ')
 
@@ -929,7 +973,7 @@ class XmlParser(object):
 
         data = None
         if entry is not None:
-            data = np.zeros(len(entry),dtype='double')
+            data = np.zeros(len(entry), dtype='double')
         for index, element in enumerate(entry):
             data[index] = np.fromstring(element.text, sep=' ')
 
@@ -956,7 +1000,7 @@ class XmlParser(object):
         data = None
         if entry is not None:
             data = np.zeros((len(entry), 3),
-                                 dtype='double')
+                            dtype='double')
 
         for index, element in enumerate(entry):
             data[index] = np.fromstring(element.text, sep=' ')
@@ -984,14 +1028,13 @@ class XmlParser(object):
         data = None
         if entry is not None:
             data = np.zeros((len(entry), 2),
-                                 dtype='double')
+                            dtype='double')
 
         for index, element in enumerate(entry):
             data[index] = np.fromstring(element.text, sep=' ')
 
         return data
 
-    
     def _convert_f(self, entry):
         """Convert the input entry to a float.
 
