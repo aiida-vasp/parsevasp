@@ -151,7 +151,6 @@ class XmlParser(object):
             #self._parsee()
         else:
             self._parsee()
-        print self._data["eigenvalues"][0][0]
 
     def _parsew(self):
         """Performs parsing on the whole XML files. For smaller files
@@ -180,6 +179,7 @@ class XmlParser(object):
         self._lattice["kpointsw"] = self._fetch_kpointsww(vaspxml)
         self._lattice["kpointdiv"] = self._fetch_kpointdivw(vaspxml)
         self._data["eigenvalues"], self._data["occupancies"] = self._fetch_eigenvaluesw(vaspxml)
+        self._data["dos"] = self._fetch_dos(vaspxml)
         
     def _parsee(self):
         """Performs parsing in an event driven fashion on the XML file.
