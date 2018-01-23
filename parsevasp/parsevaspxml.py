@@ -148,11 +148,9 @@ class XmlParser(object):
         # not necessary and is too slow.
         if self._file_size(self._file_path) < self._sizecutoff:
             self._parsew()
-            # self._parsee()
+            #self._parsee()
         else:
             self._parsee()
-
-        print self._data["dos"]
 
     def _parsew(self):
         """Performs parsing on the whole XML files. For smaller files
@@ -214,6 +212,9 @@ class XmlParser(object):
         extract_eigenvalues = False
         extract_eigenvalues_spin1 = False
         extract_eigenvalues_spin2 = False
+        extract_dos = False
+        extract_dos_ispin1 = False
+        extract_dos_ispin2 = False
 
         # do we want to extract data from all calculations (e.g. ionic steps)
         all = self._extract_all
@@ -261,7 +262,35 @@ class XmlParser(object):
                 data = []
                 data2 = []
                 extract_eigenvalues = False
-
+            if event == "start" and element.tag == "dos":
+                extract_eigenvalues = True
+            if event == "end" and element.tag == "dos":
+                dos = {}
+                _dos = {}
+                if data2:
+                    dos = {"up": None ,"down": None}
+                    dos_ispin = self._convert_array2D3_f(data)
+                    _dos["energy"] = dos_ispin[:,0]
+                    _dos["total"] = dos_ispin[:,1]
+                    _dos["integrated"] = dos_ispin[:,2]
+                    dos["up"] = _dos
+                    dos_ispin = self._convert_array2D3_f(data2)
+                    _dos["energy"] = dos_ispin[:,0]
+                    _dos["total"] = dos_ispin[:,1]
+                    _dos["integrated"] = dos_ispin[:,2]
+                    dos["down"] = _dos
+                else:
+                    dos = {"total": None}
+                    dos_ispin = self._convert_array2D3_f(data)
+                    _dos["energy"] = dos_ispin[:,0]
+                    _dos["total"] = dos_ispin[:,1]
+                    _dos["integrated"] = dos_ispin[:,2]
+                    dos["total"] = _dos
+                self._data["dos"] = dos
+                data = []
+                data2 = []
+                extract_dos = False
+                
             # now fetch the data
             if extract_parameters:
                 try:
@@ -376,14 +405,34 @@ class XmlParser(object):
                 if event == "end" and element.tag == "set" \
                    and element.attrib.get("comment") == "spin 2":
                     extract_eigenvalues_spin2 = False
-
                 if extract_eigenvalues_spin1:
                     if event == "start" and element.tag == "r":
                         data.append(element)
-
                 if extract_eigenvalues_spin2:
                     if event == "start" and element.tag == "r":
                         data2.append(element)
+
+            if extract_dos:
+                if event == "start" and element.tag == "set" \
+                   and element.attrib.get("comment") == "spin 1":
+                    extract_dos_spin1 = True
+                if event == "end" and element.tag == "set" \
+                   and element.attrib.get("comment") == "spin 1":
+                    extract_dos_spin1 = False
+                if event == "start" and element.tag == "set" \
+                   and element.attrib.get("comment") == "spin 2":
+                    extract_dos_spin2 = True
+                if event == "end" and element.tag == "set" \
+                   and element.attrib.get("comment") == "spin 2":
+                    extract_dos_spin2 = False
+                if extract_dos_spin1:
+                    if event == "start" and element.tag == "r":
+                        data.append(element)
+                if extract_dos_spin2:
+                    if event == "start" and element.tag == "r":
+                        data2.append(element)
+
+                
 
         # now we need to update some elements
         last_element = len(pos) - 1
@@ -865,22 +914,30 @@ class XmlParser(object):
         entry_total_ispin2 = xml.findall(
             './/calculation/dos/total/array/set/set[@comment="spin 2"]/r')
 
-        dos_ispin1 = self._convert_array2D3_f(entry_total_ispin1)
-
         if entry_total_ispin2:
-            dos_ispin2 = self._convert_array2D3_f(entry_total_ispin2)
-            _dos = np.concatenate((dos_ispin1, dos_ispin2), axis=0)
+            dos = {}
+            dos = {"up": None, "down": None}
+            dos_ispin = self._convert_array2D3_f(entry_total_ispin1)
+            _dos = {}
+            _dos["energy"] = dos_ispin[:,0]
+            _dos["total"] = dos_ispin[:,1]
+            _dos["integrated"] = dos_ispin[:,2]
+            dos["up"] = _dos
+            dos_ispin = self._convert_array2D3_f(entry_total_ispin2)
+            _dos["energy"] = dos_ispin[:,0]
+            _dos["total"] = dos_ispin[:,1]
+            _dos["integrated"] = dos_ispin[:,2]
+            dos["down"] = _dos
         else:
-            _dos = dos_ispin1
-
-        _dos = np.ascontiguousarray(_dos)
-
-        # now make a dict
-        dos = {}
-        dos["energy"] = _dos[:, 0]
-        dos["total"] = _dos[:, 1]
-        dos["integrated"] = _dos[:, 2]
-
+            dos = {}
+            dos = {"total": None}
+            dos_ispin = self._convert_array2D3_f(entry_total_ispin1)
+            _dos = {}
+            _dos["energy"] = dos_ispin[:,0]
+            _dos["total"] = dos_ispin[:,1]
+            _dos["integrated"] = dos_ispin[:,2]
+            dos["total"] = _dos
+            
         return dos
 
     def _convert_array_i(self, entry):
