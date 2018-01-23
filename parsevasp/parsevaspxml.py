@@ -859,9 +859,9 @@ class XmlParser(object):
 
         Returns
         -------
-        eigenvalues, occupancies : tupple
-            An tupple of two ndarrays containing the eigenvalues
-            for each spin, band and kpoint index.
+        eigenvalues, occupancies : tupple of dicts
+            An tupple of two dicts containing ndarrays with the eigenvalues
+            and occupancies for each band and kpoint index.
 
         """
 
@@ -926,9 +926,17 @@ class XmlParser(object):
         if not self._k_before_band:
             data = np.swapaxes(data, 1, 2)
 
-        # set data and make sure it is continues in memory
-        eigenvalues = np.ascontiguousarray(data[:, :, :, 0])
-        occupancies = np.ascontiguousarray(data[:, :, :, 1])
+        # set dicts
+        eigenvalues = {}
+        occupancies = {}
+        if data2:
+            eigenvalues["up"] = np.ascontiguousarray(data[0, :, :, 0])
+            occupancies["up"] = np.ascontiguousarray(data[0, :, :, 1])
+            eigenvalues["down"] = np.ascontiguousarray(data[1, :, :, 0])
+            occupancies["down"] = np.ascontiguousarray(data[1, :, :, 1])
+        else:
+            eigenvalues["total"] = np.ascontiguousarray(data[0, :, :, 0])
+            occupancies["total"] = np.ascontiguousarray(data[0, :, :, 1])
 
         return eigenvalues, occupancies
 
@@ -982,7 +990,7 @@ class XmlParser(object):
             _dos["total"] = dos_ispin[:,1]
             _dos["integrated"] = dos_ispin[:,2]
             # check if partial exists
-            if entry_partial_ispin_1:
+            if entry_partial_ispin1:
                 dos_ispin = self._convert_array2D10_f(entry_partial_ispin1)
                 # do not need the energy term (similar to total)
                 _dos["partial"] = np.asarray(np.split(dos_ispin[:,1:10],num_atoms))
@@ -993,7 +1001,7 @@ class XmlParser(object):
             _dos["energy"] = dos_ispin[:,0]
             _dos["total"] = dos_ispin[:,1]
             _dos["integrated"] = dos_ispin[:,2]
-            if entry_partial_ispin_2:
+            if entry_partial_ispin2:
                 dos_ispin = self._convert_array2D10_f(entry_partial_ispin2)
                 # do not need the energy term (similar to total)
                 _dos["partial"] = np.asarray(np.split(dos_ispin[:,1:10],num_atoms))
