@@ -198,6 +198,9 @@ class XmlParser(object):
         # helper dicts
         cell = {}
         pos = {}
+        dos = {}
+        _dos = {}
+        _dos2 = {}
 
         # bool to control extraction of content
         extract_parameters = False
@@ -213,8 +216,11 @@ class XmlParser(object):
         extract_eigenvalues_spin1 = False
         extract_eigenvalues_spin2 = False
         extract_dos = False
+        extract_total_dos = False
+        extract_partial_dos = False
         extract_dos_ispin1 = False
         extract_dos_ispin2 = False
+        extract_projected = False
 
         # do we want to extract data from all calculations (e.g. ionic steps)
         all = self._extract_all
@@ -252,9 +258,21 @@ class XmlParser(object):
                 extract_kpointdata = True
             if event == "end" and element.tag == "kpoints":
                 extract_kpointdata = False
+            if event == "start" and element.tag == "projected":
+                extract_projected = True
+            if event == "end" and element.tag == "projected":
+                extract_projected = False
             if event == "start" and element.tag == "eigenvalues":
-                extract_eigenvalues = True
-            if event == "end" and element.tag == "eigenvalues":
+                # do not start regular eigenvalue extraction
+                # if projected dataset is found
+                # do not think we need tests like this on the end
+                # statements as the xml is always serial?
+                if not extract_projected:
+                    extract_eigenvalues = True
+            if event == "end" and element.tag == "eigenvalues" and not \
+               extract_projected:
+                # we do not do this for the projected eigenvalues,
+                # that needs special threatment
                 eigenvalues, occupancies = self._extract_eigenvalues(
                     data, data2)
                 self._data["eigenvalues"] = eigenvalues
@@ -263,34 +281,60 @@ class XmlParser(object):
                 data2 = []
                 extract_eigenvalues = False
             if event == "start" and element.tag == "dos":
-                extract_eigenvalues = True
-            if event == "end" and element.tag == "dos":
-                dos = {}
-                _dos = {}
+                extract_dos = True
+            if event == "end" and element.tag == "total":
                 if data2:
-                    dos = {"up": None ,"down": None}
                     dos_ispin = self._convert_array2D3_f(data)
                     _dos["energy"] = dos_ispin[:,0]
                     _dos["total"] = dos_ispin[:,1]
                     _dos["integrated"] = dos_ispin[:,2]
-                    dos["up"] = _dos
                     dos_ispin = self._convert_array2D3_f(data2)
-                    _dos["energy"] = dos_ispin[:,0]
-                    _dos["total"] = dos_ispin[:,1]
-                    _dos["integrated"] = dos_ispin[:,2]
-                    dos["down"] = _dos
+                    _dos2["energy"] = dos_ispin[:,0]
+                    _dos2["total"] = dos_ispin[:,1]
+                    _dos2["integrated"] = dos_ispin[:,2]
                 else:
-                    dos = {"total": None}
                     dos_ispin = self._convert_array2D3_f(data)
                     _dos["energy"] = dos_ispin[:,0]
                     _dos["total"] = dos_ispin[:,1]
                     _dos["integrated"] = dos_ispin[:,2]
+                data = []
+                data2 = []
+            if event == "end" and element.tag == "partial":
+                num_atoms = 0
+                if self._lattice["species"] is not None:
+                    num_atoms = self._lattice["species"].shape[0]
+                else:
+                    self._logger.error("Before extracting the density of "
+                                       "states, please extract the species. "
+                                       "Exiting.")
+                    sys.exit(1)
+                if data2:
+                    dos_ispin = self._convert_array2D10_f(data)
+                    # do not need the energy term (similar to total)
+                    _dos["partial"] = np.asarray(
+                        np.split(dos_ispin[:,1:10], num_atoms))
+                    dos_ispin = self._convert_array2D10_f(data2)
+                    # do not need the energy term (similar to total)
+                    _dos2["partial"] = np.asarray(
+                        np.split(dos_ispin[:,1:10], num_atoms))
+                else:
+                    dos_ispin = self._convert_array2D10_f(data)
+                    # do not need the energy term (similar to total)
+                    _dos["partial"] = np.asarray(
+                        np.split(dos_ispin[:,1:10], num_atoms))
+                data = []
+                data2 = []
+            if event == "end" and element.tag == "dos":
+                if data2:
+                    dos["up"] = _dos
+                    dos["down"] = _dos2
+                else:
                     dos["total"] = _dos
                 self._data["dos"] = dos
                 data = []
                 data2 = []
                 extract_dos = False
-                
+                 
             # now fetch the data
             if extract_parameters:
                 try:
@@ -415,24 +459,22 @@ class XmlParser(object):
             if extract_dos:
                 if event == "start" and element.tag == "set" \
                    and element.attrib.get("comment") == "spin 1":
-                    extract_dos_spin1 = True
+                    extract_dos_ispin1 = True
                 if event == "end" and element.tag == "set" \
                    and element.attrib.get("comment") == "spin 1":
-                    extract_dos_spin1 = False
+                    extract_dos_ispin1 = False
                 if event == "start" and element.tag == "set" \
                    and element.attrib.get("comment") == "spin 2":
-                    extract_dos_spin2 = True
+                    extract_dos_ispin2 = True
                 if event == "end" and element.tag == "set" \
                    and element.attrib.get("comment") == "spin 2":
-                    extract_dos_spin2 = False
-                if extract_dos_spin1:
+                    extract_dos_ispin2 = False
+                if extract_dos_ispin1:
                     if event == "start" and element.tag == "r":
                         data.append(element)
-                if extract_dos_spin2:
+                if extract_dos_ispin2:
                     if event == "start" and element.tag == "r":
                         data2.append(element)
-
-                
 
         # now we need to update some elements
         last_element = len(pos) - 1
@@ -851,7 +893,7 @@ class XmlParser(object):
         num_bands = self._parameters["nbands"]
 
         data = []
-
+        
         if len(data1) != num_bands * num_kpoints:
             self._logger.error("The number of eigenvalues found does not match "
                                "the number of located kpoints and NBANDS. "
@@ -914,6 +956,23 @@ class XmlParser(object):
         entry_total_ispin2 = xml.findall(
             './/calculation/dos/total/array/set/set[@comment="spin 2"]/r')
 
+        # partial spin 1
+        entry_partial_ispin1 = xml.findall(
+            './/calculation/dos/partial/array/set/set/set[@comment="spin 1"]/r')
+
+        # partial spin 2
+        entry_partial_ispin2 = xml.findall(
+            './/calculation/dos/partial/array/set/set/set[@comment="spin 2"]/r')
+
+        # check if we have extracted the species (number of atoms)
+        if self._lattice["species"] is None:
+            self._logger.error("Before extracting the density of states, please"
+                               "extract the species. Exiting.")
+            sys.exit(1)
+
+        # number of atoms
+        num_atoms = self._lattice["species"].shape[0]
+        
         if entry_total_ispin2:
             dos = {}
             dos = {"up": None, "down": None}
@@ -922,11 +981,22 @@ class XmlParser(object):
             _dos["energy"] = dos_ispin[:,0]
             _dos["total"] = dos_ispin[:,1]
             _dos["integrated"] = dos_ispin[:,2]
+            # check if partial exists
+            if entry_partial_ispin_1:
+                dos_ispin = self._convert_array2D10_f(entry_partial_ispin1)
+                # do not need the energy term (similar to total)
+                _dos["partial"] = np.asarray(np.split(dos_ispin[:,1:10],num_atoms))
+            else:
+                _dos["partial"] = None
             dos["up"] = _dos
             dos_ispin = self._convert_array2D3_f(entry_total_ispin2)
             _dos["energy"] = dos_ispin[:,0]
             _dos["total"] = dos_ispin[:,1]
             _dos["integrated"] = dos_ispin[:,2]
+            if entry_partial_ispin_2:
+                dos_ispin = self._convert_array2D10_f(entry_partial_ispin2)
+                # do not need the energy term (similar to total)
+                _dos["partial"] = np.asarray(np.split(dos_ispin[:,1:10],num_atoms))
             dos["down"] = _dos
         else:
             dos = {}
@@ -936,6 +1006,13 @@ class XmlParser(object):
             _dos["energy"] = dos_ispin[:,0]
             _dos["total"] = dos_ispin[:,1]
             _dos["integrated"] = dos_ispin[:,2]
+            # check if partial exists
+            if entry_partial_ispin1:
+                dos_ispin = self._convert_array2D10_f(entry_partial_ispin1)
+                # do not need the energy term (similar to total)
+                _dos["partial"] = np.asarray(np.split(dos_ispin[:,1:10],num_atoms))
+            else:
+                _dos["partial"] = None
             dos["total"] = _dos
             
         return dos
@@ -1063,7 +1140,36 @@ class XmlParser(object):
             data[index] = np.fromstring(element.text, sep=' ')
 
         return data
+    
+    def _convert_array2D10_f(self, entry):
+        """Convert the input entry to numpy array
 
+        Parameters
+        ----------
+        entry : list
+            A list containing Element objects where each
+            element is a float
+
+        Returns
+        -------
+        data : ndarray
+            | Dimension: (N,10)
+            An array containing N elements with ten float
+            elements.
+
+        """
+
+        data = None
+        if entry is not None:
+            data = np.zeros((len(entry), 10),
+                            dtype='double')
+
+        for index, element in enumerate(entry):
+            data[index] = np.fromstring(element.text, sep=' ')
+
+        return data
+
+    
     def _convert_array2D2_f(self, entry):
         """Convert the input entry to numpy array
 
