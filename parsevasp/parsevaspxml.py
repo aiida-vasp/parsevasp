@@ -124,7 +124,8 @@ class XmlParser(object):
                          "kpointdiv": None}
         self._data = {"eigenvalues": None,
                       "occupancies": None,
-                      "dos": None}
+                      "dos": None,
+                      "totens": None}
         self._calculations = {}
 
         # parse parse parse
@@ -151,6 +152,8 @@ class XmlParser(object):
             #self._parsee()
         else:
             self._parsee()
+
+        print self._data["totens"]
 
     def _parsew(self):
         """Performs parsing on the whole XML files. For smaller files
@@ -181,6 +184,7 @@ class XmlParser(object):
         self._data["eigenvalues"], self._data[
             "occupancies"] = self._fetch_eigenvaluesw(vaspxml)
         self._data["dos"] = self._fetch_dosw(vaspxml)
+        self._data["totens"] = self._fetch_totensw(vaspxml)
 
     def _parsee(self):
         """Performs parsing in an event driven fashion on the XML file.
@@ -845,6 +849,40 @@ class XmlParser(object):
 
         return eigenvalues, occupancies
 
+    def _fetch_totensw(self, xml):
+        """Fetch the total energy entries
+
+        Parameters
+        ----------
+        xml : object
+            An ElementTree object to be used for parsing.
+
+        Returns
+        -------
+        eigenvalues, occupancies : tupple
+            An tupple of two ndarrays containing the eigenvalues
+            for each spin, band and kpoint index.
+
+        """
+
+        # first fetch the energies with no entropy for each calculation
+        # (e.g. each ionic step)
+        entries = xml.findall(
+            './/calculation/energy/i[@name="e_wo_entrp"]')
+
+        energy_no_entropy_calc = self._convert_array1D_f(entries)
+
+        num_calcs = energy_no_entropy_calc.shape[0]
+
+        # then fetch the energies with no enetropy for all electronic
+        # steps
+        entries = xml.findall(
+            './/calculation/scstep/energy/i[@name="e_wo_entrp"]')
+
+        energy_no_entropy_elec = self._convert_array1D_f(entries)
+
+        print energy_no_entropy_elec
+    
     def _extract_eigenvalues(self, data1, data2):
         """Extract the eigenvalues.
 
