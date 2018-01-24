@@ -982,8 +982,254 @@ class XmlParser(object):
         # replace key on the last element to final
         energies["final"] = energies.pop("step_"+str(len(entries)))
 
-        return energies
+        return energies        
+
+    def _fetch_dosw(self, xml):
+        """Fetch the density of states.
+
+        Parameters
+        ----------
+        xml : object
+            An ElementTree object to be used for parsing.
+
+        Returns
+        -------
+        dos : dict
+            A dict of ndarrays containing the energies, total and
+            integrated density of states.
+
+        """
+
+        # spin 1
+        entry_total_ispin1 = xml.findall(
+            './/calculation/dos/total/array/set/set[@comment="spin 1"]/r')
+
+        # spin 2
+        entry_total_ispin2 = xml.findall(
+            './/calculation/dos/total/array/set/set[@comment="spin 2"]/r')
+
+        # partial spin 1
+        entry_partial_ispin1 = xml.findall(
+            './/calculation/dos/partial/array/set/set/set[@comment="spin 1"]/r')
+
+        # partial spin 2
+        entry_partial_ispin2 = xml.findall(
+            './/calculation/dos/partial/array/set/set/set[@comment="spin 2"]/r')
+
+        # check if we have extracted the species (number of atoms)
+        if self._lattice["species"] is None:
+            self._logger.error("Before extracting the density of states, please"
+                               "extract the species. Exiting.")
+            sys.exit(1)
+
+        # number of atoms
+        num_atoms = self._lattice["species"].shape[0]
         
+        if entry_total_ispin2:
+            dos = {}
+            dos = {"up": None, "down": None}
+            dos_ispin = self._convert_array2D3_f(entry_total_ispin1)
+            _dos = {}
+            _dos["energy"] = dos_ispin[:,0]
+            _dos["total"] = dos_ispin[:,1]
+            _dos["integrated"] = dos_ispin[:,2]
+            # check if partial exists
+            if entry_partial_ispin1:
+                dos_ispin = self._convert_array2D10_f(entry_partial_ispin1)
+                # do not need the energy term (similar to total)
+                _dos["partial"] = np.asarray(np.split(dos_ispin[:,1:10],num_atoms))
+            else:
+                _dos["partial"] = None
+            dos["up"] = _dos
+            dos_ispin = self._convert_array2D3_f(entry_total_ispin2)
+            _dos["energy"] = dos_ispin[:,0]
+            _dos["total"] = dos_ispin[:,1]
+            _dos["integrated"] = dos_ispin[:,2]
+            if entry_partial_ispin2:
+                dos_ispin = self._convert_array2D10_f(entry_partial_ispin2)
+                # do not need the energy term (similar to total)
+                _dos["partial"] = np.asarray(np.split(dos_ispin[:,1:10],num_atoms))
+            dos["down"] = _dos
+        else:
+            dos = {}
+            dos = {"total": None}
+            dos_ispin = self._convert_array2D3_f(entry_total_ispin1)
+            _dos = {}
+            _dos["energy"] = dos_ispin[:,0]
+            _dos["total"] = dos_ispin[:,1]
+            _dos["integrated"] = dos_ispin[:,2]
+            # check if partial exists
+            if entry_partial_ispin1:
+                dos_ispin = self._convert_array2D10_f(entry_partial_ispin1)
+                # do not need the energy term (similar to total)
+                _dos["partial"] = np.asarray(np.split(dos_ispin[:,1:10],num_atoms))
+            else:
+                _dos["partial"] = None
+            dos["total"] = _dos
+            
+        return dos
+
+    def _fetch_dielectrics(self, xml, method="dft", transfer=None):
+        """ Fetch the dielectric function from the VASP XML file
+
+        Parameters
+        ----------
+        xml : object
+            An ElementTree object to be used for parsing.
+        method : {'dft', 'qp', 'bse'}, optional
+            What method was used to obtain the dielectric function. VASP
+            uses different output between DFT, QP and BSE calculations
+            (defaults to 'dft').
+        transfer : {'density', 'current'}, optional
+            Which dielectric function do you want? Density-density or
+            current-current? Defaults to the density-density.
+
+        Returns
+        -------
+        diel_imag : (N,6) list of list of float
+            If `method` is 'dft'.
+            The imaginary dielectric function for N energies for the
+            xx, yy, zz, xy, yz and zx component, respectively.
+        diel_real : (N,6) list of float
+            If `method` is 'dft'.
+            The real dielectric function for N energies for the
+            xx, yy, zz, xy, yz and zx component, respectively.
+        diel_imag_mac : (N,6) list of list of float
+            If `method` is 'qp'.
+            The imaginary part of the macroscopic dielectric function.
+            See `diel_imag` for layout.
+        diel_real_mac : (N,6) list of list of float
+            If `method` is 'qp'.
+            The real part of the polarized dielectric function.
+            See `diel_imag` for layout.
+        diel_imag_pol : (N,6) list of list of float
+            If `method` is 'qp'.
+            The imaginary part of the polarized dielectric function.
+            See `diel_imag` for layout.
+        diel_real_pol : (N,6) list of list of floa
+            If `method` is 'qp'.
+            The real part of the polarized dielectric function.
+            See `diel_imag` for layout.
+        diel_imag_invlfrpa : (N,6) list of list of float
+            If `method` is 'qp'.
+            The imaginary part of the inverse dielectric function with
+            local field effects on the RPA level.
+            See `diel_imag` for layout.
+        diel_real_invlfrpa : (N,6) list of list of float
+            If `method` is 'qp'.
+            The real part of the inverse dielectric function with
+            local field effects on the RPA level.
+            See `diel_imag` for layout.
+        diel_imag : (N,6) list of list of float
+            If `method` is 'bse'.
+            The imaginary part of the BSE dielectric function.
+            See `diel_imag` above for layout.
+            diel_real : (N,6) list of list of float
+            If `method` is 'bse'.
+            The real part of the BSE dielectric function.
+            See `diel_imag` at the top for layout.
+
+        """
+    
+        root = xml.getroot()
+        if method == "dft":
+            if transfer is None:
+                tag = 'dielectricfunction[@comment="density-density"]'
+            elif transfer == "current":
+                tag = 'dielectricfunction[@comment="current-current"]'
+            else:
+                tag = 'dielectricfunction'
+            try:
+                dielectric_xml = root.find(
+                    'calculation').find(tag)
+            except AttributeError:
+                logger.error(
+                    "Did not find <dielectricfunction> tag the current XML. Exiting.")
+                sys.exit(1)
+            diel_imag_xml = dielectric_xml.find('imag').find('array').find('set')
+            diel_imag = []
+            # first imag part
+            for energy in diel_imag_xml.iter('r'):
+                diel_imag.append([float(x) for x in energy.text.split()])
+            diel_real_xml = dielectric_xml.find('real').find('array').find('set')
+            diel_real = []
+            # then real part
+            for energy in diel_real_xml.iter('r'):
+                diel_real.append([float(x) for x in energy.text.split()])
+            return diel_imag, diel_real
+        if method == "qp":
+            try:
+                dielectric_xml = root.findall('dielectricfunction')
+            except AttributeError:
+                logger.error(
+                    "Did not find <dielectricfunction> tag in the current XML."
+                    "Exiting.")
+                sys.exit(1)
+
+            # first head of macroscopic
+            diel_imag_xml = dielectric_xml[0].find(
+                'imag').find('array').find('set')
+            diel_imag_mac = []
+            # first imag part
+            for energy in diel_imag_xml.iter('r'):
+                diel_imag_mac.append([float(x) for x in energy.text.split()])
+            diel_real_xml = dielectric_xml[0].find(
+                'real').find('array').find('set')
+            diel_real_mac = []
+            # then real part
+            for energy in diel_real_xml.iter('r'):
+                diel_real_mac.append([float(x) for x in energy.text.split()])
+    
+            # then polarized
+            diel_imag_xml = dielectric_xml[1].find(
+                'imag').find('array').find('set')
+            diel_imag_pol = []
+            # first imag part
+            for energy in diel_imag_xml.iter('r'):
+                diel_imag_pol.append([float(x) for x in energy.text.split()])
+            diel_real_xml = dielectric_xml[1].find(
+                'real').find('array').find('set')
+            diel_real_pol = []
+            # then real part
+            for energy in diel_real_xml.iter('r'):
+                diel_real_pol.append([float(x) for x in energy.text.split()])
+
+            # then inverse macroscopic (including local field)
+            diel_imag_xml = dielectric_xml[2].find(
+                'imag').find('array').find('set')
+            diel_imag_invlfrpa = []
+            # first imag part
+            for energy in diel_imag_xml.iter('r'):
+                diel_imag_invlfrpa.append([float(x) for x in energy.text.split()])
+            diel_real_xml = dielectric_xml[2].find(
+                    'real').find('array').find('set')
+            diel_real_invlfrpa = []
+            # then real part
+            for energy in diel_real_xml.iter('r'):
+                diel_real_invlfrpa.append([float(x) for x in energy.text.split()])
+            return diel_imag_mac, diel_real_mac, diel_imag_pol, diel_real_pol, \
+                diel_imag_invlfrpa, diel_real_invlfrpa
+
+        if method == "bse":
+            try:
+                dielectric_xml = root.find('dielectricfunction')
+            except AttributeError:
+                logger.error(
+                    "Did not find <dielectricfunction> tag in the current XML."
+                    "Exiting.")
+                sys.exit(1)
+            diel_imag_xml = dielectric_xml.find('imag').find('array').find('set')
+            diel_imag = []
+            # first imag part
+            for energy in diel_imag_xml.iter('r'):
+                diel_imag.append([float(x) for x in energy.text.split()])
+            diel_real_xml = dielectric_xml.find('real').find('array').find('set')
+            diel_real = []
+            # then real part
+            for energy in diel_real_xml.iter('r'):
+                diel_real.append([float(x) for x in energy.text.split()])
+            return diel_imag, diel_real
+
     def _extract_eigenvalues(self, data1, data2):
         """Extract the eigenvalues.
 
@@ -1078,92 +1324,7 @@ class XmlParser(object):
             occupancies["total"] = np.ascontiguousarray(data[0, :, :, 1])
 
         return eigenvalues, occupancies
-
-    def _fetch_dosw(self, xml):
-        """Fetch the density of states.
-
-        Parameters
-        ----------
-        xml : object
-            An ElementTree object to be used for parsing.
-
-        Returns
-        -------
-        dos : dict
-            A dict of ndarrays containing the energies, total and
-            integrated density of states.
-
-        """
-
-        # spin 1
-        entry_total_ispin1 = xml.findall(
-            './/calculation/dos/total/array/set/set[@comment="spin 1"]/r')
-
-        # spin 2
-        entry_total_ispin2 = xml.findall(
-            './/calculation/dos/total/array/set/set[@comment="spin 2"]/r')
-
-        # partial spin 1
-        entry_partial_ispin1 = xml.findall(
-            './/calculation/dos/partial/array/set/set/set[@comment="spin 1"]/r')
-
-        # partial spin 2
-        entry_partial_ispin2 = xml.findall(
-            './/calculation/dos/partial/array/set/set/set[@comment="spin 2"]/r')
-
-        # check if we have extracted the species (number of atoms)
-        if self._lattice["species"] is None:
-            self._logger.error("Before extracting the density of states, please"
-                               "extract the species. Exiting.")
-            sys.exit(1)
-
-        # number of atoms
-        num_atoms = self._lattice["species"].shape[0]
         
-        if entry_total_ispin2:
-            dos = {}
-            dos = {"up": None, "down": None}
-            dos_ispin = self._convert_array2D3_f(entry_total_ispin1)
-            _dos = {}
-            _dos["energy"] = dos_ispin[:,0]
-            _dos["total"] = dos_ispin[:,1]
-            _dos["integrated"] = dos_ispin[:,2]
-            # check if partial exists
-            if entry_partial_ispin1:
-                dos_ispin = self._convert_array2D10_f(entry_partial_ispin1)
-                # do not need the energy term (similar to total)
-                _dos["partial"] = np.asarray(np.split(dos_ispin[:,1:10],num_atoms))
-            else:
-                _dos["partial"] = None
-            dos["up"] = _dos
-            dos_ispin = self._convert_array2D3_f(entry_total_ispin2)
-            _dos["energy"] = dos_ispin[:,0]
-            _dos["total"] = dos_ispin[:,1]
-            _dos["integrated"] = dos_ispin[:,2]
-            if entry_partial_ispin2:
-                dos_ispin = self._convert_array2D10_f(entry_partial_ispin2)
-                # do not need the energy term (similar to total)
-                _dos["partial"] = np.asarray(np.split(dos_ispin[:,1:10],num_atoms))
-            dos["down"] = _dos
-        else:
-            dos = {}
-            dos = {"total": None}
-            dos_ispin = self._convert_array2D3_f(entry_total_ispin1)
-            _dos = {}
-            _dos["energy"] = dos_ispin[:,0]
-            _dos["total"] = dos_ispin[:,1]
-            _dos["integrated"] = dos_ispin[:,2]
-            # check if partial exists
-            if entry_partial_ispin1:
-                dos_ispin = self._convert_array2D10_f(entry_partial_ispin1)
-                # do not need the energy term (similar to total)
-                _dos["partial"] = np.asarray(np.split(dos_ispin[:,1:10],num_atoms))
-            else:
-                _dos["partial"] = None
-            dos["total"] = _dos
-            
-        return dos
-
     def _convert_array_i(self, entry):
         """Convert the input entry to numpy array
 
