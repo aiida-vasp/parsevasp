@@ -115,7 +115,9 @@ class XmlParser(object):
                             "ismear": None,
                             "sigma": None,
                             "ispin": None,
-                            "nbands": None}
+                            "nbands": None,
+                            "nelect": None,
+                            "system": None}
         self._lattice = {"unitcell": None,
                          "species": None,
                          "positions": None,
@@ -149,11 +151,12 @@ class XmlParser(object):
         # perform event driven parsing. For smaller files this is
         # not necessary and is too slow.
         if self._file_size(self._file_path) < self._sizecutoff:
-            #self._parsew()
-            self._parsee()
+            self._parsew()
+            #self._parsee()
         else:
             self._parsee()
-        print self._data["dos"]
+        #print self._data["dos"]
+        print self._parameters
         
     def _parsew(self):
         """Performs parsing on the whole XML files. For smaller files
@@ -175,6 +178,8 @@ class XmlParser(object):
         self._parameters["ismear"] = self._fetch_ismearw(vaspxml)
         self._parameters["ispin"] = self._fetch_ispinw(vaspxml)
         self._parameters["nbands"] = self._fetch_nbandsw(vaspxml)
+        self._parameters["nelect"] = self._fetch_nelectw(vaspxml)
+        self._parameters["system"] = self._fetch_systemw(vaspxml)
         self._lattice["species"] = self._fetch_speciesw(vaspxml)
         self._lattice["unitcell"], self._lattice["positions"], \
             self._data["forces"], self._data["stress"] = \
@@ -374,6 +379,17 @@ class XmlParser(object):
                         self._parameters["nbands"] = self._convert_i(element)
                 except KeyError:
                     pass
+                try:
+                    if event == "start" and element.attrib["name"] == "NELECT":
+                        self._parameters["nelect"] = self._convert_f(element)
+                except KeyError:
+                    pass
+                try:
+                    if event == "start" and element.attrib["name"] == "SYSTEM":
+                        self._parameters["system"] = element.text
+                except KeyError:
+                    pass
+                
 
             if extract_calculation:
                 attribute = "step_" + str(calc)
@@ -750,6 +766,60 @@ class XmlParser(object):
 
         return nbands
 
+    def _fetch_nelectw(self, xml):
+        """Fetch and set nelect using etree.
+
+        Parameters
+        ----------
+        xml : object
+            An ElementTree object to be used for parsing.
+
+        Returns
+        -------
+        nelect : float
+            If NELECT is found it is returned.
+
+        Notes
+        -----
+        The number of electrons used in the calculation.
+
+        """
+
+        nelect = None
+        entry = xml.find('.//parameters/separator[@name="electronic"]/'
+                         'i[@name="NELECT"]')
+        if entry is not None:
+            nelect = self._convert_f(entry)
+
+        return nelect
+
+    def _fetch_systemw(self, xml):
+        """Fetch and set system using etree.
+
+        Parameters
+        ----------
+        xml : object
+            An ElementTree object to be used for parsing.
+
+        Returns
+        -------
+        system : string
+            If SYSTEM is found it is returned.
+
+        Notes
+        -----
+        A comment that can be specified in the INCAR file.
+
+        """
+
+        system = None
+        entry = xml.find('.//parameters/separator[@name="general"]/'
+                         'i[@name="SYSTEM"]')
+        if entry is not None:
+            system = entry.text
+            
+        return system
+    
     def _fetch_upfsw(self, xml, all=False):
         """Fetch the unitcell, atomic positions, force and stress.
 
