@@ -149,11 +149,12 @@ class XmlParser(object):
         # perform event driven parsing. For smaller files this is
         # not necessary and is too slow.
         if self._file_size(self._file_path) < self._sizecutoff:
-            self._parsew()
-            #self._parsee()
+            #self._parsew()
+            self._parsee()
         else:
             self._parsee()
-
+        print self._data["dos"]
+        
     def _parsew(self):
         """Performs parsing on the whole XML files. For smaller files
 
@@ -199,6 +200,7 @@ class XmlParser(object):
         data = []
         data2 = []
         data3 = []
+        data4 = []
 
         # dicts
         cell = {}
@@ -322,14 +324,27 @@ class XmlParser(object):
                 data = []
                 data2 = []
             if event == "end" and element.tag == "dos":
+                # check the Fermi level
+                if len(data4) == 1:
+                    fermi_level = self._convert_f(data4[0])
+                elif len(data4) > 1:
+                    self._logger.error("Multiple entries of efermi was located. "
+                                       "Exiting.")
+                    sys.exit(1)
+                else:
+                    fermi_level = None
+                    
                 if data2:
                     dos["up"] = _dos
                     dos["down"] = _dos2
+                    dos["total"] = {"fermi_level": fermi_level}
                 else:
+                    _dos["fermi_level"] = fermi_level
                     dos["total"] = _dos
                 self._data["dos"] = dos
                 data = []
                 data2 = []
+                data4 = []
                 extract_dos = False
                  
             # now fetch the data
@@ -488,7 +503,8 @@ class XmlParser(object):
 
             if extract_kpointdata:
                 try:
-                    if event == "start" and element.tag == "v" and element.attrib["name"] == "divisions":
+                    if event == "start" and element.tag == "v" and \
+                       element.attrib["name"] == "divisions":
                         self._lattice[
                             "kpointdiv"] = self._convert_array_i(element)
                 except KeyError:
@@ -518,6 +534,13 @@ class XmlParser(object):
                         data.append(element)
 
             if extract_dos:
+                try:
+                    if event == "start" and element.tag == "i" and \
+                       element.attrib["name"] == "efermi":
+                        data4.append(element)
+                except KeyError:
+                    pass
+
                 if event == "start" and element.tag == "set" \
                    and element.attrib.get("comment") == "spin 1":
                     extract_dos_ispin1 = True
@@ -979,8 +1002,12 @@ class XmlParser(object):
             else:
                 energies["step_"+str(index+1)] = {"energy_no_entropy":
                                                   [data[data.shape[0]-1], data]}
-        # replace key on the last element to final
-        energies["final"] = energies.pop("step_"+str(len(entries)))
+                
+        if len(energies) == 1:
+            energies["final"] = energies["initial"]
+        else:
+            # replace key on the last element to final
+            energies["final"] = energies.pop("step_"+str(len(entries)))
 
         return energies        
 
@@ -999,6 +1026,15 @@ class XmlParser(object):
             integrated density of states.
 
         """
+
+        # fetch the Fermi level
+        entry = xml.find(
+            './/calculation/dos/i[@name="efermi"]')
+
+        if entry is not None:
+            fermi_level = self._convert_f(entry)
+        else:
+            fermi_level = None
 
         # spin 1
         entry_total_ispin1 = xml.findall(
@@ -1050,6 +1086,7 @@ class XmlParser(object):
                 # do not need the energy term (similar to total)
                 _dos["partial"] = np.asarray(np.split(dos_ispin[:,1:10],num_atoms))
             dos["down"] = _dos
+            dos["total"] = {"fermi_level": fermi_level}
         else:
             dos = {}
             dos = {"total": None}
@@ -1065,8 +1102,9 @@ class XmlParser(object):
                 _dos["partial"] = np.asarray(np.split(dos_ispin[:,1:10],num_atoms))
             else:
                 _dos["partial"] = None
+            _dos["fermi_level"] = fermi_level
             dos["total"] = _dos
-            
+        
         return dos
 
     def _fetch_dielectrics(self, xml, method="dft", transfer=None):
