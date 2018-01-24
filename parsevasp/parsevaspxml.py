@@ -129,7 +129,8 @@ class XmlParser(object):
                       "dos": None,
                       "totens": None,
                       "forces": None,
-                      "stress": None}
+                      "stress": None,
+                      "dielectrics": None}
 
         # parse parse parse
         self._parse()
@@ -157,6 +158,7 @@ class XmlParser(object):
             self._parsee()
         #print self._data["dos"]
         print self._parameters
+        print self._data["dielectrics"]
         
     def _parsew(self):
         """Performs parsing on the whole XML files. For smaller files
@@ -191,6 +193,7 @@ class XmlParser(object):
             "occupancies"] = self._fetch_eigenvaluesw(vaspxml)
         self._data["dos"] = self._fetch_dosw(vaspxml)
         self._data["totens"] = self._fetch_totensw(vaspxml)
+        self._data["dielectrics"] = self._fetch_dielectricsw(vaspxml)
 
     def _parsee(self):
         """Performs parsing in an event driven fashion on the XML file.
@@ -1177,7 +1180,7 @@ class XmlParser(object):
         
         return dos
 
-    def _fetch_dielectrics(self, xml, method="dft", transfer=None):
+    def _fetch_dielectricsw(self, xml, method="dft", transfer=None):
         """ Fetch the dielectric function from the VASP XML file
 
         Parameters
@@ -1239,104 +1242,106 @@ class XmlParser(object):
 
         """
     
-        root = xml.getroot()
         if method == "dft":
-            if transfer is None:
+            diel = {}
+            if transfer == "density":
                 tag = 'dielectricfunction[@comment="density-density"]'
             elif transfer == "current":
                 tag = 'dielectricfunction[@comment="current-current"]'
             else:
                 tag = 'dielectricfunction'
-            try:
-                dielectric_xml = root.find(
-                    'calculation').find(tag)
-            except AttributeError:
-                logger.error(
-                    "Did not find <dielectricfunction> tag the current XML. Exiting.")
-                sys.exit(1)
-            diel_imag_xml = dielectric_xml.find('imag').find('array').find('set')
-            diel_imag = []
-            # first imag part
-            for energy in diel_imag_xml.iter('r'):
-                diel_imag.append([float(x) for x in energy.text.split()])
-            diel_real_xml = dielectric_xml.find('real').find('array').find('set')
-            diel_real = []
-            # then real part
-            for energy in diel_real_xml.iter('r'):
-                diel_real.append([float(x) for x in energy.text.split()])
-            return diel_imag, diel_real
-        if method == "qp":
-            try:
-                dielectric_xml = root.findall('dielectricfunction')
-            except AttributeError:
-                logger.error(
-                    "Did not find <dielectricfunction> tag in the current XML."
-                    "Exiting.")
-                sys.exit(1)
 
-            # first head of macroscopic
-            diel_imag_xml = dielectric_xml[0].find(
-                'imag').find('array').find('set')
-            diel_imag_mac = []
-            # first imag part
-            for energy in diel_imag_xml.iter('r'):
-                diel_imag_mac.append([float(x) for x in energy.text.split()])
-            diel_real_xml = dielectric_xml[0].find(
-                'real').find('array').find('set')
-            diel_real_mac = []
-            # then real part
-            for energy in diel_real_xml.iter('r'):
-                diel_real_mac.append([float(x) for x in energy.text.split()])
+            # imaginary part
+            entry = xml.findall(
+                './/calculation/'+tag+'/imag/array/set/r')
+            if not entry:
+                self._logger.error("Did not find <dielectricfunction> in "
+                                   "the XML file. Exiting.")
+                sys.exit(1)
+            data = self._convert_array2D7_f(entry)
+            diel["energy"] = data[:,0]
+            diel["imag"] = data[:,1:7]
+
+            # real part
+            entry = xml.findall(
+                './/calculation/'+tag+'/real/array/set/r')
+            data = self._convert_array2D7_f(entry)
+            diel["real"] = data[:,1:7]
+
+            return diel
+        
+        # if method == "qp":
+        #     try:
+        #         dielectric_xml = root.findall('dielectricfunction')
+        #     except AttributeError:
+        #         logger.error(
+        #             "Did not find <dielectricfunction> tag in the current XML."
+        #             "Exiting.")
+        #         sys.exit(1)
+
+        #     # first head of macroscopic
+        #     diel_imag_xml = dielectric_xml[0].find(
+        #         'imag').find('array').find('set')
+        #     diel_imag_mac = []
+        #     # first imag part
+        #     for energy in diel_imag_xml.iter('r'):
+        #         diel_imag_mac.append([float(x) for x in energy.text.split()])
+        #     diel_real_xml = dielectric_xml[0].find(
+        #         'real').find('array').find('set')
+        #     diel_real_mac = []
+        #     # then real part
+        #     for energy in diel_real_xml.iter('r'):
+        #         diel_real_mac.append([float(x) for x in energy.text.split()])
     
-            # then polarized
-            diel_imag_xml = dielectric_xml[1].find(
-                'imag').find('array').find('set')
-            diel_imag_pol = []
-            # first imag part
-            for energy in diel_imag_xml.iter('r'):
-                diel_imag_pol.append([float(x) for x in energy.text.split()])
-            diel_real_xml = dielectric_xml[1].find(
-                'real').find('array').find('set')
-            diel_real_pol = []
-            # then real part
-            for energy in diel_real_xml.iter('r'):
-                diel_real_pol.append([float(x) for x in energy.text.split()])
+        #     # then polarized
+        #     diel_imag_xml = dielectric_xml[1].find(
+        #         'imag').find('array').find('set')
+        #     diel_imag_pol = []
+        #     # first imag part
+        #     for energy in diel_imag_xml.iter('r'):
+        #         diel_imag_pol.append([float(x) for x in energy.text.split()])
+        #     diel_real_xml = dielectric_xml[1].find(
+        #         'real').find('array').find('set')
+        #     diel_real_pol = []
+        #     # then real part
+        #     for energy in diel_real_xml.iter('r'):
+        #         diel_real_pol.append([float(x) for x in energy.text.split()])
 
-            # then inverse macroscopic (including local field)
-            diel_imag_xml = dielectric_xml[2].find(
-                'imag').find('array').find('set')
-            diel_imag_invlfrpa = []
-            # first imag part
-            for energy in diel_imag_xml.iter('r'):
-                diel_imag_invlfrpa.append([float(x) for x in energy.text.split()])
-            diel_real_xml = dielectric_xml[2].find(
-                    'real').find('array').find('set')
-            diel_real_invlfrpa = []
-            # then real part
-            for energy in diel_real_xml.iter('r'):
-                diel_real_invlfrpa.append([float(x) for x in energy.text.split()])
-            return diel_imag_mac, diel_real_mac, diel_imag_pol, diel_real_pol, \
-                diel_imag_invlfrpa, diel_real_invlfrpa
+        #     # then inverse macroscopic (including local field)
+        #     diel_imag_xml = dielectric_xml[2].find(
+        #         'imag').find('array').find('set')
+        #     diel_imag_invlfrpa = []
+        #     # first imag part
+        #     for energy in diel_imag_xml.iter('r'):
+        #         diel_imag_invlfrpa.append([float(x) for x in energy.text.split()])
+        #     diel_real_xml = dielectric_xml[2].find(
+        #             'real').find('array').find('set')
+        #     diel_real_invlfrpa = []
+        #     # then real part
+        #     for energy in diel_real_xml.iter('r'):
+        #         diel_real_invlfrpa.append([float(x) for x in energy.text.split()])
+        #     return diel_imag_mac, diel_real_mac, diel_imag_pol, diel_real_pol, \
+        #         diel_imag_invlfrpa, diel_real_invlfrpa
 
-        if method == "bse":
-            try:
-                dielectric_xml = root.find('dielectricfunction')
-            except AttributeError:
-                logger.error(
-                    "Did not find <dielectricfunction> tag in the current XML."
-                    "Exiting.")
-                sys.exit(1)
-            diel_imag_xml = dielectric_xml.find('imag').find('array').find('set')
-            diel_imag = []
-            # first imag part
-            for energy in diel_imag_xml.iter('r'):
-                diel_imag.append([float(x) for x in energy.text.split()])
-            diel_real_xml = dielectric_xml.find('real').find('array').find('set')
-            diel_real = []
-            # then real part
-            for energy in diel_real_xml.iter('r'):
-                diel_real.append([float(x) for x in energy.text.split()])
-            return diel_imag, diel_real
+        # if method == "bse":
+        #     try:
+        #         dielectric_xml = root.find('dielectricfunction')
+        #     except AttributeError:
+        #         logger.error(
+        #             "Did not find <dielectricfunction> tag in the current XML."
+        #             "Exiting.")
+        #         sys.exit(1)
+        #     diel_imag_xml = dielectric_xml.find('imag').find('array').find('set')
+        #     diel_imag = []
+        #     # first imag part
+        #     for energy in diel_imag_xml.iter('r'):
+        #         diel_imag.append([float(x) for x in energy.text.split()])
+        #     diel_real_xml = dielectric_xml.find('real').find('array').find('set')
+        #     diel_real = []
+        #     # then real part
+        #     for energy in diel_real_xml.iter('r'):
+        #         diel_real.append([float(x) for x in energy.text.split()])
+        #     return diel_imag, diel_real
 
     def _extract_eigenvalues(self, data1, data2):
         """Extract the eigenvalues.
@@ -1585,6 +1590,33 @@ class XmlParser(object):
 
         return data
 
+    def _convert_array2D7_f(self, entry):
+        """Convert the input entry to numpy array
+
+        Parameters
+        ----------
+        entry : list
+            A list containing Element objects where each
+            element is a float
+
+        Returns
+        -------
+        data : ndarray
+            | Dimension: (N,7)
+            An array containing N elements with ten float
+            elements.
+
+        """
+
+        data = None
+        if entry is not None:
+            data = np.zeros((len(entry), 7),
+                            dtype='double')
+
+        for index, element in enumerate(entry):
+            data[index] = np.fromstring(element.text, sep=' ')
+
+        return data
     
     def _convert_array2D2_f(self, entry):
         """Convert the input entry to numpy array
