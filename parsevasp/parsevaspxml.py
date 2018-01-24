@@ -125,8 +125,9 @@ class XmlParser(object):
         self._data = {"eigenvalues": None,
                       "occupancies": None,
                       "dos": None,
-                      "totens": None}
-        self._calculations = {}
+                      "totens": None,
+                      "forces": None,
+                      "stress": None}
 
         # parse parse parse
         self._parse()
@@ -148,8 +149,8 @@ class XmlParser(object):
         # perform event driven parsing. For smaller files this is
         # not necessary and is too slow.
         if self._file_size(self._file_path) < self._sizecutoff:
-            self._parsew()
-            #self._parsee()
+            #self._parsew()
+            self._parsee()
         else:
             self._parsee()
 
@@ -175,9 +176,10 @@ class XmlParser(object):
         self._parameters["ismear"] = self._fetch_ismearw(vaspxml)
         self._parameters["ispin"] = self._fetch_ispinw(vaspxml)
         self._parameters["nbands"] = self._fetch_nbandsw(vaspxml)
-        self._lattice["unitcell"] = self._fetch_unitcellw(vaspxml, all=all)
         self._lattice["species"] = self._fetch_speciesw(vaspxml)
-        self._lattice["positions"] = self._fetch_positionsw(vaspxml, all=all)
+        self._lattice["unitcell"], self._lattice["positions"], \
+            self._data["forces"], self._data["stress"] = \
+                self._fetch_upfsw(vaspxml, all=all)
         self._lattice["kpoints"] = self._fetch_kpointsw(vaspxml)
         self._lattice["kpointsw"] = self._fetch_kpointsww(vaspxml)
         self._lattice["kpointdiv"] = self._fetch_kpointdivw(vaspxml)
@@ -185,6 +187,7 @@ class XmlParser(object):
             "occupancies"] = self._fetch_eigenvaluesw(vaspxml)
         self._data["dos"] = self._fetch_dosw(vaspxml)
         self._data["totens"] = self._fetch_totensw(vaspxml)
+        print self._data["stress"]
 
     def _parsee(self):
         """Performs parsing in an event driven fashion on the XML file.
@@ -198,16 +201,21 @@ class XmlParser(object):
         # helper list
         data = []
         data2 = []
+        data3 = []
 
-        # helper dicts
+        # dicts
         cell = {}
         pos = {}
+        force = {}
+        stress = {}
         dos = {}
+        totens = {}
         _dos = {}
         _dos2 = {}
 
         # bool to control extraction of content
         extract_parameters = False
+        extract_calculation = False
         extract_latticedata = False
         extract_unitcell = False
         extract_positions = False
@@ -225,12 +233,18 @@ class XmlParser(object):
         extract_dos_ispin1 = False
         extract_dos_ispin2 = False
         extract_projected = False
+        extract_forces = False
+        extract_force = False
+        extract_stress = False
+        extract_stres = False
+        extract_ewoe = False
+        extract_scstep = False
 
         # do we want to extract data from all calculations (e.g. ionic steps)
         all = self._extract_all
 
         # index that control the calculation step (e.g. ionic step)
-        calc = 0
+        calc = 1
         for event, element in etree.iterparse(self._file_path, events=("start", "end")):
             # set extraction points (what to read and when to read it)
             # here we also set the relevant data elements when the tags
@@ -239,16 +253,16 @@ class XmlParser(object):
                 extract_parameters = True
             if event == "end" and element.tag == "parameters":
                 extract_parameters = False
-            if all:
-                if event == "start" and element.tag == "structure":
-                    extract_latticedata = True
-                if event == "end" and element.tag == "structure":
-                    extract_latticedata = False
-            else:
-                if event == "start" and element.tag == "structure":
-                    extract_latticedata = True
-                if event == "end" and element.tag == "structure":
-                    extract_latticedata = False
+            if event == "start" and element.tag == "calculation":
+                extract_calculation = True
+            if event == "end" and element.tag == "calculation":
+                data3 = self._convert_array1D_f(data3)
+                totens["step_"+str(calc)] = {"energy_wo_entropy":
+                                             [data3[data3.shape[0]-1], data3]}
+                data3 = []
+                # update index for the calculation
+                calc = calc + 1
+                extract_calculation = False
             if event == "start" and element.tag == "array" \
                and element.attrib.get("name") == "atoms":
                 extract_species = True
@@ -266,24 +280,6 @@ class XmlParser(object):
                 extract_projected = True
             if event == "end" and element.tag == "projected":
                 extract_projected = False
-            if event == "start" and element.tag == "eigenvalues":
-                # do not start regular eigenvalue extraction
-                # if projected dataset is found
-                # do not think we need tests like this on the end
-                # statements as the xml is always serial?
-                if not extract_projected:
-                    extract_eigenvalues = True
-            if event == "end" and element.tag == "eigenvalues" and not \
-               extract_projected:
-                # we do not do this for the projected eigenvalues,
-                # that needs special threatment
-                eigenvalues, occupancies = self._extract_eigenvalues(
-                    data, data2)
-                self._data["eigenvalues"] = eigenvalues
-                self._data["occupancies"] = occupancies
-                data = []
-                data2 = []
-                extract_eigenvalues = False
             if event == "start" and element.tag == "dos":
                 extract_dos = True
             if event == "end" and element.tag == "total":
@@ -367,44 +363,128 @@ class XmlParser(object):
                 except KeyError:
                     pass
 
-            if extract_latticedata:
-                # print event, element.tag, element.text, element.attrib
-                if event == "start" and element.tag == "varray" \
-                   and element.attrib.get("name") == "basis":
-                    extract_unitcell = True
-                if event == "end" and element.tag == "varray" \
-                   and element.attrib.get("name") == "basis":
-                    if calc == 0:
-                        attribute = "initial"
-                    else:
-                        attribute = "step_" + str(calc)
-                    cell[attribute] = self._convert_array2D3_f(data)
+            if extract_calculation:
+                attribute = "step_" + str(calc)
+                # it would be very tempting just to fill the data and disect
+                # it later, would be faster, but it is not so easy since
+                # we do not know how many calculations have been performed
+                # or how many scteps there are per calculation
+                if event == "start" and element.tag == "structure":
+                    extract_latticedata = True
+                if event == "end" and element.tag == "structure":
+                    extract_latticedata = False
+                if event == "start" and element.tag == "varray" and \
+                   element.attrib["name"] == "forces":
+                    extract_forces = True
+                if event == "end" and element.tag == "varray" and \
+                   element.attrib["name"] == "forces":
+                    extract_forces = False
+                if event == "start" and element.tag == "varray" and \
+                   element.attrib["name"] == "stress":
+                    extract_stress = True
+                if event == "end" and element.tag == "varray" and \
+                   element.attrib["name"] == "stress":
+                    extract_stress = False
+                if event == "start" and element.tag == "scstep":
+                    extract_scstep = True
+                if event == "end" and element.tag == "scstep":
+                    extract_scstep = False
+                if event == "start" and element.tag == "eigenvalues":
+                    # do not start regular eigenvalue extraction
+                    # if projected dataset is found
+                    # do not think we need tests like this on the end
+                    # statements as the xml is always serial?
+                    if not extract_projected:
+                        extract_eigenvalues = True
+                if event == "end" and element.tag == "eigenvalues" and not \
+                   extract_projected:
+                    # we do not do this for the projected eigenvalues,
+                    # that needs special threatment
+                    eigenvalues, occupancies = self._extract_eigenvalues(
+                        data, data2)
+                    self._data["eigenvalues"] = eigenvalues
+                    self._data["occupancies"] = occupancies
                     data = []
-                    extract_unitcell = False
-                if event == "start" and element.tag == "varray" \
-                   and element.attrib.get("name") == "positions":
-                    extract_positions = True
-                if event == "end" and element.tag == "varray" \
-                   and element.attrib.get("name") == "positions":
-                    if calc == 0:
-                        attribute = "initial"
-                    else:
-                        attribute = "step_" + str(calc)
-                    pos[attribute] = self._convert_array2D3_f(data)
-                    data = []
-                    # if we do multiple calculations (e.g. ionic) the
-                    # position data is always updated? we assume this for now
-                    # otherwise this needs to be more fancy
-                    calc = calc + 1
-                    extract_positions = False
+                    data2 = []
+                    extract_eigenvalues = False
 
-                if extract_unitcell:
+                # now extract data
+                if extract_scstep:
+                    #print element.tag, element.attrib, element.text
+                    # energy without entropy
+                    if event == "start" and element.tag == "i" and \
+                       element.attrib["name"] == "e_wo_entrp":
+                        extract_ewoe = True
+                    if event == "end" and element.tag == "i" and \
+                       element.attrib["name"] == "e_wo_entrp":
+                        extract_ewoe = False
+                    if extract_ewoe:
+                        data3.append(element)
+                if extract_latticedata:
+                    if event == "start" and element.tag == "varray" \
+                       and element.attrib.get("name") == "basis":
+                        extract_unitcell = True
+                    if event == "end" and element.tag == "varray" \
+                       and element.attrib.get("name") == "basis":
+                        cell[attribute] = self._convert_array2D3_f(data)
+                        data = []
+                        extract_unitcell = False
+
+                    if event == "start" and element.tag == "varray" \
+                       and element.attrib.get("name") == "positions":
+                        extract_positions = True
+                    if event == "end" and element.tag == "varray" \
+                       and element.attrib.get("name") == "positions":
+                        pos[attribute] = self._convert_array2D3_f(data)
+                        data = []
+                        extract_positions = False
+
+                    if extract_unitcell:
+                        if event == "start" and element.tag == "v":
+                            data.append(element)
+                    if extract_positions:
+                        if event == "start" and element.tag == "v":
+                            data.append(element)
+                if extract_forces:
                     if event == "start" and element.tag == "v":
-                        data.append(element)
-                if extract_positions:
-                    if event == "start" and element.tag == "v":
+                        extract_force = True
+                    if event == "end" and element.tag == "v":
+                        force[attribute] = self._convert_array2D3_f(data)
+                        data = []
+                        extract_force = False
+                    if extract_force:
                         data.append(element)
 
+                if extract_stress:
+                    if event == "start" and element.tag == "v":
+                        extract_stres = True
+                    if event == "end" and element.tag == "v":
+                        stress[attribute] = self._convert_array2D3_f(data)
+                        data = []
+                        extract_stres = False
+                    if extract_stres:
+                        data.append(element)
+
+                if extract_eigenvalues:
+                    if event == "start" and element.tag == "set" \
+                       and element.attrib.get("comment") == "spin 1":
+                        extract_eigenvalues_spin1 = True
+                    if event == "end" and element.tag == "set" \
+                       and element.attrib.get("comment") == "spin 1":
+                        extract_eigenvalues_spin1 = False
+                    if event == "start" and element.tag == "set" \
+                       and element.attrib.get("comment") == "spin 2":
+                        extract_eigenvalues_spin2 = True
+                    if event == "end" and element.tag == "set" \
+                       and element.attrib.get("comment") == "spin 2":
+                        extract_eigenvalues_spin2 = False
+                    if extract_eigenvalues_spin1:
+                        if event == "start" and element.tag == "r":
+                            data.append(element)
+                    if extract_eigenvalues_spin2:
+                        if event == "start" and element.tag == "r":
+                            data2.append(element)
+                        
             if extract_species:
                 if event == "start" and element.tag == "c":
                     data.append(element)
@@ -440,26 +520,6 @@ class XmlParser(object):
                     if event == "start" and element.tag == "v":
                         data.append(element)
 
-            if extract_eigenvalues:
-                if event == "start" and element.tag == "set" \
-                   and element.attrib.get("comment") == "spin 1":
-                    extract_eigenvalues_spin1 = True
-                if event == "end" and element.tag == "set" \
-                   and element.attrib.get("comment") == "spin 1":
-                    extract_eigenvalues_spin1 = False
-                if event == "start" and element.tag == "set" \
-                   and element.attrib.get("comment") == "spin 2":
-                    extract_eigenvalues_spin2 = True
-                if event == "end" and element.tag == "set" \
-                   and element.attrib.get("comment") == "spin 2":
-                    extract_eigenvalues_spin2 = False
-                if extract_eigenvalues_spin1:
-                    if event == "start" and element.tag == "r":
-                        data.append(element)
-                if extract_eigenvalues_spin2:
-                    if event == "start" and element.tag == "r":
-                        data2.append(element)
-
             if extract_dos:
                 if event == "start" and element.tag == "set" \
                    and element.attrib.get("comment") == "spin 1":
@@ -479,32 +539,57 @@ class XmlParser(object):
                 if extract_dos_ispin2:
                     if event == "start" and element.tag == "r":
                         data2.append(element)
+                        
+            if extract_force:
+                if event == "start" and element.tag == "v":
+                    data.append(element)
+
+            if extract_stress:
+                if event == "start" and element.tag == "v":
+                    data.append(element)
 
         # now we need to update some elements
-        last_element = len(pos) - 1
-        # the two last and two first elements should be the same,
-        # so remove them
-        del cell["step_1"]
-        del pos["step_1"]
-        if last_element > 2:
-            # in cases where a static run is done, we will have
-            # initial, step_1 and final so we only have to delete
-            # step_1, which is done above, here we delete the next
-            # last item for the other cases
-            del cell["step_" + str(last_element - 1)]
-            del pos["step_" + str(last_element - 1)]
-        cell["final"] = cell.pop("step_" + str(last_element))
-        pos["final"] = pos.pop("step_" + str(last_element))
+        # first element should be initial
+        cell["initial"] = cell.pop("step_1")
+        pos["initial"] = pos.pop("step_1")
+        force["initial"] = force.pop("step_1")
+        stress["initial"] = stress.pop("step_1")
+        totens["initial"] = totens.pop("step_1")
+        if len(cell) == 1:
+            # for static runs, initial is equal to final
+            cell["final"] = cell["initial"]
+            pos["final"] = pos["initial"]
+            force["final"] = force["initial"]
+            stress["final"] = stress["initial"]
+            totens["final"] = totens["initial"]
+        else:
+            last_element = "step_"+str(len(cell)-1)
+            cell["final"] = cell.pop(last_element)
+            pos["final"] = pos.pop(last_element)
+            force["final"] = force.pop(last_element)
+            stress["final"] = stress.pop(last_element)
+            totens["final"] = totens.pop(last_element)
+
         if not all:
             # only save initial and final
             self._lattice["unitcell"] = {key: cell[key]
                                          for key in {"initial", "final"}}
             self._lattice["positions"] = {key: cell[key]
                                           for key in {"initial", "final"}}
+            self._data["forces"] = {key: force[key]
+                                         for key in {"initial", "final"}}
+            self._data["stress"] = {key: stress[key]
+                                         for key in {"initial", "final"}}
+            self._data["totens"] = {key: totens[key]
+                                         for key in {"initial", "final"}}
+                        
         else:
             # save all
             self._lattice["unitcell"] = cell
             self._lattice["positions"] = pos
+            self._data["forces"] = force
+            self._data["stress"] = stress
+            self._data["totens"] = totens
 
     def _fetch_symprecw(self, xml):
         """Fetch and set symprec using etree
@@ -645,26 +730,35 @@ class XmlParser(object):
 
         return nbands
 
-    def _fetch_unitcellw(self, xml, all=False):
-        """Fetch the unitcell
+    def _fetch_upfsw(self, xml, all=False):
+        """Fetch the unitcell, atomic positions, force and stress.
 
         Parameters
         ----------
         xml : object
             An ElementTree object to be used for parsing.
         all : bool 
-            Determines which unitcell to get. Defaults to the initial
-            and final. If True, extract all.
+            Determines which unitcell and positions to get. 
+            Defaults to the initial and final. If True, extract all.
 
         Returns
         -------
-        cell : dict
-            An dictionary containing ndarrays of the unitcell with 
-            vectors as rows in units of AA for each calculation.
+        cell, pos, force, stress : dict
+            An dictionary containing ndarrays of the:
+            | unitcells with the vectors as rows in AA.
+
+            | positions with each position as a row in direct coordinates.
+
+            | forces where each row is the force in eVAA on each atom.
+
+            | stress where each row is the stress vector for the unitcell.
 
         """
 
         cell = {}
+        pos = {}
+        force = {}
+        stress = {}
         if not all:
             entry = xml.findall(
                 './/structure[@name="finalpos"]/crystal/varray[@name="basis"]/v')
@@ -672,41 +766,6 @@ class XmlParser(object):
             entry = xml.findall(
                 './/structure[@name="initialpos"]/crystal/varray[@name="basis"]/v')
             cell["initial"] = self._convert_array2D3_f(entry)
-        else:
-            entry = xml.findall(
-                './/calculation/structure/crystal/varray[@name="basis"]/v')
-            entries = len(entry)
-            num_calcs = entries / 3
-            cell["initial"] = self._convert_array2D3_f(entry[0:3])
-            cell["final"] = self._convert_array2D3_f(entry[-3:])
-            for calc in range(1, num_calcs - 1):
-                base = calc * 3
-                cell[
-                    "step_" + str(calc + 1)] = self._convert_array2D3_f(entry[base:base + 3])
-
-        return cell
-
-    def _fetch_positionsw(self, xml, all=False):
-        """Fetch the atomic positions.
-
-        Parameters
-        ----------
-        xml : object
-            An ElementTree object to be used for parsing.
-        all : bool
-            Determines which atomic positions to get. Defaults to the
-            initial and final. If True, extract all.
-
-        Returns
-        -------
-        pos : dict
-            An dictionary containing ndarrays of the positions with 
-            each position as rows in direct coordinates for each calculation.
-
-        """
-
-        pos = {}
-        if not all:
             entry = xml.findall(
                 './/structure[@name="finalpos"]/varray[@name="positions"]/v')
             pos["final"] = self._convert_array2D3_f(entry)
@@ -714,19 +773,50 @@ class XmlParser(object):
                 './/structure[@name="initialpos"]/varray[@name="positions"]/v')
             pos["initial"] = self._convert_array2D3_f(entry)
         else:
-            entry = xml.findall(
+            num_atoms = 0
+            if self._lattice["species"] is not None:
+                num_atoms = self._lattice["species"].shape[0]
+            else:
+                self._logger.error("Before extracting the unitcell and"
+                                   "positions please extract the species. "
+                                   "Exiting.")
+                sys.exit(1)
+        
+            entrycell = xml.findall(
+                './/calculation/structure/crystal/varray[@name="basis"]/v')
+            entrypos = xml.findall(
                 './/calculation/structure/varray[@name="positions"]/v')
-            entries = len(entry)
-            num_atoms = self._lattice["species"].shape[0]
-            num_calcs = entries / num_atoms
-            pos["initial"] = self._convert_array2D3_f(entry[0:num_atoms])
-            pos["final"] = self._convert_array2D3_f(entry[-num_atoms:])
+            entryforce = xml.findall(
+                './/calculation/varray[@name="forces"]/v')
+            entrystress = xml.findall(
+                './/calculation/varray[@name="stress"]/v')        
+            entries = len(entrycell)
+            num_calcs = entries / 3
+            cell["initial"] = self._convert_array2D3_f(entrycell[0:3])
+            cell["final"] = self._convert_array2D3_f(entrycell[-3:])
+            pos["initial"] = self._convert_array2D3_f(entrypos[0:num_atoms])
+            pos["final"] = self._convert_array2D3_f(entrypos[-num_atoms:])
+            force["initial"] = self._convert_array2D3_f(entryforce[0:num_atoms])
+            force["final"] = self._convert_array2D3_f(entryforce[-num_atoms:])
+            stress["initial"] = self._convert_array2D3_f(entrystress[0:3])
+            stress["final"] = self._convert_array2D3_f(entrystress[-3:])
             for calc in range(1, num_calcs - 1):
-                base = calc * num_atoms
-                pos["step_" + str(calc + 1)
-                    ] = self._convert_array2D3_f(entry[base:base + num_atoms])
-
-        return pos
+                basecell = calc * 3
+                basepos = calc * num_atoms
+                cell[
+                    "step_" + str(calc + 1)] = self._convert_array2D3_f(
+                        entrycell[basecell:basecell + 3])
+                pos[
+                    "step_" + str(calc + 1)] = self._convert_array2D3_f(
+                        entrypos[basepos:basepos + num_atoms])
+                force[
+                    "step_" + str(calc + 1)] = self._convert_array2D3_f(
+                        entryforce[basepos:basepos + num_atoms])
+                stress[
+                    "step_" + str(calc + 1)] = self._convert_array2D3_f(
+                        entrystress[basecell:basecell + 3])
+                
+        return cell, pos, force, stress
 
     def _fetch_speciesw(self, xml):
         """Fetch the atomic species
@@ -850,7 +940,7 @@ class XmlParser(object):
         return eigenvalues, occupancies
 
     def _fetch_totensw(self, xml):
-        """Fetch the total energy entries
+        """Fetch the total energies
 
         Parameters
         ----------
@@ -865,24 +955,36 @@ class XmlParser(object):
 
         """
 
-        # first fetch the energies with no entropy for each calculation
-        # (e.g. each ionic step)
+        # fetch the energies for all electronic
+        # steps, due to the fact that the number of steps is not the
+        # same between each calculation we need to look at all the
+        # children
+        #
+        # TODO: check in the future if it is faster to fetch all scstep
+        # elements and then only how many scstep there is pr. calc
+        # and sort from there
+        #
         entries = xml.findall(
-            './/calculation/energy/i[@name="e_wo_entrp"]')
+            './/calculation')
 
-        energy_no_entropy_calc = self._convert_array1D_f(entries)
-
-        num_calcs = energy_no_entropy_calc.shape[0]
-
-        # then fetch the energies with no enetropy for all electronic
-        # steps
-        entries = xml.findall(
-            './/calculation/scstep/energy/i[@name="e_wo_entrp"]')
-
-        energy_no_entropy_elec = self._convert_array1D_f(entries)
-
-        print energy_no_entropy_elec
-    
+        # this most likely takes too long for very long fpmd calculations,
+        # so consider putting in a flag that only extract the
+        # energies from each step in the calculation and not the scsteps as
+        # well
+        energies = {}
+        for index, calc in enumerate(entries):
+            # energy without entropy
+            data = calc.findall('.//scstep/energy/i[@name="e_wo_entrp"]')
+            data = self._convert_array1D_f(data)
+            if index == 0:
+                energies["initial"] = {"energy_no_entropy":
+                                       [data[data.shape[0]-1], data]}
+            else:
+                energies["step_"+str(index+1)] = {"energy_no_entropy":
+                                                  [data[data.shape[0]-1], data]}
+        # replace key on the last element to final
+        energies["final"] = energies.pop("step_"+str(len(entries)))
+        
     def _extract_eigenvalues(self, data1, data2):
         """Extract the eigenvalues.
 
