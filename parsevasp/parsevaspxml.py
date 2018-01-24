@@ -149,12 +149,10 @@ class XmlParser(object):
         # perform event driven parsing. For smaller files this is
         # not necessary and is too slow.
         if self._file_size(self._file_path) < self._sizecutoff:
-            #self._parsew()
-            self._parsee()
+            self._parsew()
+            #self._parsee()
         else:
             self._parsee()
-
-        print self._data["totens"]
 
     def _parsew(self):
         """Performs parsing on the whole XML files. For smaller files
@@ -187,7 +185,6 @@ class XmlParser(object):
             "occupancies"] = self._fetch_eigenvaluesw(vaspxml)
         self._data["dos"] = self._fetch_dosw(vaspxml)
         self._data["totens"] = self._fetch_totensw(vaspxml)
-        print self._data["stress"]
 
     def _parsee(self):
         """Performs parsing in an event driven fashion on the XML file.
@@ -984,6 +981,8 @@ class XmlParser(object):
                                                   [data[data.shape[0]-1], data]}
         # replace key on the last element to final
         energies["final"] = energies.pop("step_"+str(len(entries)))
+
+        return energies
         
     def _extract_eigenvalues(self, data1, data2):
         """Extract the eigenvalues.
