@@ -85,7 +85,9 @@ class XmlParser(object):
                       "totens": None,
                       "forces": None,
                       "stress": None,
-                      "dielectrics": None}
+                      "dielectrics": None,
+                      "projectors": None}
+        
         if lxml:
             self._logger.info("We are utilizing lxml!")
         else:
@@ -118,6 +120,7 @@ class XmlParser(object):
         #print self._data["dos"]
         #print self._parameters
         #print self._data["dielectrics"]
+        print self._data["projectors"]
         
     def _parsew(self):
         """Performs parsing on the whole XML files. For smaller files
@@ -153,6 +156,7 @@ class XmlParser(object):
         self._data["dos"] = self._fetch_dosw(vaspxml)
         self._data["totens"] = self._fetch_totensw(vaspxml)
         self._data["dielectrics"] = self._fetch_dielectricsw(vaspxml)
+        self._data["projectors"] = self._fetch_projectorsw(vaspxml)
 
     def _parsee(self):
         """Performs parsing in an event driven fashion on the XML file.
@@ -206,6 +210,9 @@ class XmlParser(object):
         extract_ewoe = False
         extract_scstep = False
         extract_dielectrics = False
+        extract_eig_proj = False
+        extract_eig_proj_ispin1 = False
+        extract_eig_proj_ispin2 = False
 
         # do we want to extract data from all calculations (e.g. ionic steps)
         all = self._extract_all
@@ -251,16 +258,16 @@ class XmlParser(object):
                 extract_dos = True
             if event == "end" and element.tag == "total":
                 if data2:
-                    dos_ispin = self._convert_array2D3_f(data)
+                    dos_ispin = self._convert_array2D_f(data, 3)
                     _dos["energy"] = dos_ispin[:,0]
                     _dos["total"] = dos_ispin[:,1]
                     _dos["integrated"] = dos_ispin[:,2]
-                    dos_ispin = self._convert_array2D3_f(data2)
+                    dos_ispin = self._convert_array2D_f(data2, 3)
                     _dos2["energy"] = dos_ispin[:,0]
                     _dos2["total"] = dos_ispin[:,1]
                     _dos2["integrated"] = dos_ispin[:,2]
                 else:
-                    dos_ispin = self._convert_array2D3_f(data)
+                    dos_ispin = self._convert_array2D_f(data, 3)
                     _dos["energy"] = dos_ispin[:,0]
                     _dos["total"] = dos_ispin[:,1]
                     _dos["integrated"] = dos_ispin[:,2]
@@ -276,16 +283,16 @@ class XmlParser(object):
                                        "Exiting.")
                     sys.exit(1)
                 if data2:
-                    dos_ispin = self._convert_array2D10_f(data)
+                    dos_ispin = self._convert_array2D_f(data, 10)
                     # do not need the energy term (similar to total)
                     _dos["partial"] = np.asarray(
                         np.split(dos_ispin[:,1:10], num_atoms))
-                    dos_ispin = self._convert_array2D10_f(data2)
+                    dos_ispin = self._convert_array2D_f(data2, 10)
                     # do not need the energy term (similar to total)
                     _dos2["partial"] = np.asarray(
                         np.split(dos_ispin[:,1:10], num_atoms))
                 else:
-                    dos_ispin = self._convert_array2D10_f(data)
+                    dos_ispin = self._convert_array2D_f(data, 10)
                     # do not need the energy term (similar to total)
                     _dos["partial"] = np.asarray(
                         np.split(dos_ispin[:,1:10], num_atoms))
@@ -381,16 +388,8 @@ class XmlParser(object):
                 if event == "end" and element.tag == "scstep":
                     extract_scstep = False
                 if event == "start" and element.tag == "eigenvalues":
-                    # do not start regular eigenvalue extraction
-                    # if projected dataset is found
-                    # do not think we need tests like this on the end
-                    # statements as the xml is always serial?
-                    if not extract_projected:
-                        extract_eigenvalues = True
-                if event == "end" and element.tag == "eigenvalues" and not \
-                   extract_projected:
-                    # we do not do this for the projected eigenvalues,
-                    # that needs special threatment
+                    extract_eigenvalues = True
+                if event == "end" and element.tag == "eigenvalues":
                     eigenvalues, occupancies = self._extract_eigenvalues(
                         data, data2)
                     self._data["eigenvalues"] = eigenvalues
@@ -402,7 +401,7 @@ class XmlParser(object):
                     extract_dielectrics = True
                 if event == "end" and element.tag == "dielectricfunction":
                     _diel = {}
-                    diel = np.split(self._convert_array2D7_f(data), 2)
+                    diel = np.split(self._convert_array2D_f(data, 7), 2)
                     _diel["energies"] = diel[0][:,0]
                     _diel["imag"] = diel[0][:,1-7]
                     _diel["real"] = diel[1][:,1-7]
@@ -428,7 +427,7 @@ class XmlParser(object):
                         extract_unitcell = True
                     if event == "end" and element.tag == "varray" \
                        and element.attrib.get("name") == "basis":
-                        cell[attribute] = self._convert_array2D3_f(data)
+                        cell[attribute] = self._convert_array2D_f(data, 3)
                         data = []
                         extract_unitcell = False
 
@@ -437,7 +436,7 @@ class XmlParser(object):
                         extract_positions = True
                     if event == "end" and element.tag == "varray" \
                        and element.attrib.get("name") == "positions":
-                        pos[attribute] = self._convert_array2D3_f(data)
+                        pos[attribute] = self._convert_array2D_f(data, 3)
                         data = []
                         extract_positions = False
 
@@ -451,7 +450,7 @@ class XmlParser(object):
                     if event == "start" and element.tag == "v":
                         extract_force = True
                     if event == "end" and element.tag == "v":
-                        force[attribute] = self._convert_array2D3_f(data)
+                        force[attribute] = self._convert_array2D_f(data, 3)
                         data = []
                         extract_force = False
                     if extract_force:
@@ -461,7 +460,7 @@ class XmlParser(object):
                     if event == "start" and element.tag == "v":
                         extract_stres = True
                     if event == "end" and element.tag == "v":
-                        stress[attribute] = self._convert_array2D3_f(data)
+                        stress[attribute] = self._convert_array2D_f(data, 3)
                         data = []
                         extract_stres = False
                     if extract_stres:
@@ -490,6 +489,40 @@ class XmlParser(object):
                 if extract_dielectrics:
                     if event == "start" and element.tag == "r":
                         data.append(element)
+
+                if extract_projected:
+                    # make sure we skip the first entry containing
+                    # the eigenvalues (already stored at this point)
+                    if event == "end" and element.tag == "eigenvalues":
+                        extract_eig_proj = True
+                    if event == "end" and element.tag == "array" and \
+                       extract_eig_proj:
+                        projectors = self._extract_projectors(data, data2)
+                        self._data["projectors"] = projectors
+                        data = []
+                        data2 = []
+                        extract_eig_proj = False
+
+                    if extract_eig_proj:
+                        if event == "start" and element.tag == "set" \
+                           and element.attrib.get("comment") == "spin1":
+                            extract_eig_proj_ispin1 = True
+                        if event == "end" and element.tag == "set" \
+                           and element.attrib.get("comment") == "spin1":
+                            extract_eig_proj_ispin1 = False
+                        if event == "start" and element.tag == "set" \
+                           and element.attrib.get("comment") == "spin2":
+                            extract_eig_proj_ispin2 = True
+                        if event == "end" and element.tag == "set" \
+                           and element.attrib.get("comment") == "spin2":
+                            extract_eig_proj_ispin2 = False
+                        if extract_eig_proj_ispin1:
+                            if event == "start" and element.tag == "r":
+                                data.append(element)
+                        if extract_eig_proj_ispin2:
+                            if event == "start" and element.tag == "r":
+                                data2.append(element)
+
                         
             if extract_species:
                 if event == "start" and element.tag == "c":
@@ -509,7 +542,7 @@ class XmlParser(object):
                     extract_kpoints = True
                 if event == "end" and element.tag == "varray" \
                    and element.attrib.get("name") == "kpointlist":
-                    self._lattice["kpoints"] = self._convert_array2D3_f(data)
+                    self._lattice["kpoints"] = self._convert_array2D_f(data, 3)
                     data = []
                     extract_kpoints = False
                 if event == "start" and element.tag == "varray" \
@@ -560,7 +593,7 @@ class XmlParser(object):
 
             if extract_stress:
                 if event == "start" and element.tag == "v":
-                    data.append(element)
+                    data.append(element)                
 
         # now we need to update some elements
         # first element should be initial
@@ -830,16 +863,16 @@ class XmlParser(object):
         if not all:
             entry = xml.findall(
                 './/structure[@name="finalpos"]/crystal/varray[@name="basis"]/v')
-            cell["final"] = self._convert_array2D3_f(entry)
+            cell["final"] = self._convert_array2D_f(entry, 3)
             entry = xml.findall(
                 './/structure[@name="initialpos"]/crystal/varray[@name="basis"]/v')
-            cell["initial"] = self._convert_array2D3_f(entry)
+            cell["initial"] = self._convert_array2D_f(entry, 3)
             entry = xml.findall(
                 './/structure[@name="finalpos"]/varray[@name="positions"]/v')
-            pos["final"] = self._convert_array2D3_f(entry)
+            pos["final"] = self._convert_array2D_f(entry, 3)
             entry = xml.findall(
                 './/structure[@name="initialpos"]/varray[@name="positions"]/v')
-            pos["initial"] = self._convert_array2D3_f(entry)
+            pos["initial"] = self._convert_array2D_f(entry, 3)
         else:
             num_atoms = 0
             if self._lattice["species"] is not None:
@@ -860,29 +893,29 @@ class XmlParser(object):
                 './/calculation/varray[@name="stress"]/v')        
             entries = len(entrycell)
             num_calcs = entries / 3
-            cell["initial"] = self._convert_array2D3_f(entrycell[0:3])
-            cell["final"] = self._convert_array2D3_f(entrycell[-3:])
-            pos["initial"] = self._convert_array2D3_f(entrypos[0:num_atoms])
-            pos["final"] = self._convert_array2D3_f(entrypos[-num_atoms:])
-            force["initial"] = self._convert_array2D3_f(entryforce[0:num_atoms])
-            force["final"] = self._convert_array2D3_f(entryforce[-num_atoms:])
-            stress["initial"] = self._convert_array2D3_f(entrystress[0:3])
-            stress["final"] = self._convert_array2D3_f(entrystress[-3:])
+            cell["initial"] = self._convert_array2D_f(entrycell[0:3], 3)
+            cell["final"] = self._convert_array2D_f(entrycell[-3:], 3)
+            pos["initial"] = self._convert_array2D_f(entrypos[0:num_atoms], 3)
+            pos["final"] = self._convert_array2D_f(entrypos[-num_atoms:], 3)
+            force["initial"] = self._convert_array2D_f(entryforce[0:num_atoms], 3)
+            force["final"] = self._convert_array2D_f(entryforce[-num_atoms:], 3)
+            stress["initial"] = self._convert_array2D_f(entrystress[0:3], 3)
+            stress["final"] = self._convert_array2D_f(entrystress[-3:], 3)
             for calc in range(1, num_calcs - 1):
                 basecell = calc * 3
                 basepos = calc * num_atoms
                 cell[
-                    "step_" + str(calc + 1)] = self._convert_array2D3_f(
-                        entrycell[basecell:basecell + 3])
+                    "step_" + str(calc + 1)] = self._convert_array2D_f(
+                        entrycell[basecell:basecell + 3], 3)
                 pos[
-                    "step_" + str(calc + 1)] = self._convert_array2D3_f(
-                        entrypos[basepos:basepos + num_atoms])
+                    "step_" + str(calc + 1)] = self._convert_array2D_f(
+                        entrypos[basepos:basepos + num_atoms], 3)
                 force[
-                    "step_" + str(calc + 1)] = self._convert_array2D3_f(
-                        entryforce[basepos:basepos + num_atoms])
+                    "step_" + str(calc + 1)] = self._convert_array2D_f(
+                        entryforce[basepos:basepos + num_atoms], 3)
                 stress[
-                    "step_" + str(calc + 1)] = self._convert_array2D3_f(
-                        entrystress[basecell:basecell + 3])
+                    "step_" + str(calc + 1)] = self._convert_array2D_f(
+                        entrystress[basecell:basecell + 3], 3)
                 
         return cell, pos, force, stress
 
@@ -928,7 +961,7 @@ class XmlParser(object):
         entry = xml.findall(
             'kpoints/varray[@name="kpointlist"]/v')
 
-        kpoints = self._convert_array2D3_f(entry)
+        kpoints = self._convert_array2D_f(entry, 3)
 
         return kpoints
 
@@ -989,24 +1022,57 @@ class XmlParser(object):
         Returns
         -------
         eigenvalues, occupancies : tupple
-            An tupple of two ndarrays containing the eigenvalues
-            for each spin, band and kpoint index.
+            An tupple of dicts containing ndarrays containing the 
+            eigenvalues and occupancies for each spin, band and 
+            kpoint index.
 
         """
 
         # spin 1
         entry_ispin1 = xml.findall(
-            './/calculation/eigenvalues/array/set/set[@comment="spin 1"]/set/r')
+            './/calculation/eigenvalues/array/set/'
+            'set[@comment="spin 1"]/set/r')
 
         # spin 2
         entry_ispin2 = xml.findall(
-            './/calculation/eigenvalues/array/set/set[@comment="spin 2"]/set/r')
-
+            './/calculation/eigenvalues/array/set/'
+            'set[@comment="spin 2"]/set/r')
+        
         eigenvalues, occupancies = self._extract_eigenvalues(entry_ispin1,
                                                              entry_ispin2)
 
         return eigenvalues, occupancies
 
+    def _fetch_projectorsw(self, xml):
+        """Fetch the projectors.
+
+        Parameters
+        ----------
+        xml : object
+            An ElementTree object to be used for parsing.
+
+        Returns
+        -------
+        projectors : dict
+            An dict containing ndarrays of the projectors
+            for each atomic, spin, band and kpoint index.
+
+        """
+
+        # projectors spin 1
+        entry_ispin1 = xml.findall(
+            './/calculation/projected/array/set/'
+            'set[@comment="spin1"]/set/set/r')
+
+        # projectors spin 2
+        entry_ispin2 = xml.findall(
+            './/calculation/projected/array/set/'
+            'set[@comment="spin2"]/set/set/r')
+
+        projectors = self._extract_projectors(entry_ispin1,
+                                               entry_ispin2)        
+        return projectors
+    
     def _fetch_totensw(self, xml):
         """Fetch the total energies
 
@@ -1112,25 +1178,25 @@ class XmlParser(object):
         if entry_total_ispin2:
             dos = {}
             dos = {"up": None, "down": None}
-            dos_ispin = self._convert_array2D3_f(entry_total_ispin1)
+            dos_ispin = self._convert_array2D_f(entry_total_ispin1, 3)
             _dos = {}
             _dos["energy"] = dos_ispin[:,0]
             _dos["total"] = dos_ispin[:,1]
             _dos["integrated"] = dos_ispin[:,2]
             # check if partial exists
             if entry_partial_ispin1:
-                dos_ispin = self._convert_array2D10_f(entry_partial_ispin1)
+                dos_ispin = self._convert_array2D_f(entry_partial_ispin1, 10)
                 # do not need the energy term (similar to total)
                 _dos["partial"] = np.asarray(np.split(dos_ispin[:,1:10],num_atoms))
             else:
                 _dos["partial"] = None
             dos["up"] = _dos
-            dos_ispin = self._convert_array2D3_f(entry_total_ispin2)
+            dos_ispin = self._convert_array2D_f(entry_total_ispin2, 3)
             _dos["energy"] = dos_ispin[:,0]
             _dos["total"] = dos_ispin[:,1]
             _dos["integrated"] = dos_ispin[:,2]
             if entry_partial_ispin2:
-                dos_ispin = self._convert_array2D10_f(entry_partial_ispin2)
+                dos_ispin = self._convert_array2D_f(entry_partial_ispin2, 10)
                 # do not need the energy term (similar to total)
                 _dos["partial"] = np.asarray(np.split(dos_ispin[:,1:10],num_atoms))
             dos["down"] = _dos
@@ -1138,14 +1204,14 @@ class XmlParser(object):
         else:
             dos = {}
             dos = {"total": None}
-            dos_ispin = self._convert_array2D3_f(entry_total_ispin1)
+            dos_ispin = self._convert_array2D_f(entry_total_ispin1, 3)
             _dos = {}
             _dos["energy"] = dos_ispin[:,0]
             _dos["total"] = dos_ispin[:,1]
             _dos["integrated"] = dos_ispin[:,2]
             # check if partial exists
             if entry_partial_ispin1:
-                dos_ispin = self._convert_array2D10_f(entry_partial_ispin1)
+                dos_ispin = self._convert_array2D_f(entry_partial_ispin1, 10)
                 # do not need the energy term (similar to total)
                 _dos["partial"] = np.asarray(np.split(dos_ispin[:,1:10],num_atoms))
             else:
@@ -1230,7 +1296,7 @@ class XmlParser(object):
             entry = xml.findall(
                 './/calculation/'+tag+'/imag/array/set/r')
             if entry:
-                data = self._convert_array2D7_f(entry)
+                data = self._convert_array2D_f(entry, 7)
                 diel["energy"] = data[:,0]
                 diel["imag"] = data[:,1:7]
 
@@ -1238,7 +1304,7 @@ class XmlParser(object):
             entry = xml.findall(
                 './/calculation/'+tag+'/real/array/set/r')
             if entry:
-                data = self._convert_array2D7_f(entry)
+                data = self._convert_array2D_f(entry, 7)
                 diel["real"] = data[:,1:7]
 
             return diel
@@ -1316,15 +1382,15 @@ class XmlParser(object):
         #         diel_real.append([float(x) for x in energy.text.split()])
         #     return diel_imag, diel_real
 
-    def _extract_eigenvalues(self, data1, data2):
+    def _extract_eigenvalues(self, spin1, spin2):
         """Extract the eigenvalues.
 
         Parameters
         ----------
-        data1 : list
+        spin1 : list
             A list of ElementTree object to be used for parsing of the
             ispin=1 entries.
-        data2 : list
+        spin2 : list
             A list of ElementTree object to be used for parsing of the
             ispin=2 entries.
 
@@ -1363,44 +1429,34 @@ class XmlParser(object):
         # number of bands
         num_bands = self._parameters["nbands"]
 
-        data = []
+        # set dicts
+        eigenvalues = {}
+        occupancies = {}
         
-        if len(data1) != num_bands * num_kpoints:
+        data = []
+        if len(spin1) != num_bands * num_kpoints:
             self._logger.error("The number of eigenvalues found does not match "
                                "the number of located kpoints and NBANDS. "
                                "Exiting.")
             sys.exit(1)
 
-        data.append([])
-
-        if data2:
-            if len(data2) != num_bands * num_kpoints:
+        data.append(self._convert_array2D_f(spin1, 2))
+        data[0] = np.asarray(np.split(data[0], num_kpoints))
+        if spin2:
+            if len(spin2) != num_bands * num_kpoints:
                 self._logger.error("The number of eigenvalues found does not match "
                                    "the number of located kpoints and NBANDS. "
                                    "Exiting.")
                 sys.exit(1)
-            data.append([])
-
-        # a bit of a nasty and explicit loop, improve performance later
-        for kpoint in range(num_kpoints):
-            base = kpoint * num_bands
-            data[0].append(
-                self._convert_array2D2_f(data1[base:base + num_bands]))
-            if data2:
-                data[1].append(
-                    self._convert_array2D2_f(data2[base:base + num_bands]))
-
-        # convert to numpy array
+            data.append(self._convert_array2D_f(spin2, 2))
+            data[1] = np.asarray(np.split(data[1], num_kpoints))
+                
+        # convert to numpy arrays
         data = np.asarray(data)
-
         # swap axis if the band index should be before the kpoint index
         if not self._k_before_band:
             data = np.swapaxes(data, 1, 2)
-
-        # set dicts
-        eigenvalues = {}
-        occupancies = {}
-        if data2:
+        if spin2:
             eigenvalues["up"] = np.ascontiguousarray(data[0, :, :, 0])
             occupancies["up"] = np.ascontiguousarray(data[0, :, :, 1])
             eigenvalues["down"] = np.ascontiguousarray(data[1, :, :, 0])
@@ -1408,9 +1464,109 @@ class XmlParser(object):
         else:
             eigenvalues["total"] = np.ascontiguousarray(data[0, :, :, 0])
             occupancies["total"] = np.ascontiguousarray(data[0, :, :, 1])
-
+            
         return eigenvalues, occupancies
-        
+
+    def _extract_projectors(self, spin1, spin2):
+        """Extract the projectors.
+
+        Parameters
+        ----------
+        spin1 : list
+            A list of ElementTree object to be used for parsing of the
+            ispin=1 entries. Contains the projectors.
+        spin2 : list
+            A list of ElementTree object to be used for parsing of the
+            ispin=2 entries. Contains the projectors.
+
+
+        Returns
+        -------
+        projectors : dict
+            A dict containing ndarrays with the projectors for each atom,
+            band and kpoint index. 
+
+        """
+
+        # first check if we have extracted the kpoints
+        if self._lattice["kpoints"] is None:
+            self._logger.error("Before extracting the projectors, please"
+                               "extract the kpoints. Exiting.")
+            sys.exit(1)
+
+        # then check if we have asigned ispin
+        if self._parameters["ispin"] is None:
+            self._logger.error("Before extracting the projectors, please"
+                               "extract ISPIN. Exiting.")
+            sys.exit(1)
+
+        # then check if we have asigned nbands
+        if self._parameters["nbands"] is None:
+            self._logger.error("Before extracting the projectors, please"
+                               "extract NBANDS. Exiting.")
+            sys.exit(1)
+
+        num_atoms = 0
+        # also need the number of atoms if the projected values are supplied
+        if spin1:
+            if self._lattice["species"] is None:
+                self._logger.error("Before extracting the projected "
+                                   "projectors, please extract NBANDS. "
+                                   "the species. Exiting.")
+                sys.exit(1)
+            else:
+                num_atoms = self._lattice["species"].shape[0]
+            
+        # number of kpoints to disect the eigenvalue sets later
+        num_kpoints = self._lattice["kpoints"].shape[0]
+
+        # ispin
+        ispin = self._parameters["ispin"]
+
+        # number of bands
+        num_bands = self._parameters["nbands"]
+
+        # set dicts
+        projectors = {}
+
+        pdata = []
+        if len(spin1) != num_bands * num_kpoints * num_atoms:
+            self._logger.error("The number of projectors found "
+                               "does not match the number of located "
+                               "kpoints, NBANDS and number of atoms. "
+                               "Exiting.")
+            sys.exit(1)
+        pdata.append(self._convert_array2D_f(spin1, 9))
+        pdata[0] = np.asarray(np.split(pdata[0], num_kpoints))
+        pdata[0] = np.asarray(np.split(pdata[0], num_bands, axis=1))
+        if spin2:
+            if len(spin2) != num_bands * num_kpoints * num_atoms:
+                self._logger.error("The number of projectors found "
+                                   "does not match the number of located "
+                                   "kpoints, NBANDS and number of atoms. "
+                                   "Exiting.")
+                sys.exit(1)
+            pdata.append(self._convert_array2D_f(spin2, 9))
+            pdata[1] = np.asarray(np.split(pdata[1], num_kpoints))
+            pdata[1] = np.asarray(np.split(pdata[1], num_bands, axis=1))
+                
+        # convert to numpy arrays
+        pdata = np.asarray(pdata)
+        # swap axis if the band index should be before the kpoint index
+        # make sure atomic index is first
+        pdata = np.swapaxes(pdata, 0, 3)
+        pdata = np.swapaxes(pdata, 1, 3)
+        if not self._k_before_band:
+            pdata = np.swapaxes(pdata, 2, 3)
+                
+        if spin2:
+            projectors["up"] = np.ascontiguousarray(pdata[:, 0, :, :])
+            projectors["down"] = np.ascontiguousarray(pdata[:, 1, :, :])
+        else:
+            projectors["total"] = np.ascontiguousarray(pdata[:, 0, :, :])
+                
+        return projectors
+    
     def _convert_array_i(self, entry):
         """Convert the input entry to numpy array
 
@@ -1507,7 +1663,7 @@ class XmlParser(object):
 
         return data
 
-    def _convert_array2D3_f(self, entry):
+    def _convert_array2D_f(self, entry, dim):
         """Convert the input entry to numpy array
 
         Parameters
@@ -1515,19 +1671,21 @@ class XmlParser(object):
         entry : list
             A list containing Element objects where each
             element is a float
+        dim : int
+            The dimension of the second index.
 
         Returns
         -------
         data : ndarray
-            | Dimension: (N,3)
-            An array containing N elements with three float
+            | Dimension: (N,M)
+            An array containing N elements with M float
             elements.
 
         """
 
         data = None
         if entry is not None:
-            data = np.zeros((len(entry), 3),
+            data = np.zeros((len(entry), dim),
                             dtype='double')
 
         for index, element in enumerate(entry):
@@ -1535,90 +1693,6 @@ class XmlParser(object):
 
         return data
     
-    def _convert_array2D10_f(self, entry):
-        """Convert the input entry to numpy array
-
-        Parameters
-        ----------
-        entry : list
-            A list containing Element objects where each
-            element is a float
-
-        Returns
-        -------
-        data : ndarray
-            | Dimension: (N,10)
-            An array containing N elements with ten float
-            elements.
-
-        """
-
-        data = None
-        if entry is not None:
-            data = np.zeros((len(entry), 10),
-                            dtype='double')
-
-        for index, element in enumerate(entry):
-            data[index] = np.fromstring(element.text, sep=' ')
-
-        return data
-
-    def _convert_array2D7_f(self, entry):
-        """Convert the input entry to numpy array
-
-        Parameters
-        ----------
-        entry : list
-            A list containing Element objects where each
-            element is a float
-
-        Returns
-        -------
-        data : ndarray
-            | Dimension: (N,7)
-            An array containing N elements with ten float
-            elements.
-
-        """
-
-        data = None
-        if entry is not None:
-            data = np.zeros((len(entry), 7),
-                            dtype='double')
-
-        for index, element in enumerate(entry):
-            data[index] = np.fromstring(element.text, sep=' ')
-
-        return data
-    
-    def _convert_array2D2_f(self, entry):
-        """Convert the input entry to numpy array
-
-        Parameters
-        ----------
-        entry : list
-            A list containing Element objects where each
-            element is a float
-
-        Returns
-        -------
-        data : ndarray
-            | Dimension: (N,2)
-            An array containing N elements with three float
-            elements.
-
-        """
-
-        data = None
-        if entry is not None:
-            data = np.zeros((len(entry), 2),
-                            dtype='double')
-
-        for index, element in enumerate(entry):
-            data[index] = np.fromstring(element.text, sep=' ')
-
-        return data
-
     def _convert_f(self, entry):
         """Convert the input entry to a float.
 
