@@ -86,7 +86,11 @@ class XmlParser(object):
                       "forces": None,
                       "stress": None,
                       "dielectrics": None}
-
+        if lxml:
+            self._logger.info("We are utilizing lxml!")
+        else:
+            self._logger.info("We are not uitilizing lxml!")
+        
         # parse parse parse
         self._parse()
 
@@ -107,13 +111,13 @@ class XmlParser(object):
         # perform event driven parsing. For smaller files this is
         # not necessary and is too slow.
         if self._file_size(self._file_path) < self._sizecutoff:
-            #self._parsew()
-            self._parsee()
+            self._parsew()
+            #self._parsee()
         else:
             self._parsee()
         #print self._data["dos"]
-        print self._parameters
-        print self._data["dielectrics"]
+        #print self._parameters
+        #print self._data["dielectrics"]
         
     def _parsew(self):
         """Performs parsing on the whole XML files. For smaller files
@@ -1225,19 +1229,17 @@ class XmlParser(object):
             # imaginary part
             entry = xml.findall(
                 './/calculation/'+tag+'/imag/array/set/r')
-            if not entry:
-                self._logger.error("Did not find <dielectricfunction> in "
-                                   "the XML file. Exiting.")
-                sys.exit(1)
-            data = self._convert_array2D7_f(entry)
-            diel["energy"] = data[:,0]
-            diel["imag"] = data[:,1:7]
+            if entry:
+                data = self._convert_array2D7_f(entry)
+                diel["energy"] = data[:,0]
+                diel["imag"] = data[:,1:7]
 
             # real part
             entry = xml.findall(
                 './/calculation/'+tag+'/real/array/set/r')
-            data = self._convert_array2D7_f(entry)
-            diel["real"] = data[:,1:7]
+            if entry:
+                data = self._convert_array2D7_f(entry)
+                diel["real"] = data[:,1:7]
 
             return diel
         

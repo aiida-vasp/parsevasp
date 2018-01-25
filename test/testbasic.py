@@ -8,7 +8,7 @@ srcdir = '../parsevasp'
 sys.path.insert(0, os.path.abspath(os.path.join(testdir, srcdir)))
 import parsevaspxml
 
-logging.basicConfig()
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('Testing')
 
 vaspxml = parsevaspxml.XmlParser(logger, testdir + "/vasprunbasic.xml")
