@@ -654,11 +654,13 @@ class XmlParser(object):
 
         """
 
-        symprec = None
-        entry = xml.find('.//parameters/separator[@name="symmetry"]/'
+        entry = self._find(xml, './/parameters/separator[@name="symmetry"]/'
                          'i[@name="SYMPREC"]')
-        if entry is not None:
-            symprec = self._convert_f(entry)
+
+        if entry is None:
+            return None
+
+        symprec = self._convert_f(entry)
 
         return symprec
 
@@ -681,13 +683,14 @@ class XmlParser(object):
 
         """
 
-        sigma = None
-        entry = xml.find('.//parameters/separator[@name="electronic"]/'
+        entry = self._find(xml, './/parameters/separator[@name="electronic"]/'
                          'separator[@name="electronic smearing"]/'
                          'i[@name="SIGMA"]')
 
-        if entry is not None:
-            sigma = self._convert_f(entry)
+        if entry is None:
+            return None
+
+        sigma = self._convert_f(entry)
 
         return sigma
 
@@ -710,12 +713,13 @@ class XmlParser(object):
 
         """
 
-        ispin = None
-        entry = xml.find('.//parameters/separator[@name="electronic"]/'
+        entry = self._find(xml, './/parameters/separator[@name="electronic"]/'
                          'separator[@name="electronic spin"]/'
                          'i[@name="ISPIN"]')
-        if entry is not None:
-            ispin = self._convert_i(entry)
+        if entry is None:
+            return None
+        
+        ispin = self._convert_i(entry)
 
         return ispin
 
@@ -738,12 +742,14 @@ class XmlParser(object):
 
         """
 
-        ismear = None
-        entry = xml.find('.//parameters/separator[@name="electronic"]/'
+        entry = self._find(xml, './/parameters/separator[@name="electronic"]/'
                          'separator[@name="electronic smearing"]/'
                          'i[@name="ISMEAR"]')
-        if entry is not None:
-            ismear = self._convert_i(entry)
+
+        if entry is None:
+            return None
+        
+        ismear = self._convert_i(entry)
 
         return ismear
 
@@ -766,11 +772,12 @@ class XmlParser(object):
 
         """
 
-        nbands = None
-        entry = xml.find('.//parameters/separator[@name="electronic"]/'
+        entry = self._find(xml, './/parameters/separator[@name="electronic"]/'
                          'i[@name="NBANDS"]')
-        if entry is not None:
-            nbands = self._convert_i(entry)
+        if entry is None:
+            return None
+        
+        nbands = self._convert_i(entry)
 
         return nbands
 
@@ -793,11 +800,13 @@ class XmlParser(object):
 
         """
 
-        nelect = None
-        entry = xml.find('.//parameters/separator[@name="electronic"]/'
+        entry = self._find(xml, './/parameters/separator[@name="electronic"]/'
                          'i[@name="NELECT"]')
-        if entry is not None:
-            nelect = self._convert_f(entry)
+        
+        if entry is None:
+            return None
+        
+        nelect = self._convert_f(entry)
 
         return nelect
 
@@ -820,11 +829,13 @@ class XmlParser(object):
 
         """
 
-        system = None
-        entry = xml.find('.//parameters/separator[@name="general"]/'
+        entry = self._find(xml, './/parameters/separator[@name="general"]/'
                          'i[@name="SYSTEM"]')
-        if entry is not None:
-            system = entry.text
+        
+        if entry is None:
+            return None
+        
+        system = entry.text
             
         return system
     
@@ -858,18 +869,30 @@ class XmlParser(object):
         force = {}
         stress = {}
         if not all:
-            entry = xml.findall(
+            entry = self._findall(xml, 
                 './/structure[@name="finalpos"]/crystal/varray[@name="basis"]/v')
-            cell["final"] = self._convert_array2D_f(entry, 3)
-            entry = xml.findall(
+            if entry is not None:
+                cell["final"] = self._convert_array2D_f(entry, 3)
+            else:
+                cell["final"] = None
+            entry = self._findall(xml, 
                 './/structure[@name="initialpos"]/crystal/varray[@name="basis"]/v')
-            cell["initial"] = self._convert_array2D_f(entry, 3)
-            entry = xml.findall(
+            if entry is not None:
+                cell["initial"] = self._convert_array2D_f(entry, 3)
+            else:
+                cell["initial"] = None
+            entry = self._findall(xml, 
                 './/structure[@name="finalpos"]/varray[@name="positions"]/v')
-            pos["final"] = self._convert_array2D_f(entry, 3)
-            entry = xml.findall(
+            if entry is not None:
+                pos["final"] = self._convert_array2D_f(entry, 3)
+            else:
+                pos["final"] = None
+            entry = self._findall(xml, 
                 './/structure[@name="initialpos"]/varray[@name="positions"]/v')
-            pos["initial"] = self._convert_array2D_f(entry, 3)
+            if entry is not None:
+                pos["initial"] = self._convert_array2D_f(entry, 3)
+            else:
+                pos["initial"] = None
         else:
             num_atoms = 0
             if self._lattice["species"] is not None:
@@ -880,24 +903,40 @@ class XmlParser(object):
                                    "Exiting.")
                 sys.exit(1)
         
-            entrycell = xml.findall(
+            entrycell = self._findall(xml, 
                 './/calculation/structure/crystal/varray[@name="basis"]/v')
-            entrypos = xml.findall(
+            entrypos = self._findall(xml, 
                 './/calculation/structure/varray[@name="positions"]/v')
-            entryforce = xml.findall(
+            entryforce = self._findall(xml, 
                 './/calculation/varray[@name="forces"]/v')
-            entrystress = xml.findall(
+            entrystress = self._findall(xml, 
                 './/calculation/varray[@name="stress"]/v')        
             entries = len(entrycell)
             num_calcs = entries / 3
-            cell["initial"] = self._convert_array2D_f(entrycell[0:3], 3)
-            cell["final"] = self._convert_array2D_f(entrycell[-3:], 3)
-            pos["initial"] = self._convert_array2D_f(entrypos[0:num_atoms], 3)
-            pos["final"] = self._convert_array2D_f(entrypos[-num_atoms:], 3)
-            force["initial"] = self._convert_array2D_f(entryforce[0:num_atoms], 3)
-            force["final"] = self._convert_array2D_f(entryforce[-num_atoms:], 3)
-            stress["initial"] = self._convert_array2D_f(entrystress[0:3], 3)
-            stress["final"] = self._convert_array2D_f(entrystress[-3:], 3)
+            if entrycell is not None:
+                cell["initial"] = self._convert_array2D_f(entrycell[0:3], 3)
+                cell["final"] = self._convert_array2D_f(entrycell[-3:], 3)
+            else:
+                cell["initial"] = None
+                cell["final"] = None
+            if entrypos is not None:
+                pos["initial"] = self._convert_array2D_f(entrypos[0:num_atoms], 3)
+                pos["final"] = self._convert_array2D_f(entrypos[-num_atoms:], 3)
+            else:
+                pos["initial"] = None
+                pos["final"] = None
+            if entryforce is not None:
+                force["initial"] = self._convert_array2D_f(entryforce[0:num_atoms], 3)
+                force["final"] = self._convert_array2D_f(entryforce[-num_atoms:], 3)
+            else:
+                force["initial"] = None
+                force["final"] = None
+            if entrystress is None:
+                stress["initial"] = self._convert_array2D_f(entrystress[0:3], 3)
+                stress["final"] = self._convert_array2D_f(entrystress[-3:], 3)
+            else:
+                stress["initial"] = None
+                stress["final"] = None
             for calc in range(1, num_calcs - 1):
                 basecell = calc * 3
                 basepos = calc * num_atoms
@@ -932,8 +971,11 @@ class XmlParser(object):
 
         """
 
-        entry = xml.findall('.//atominfo/'
+        entry = self._findall(xml, './/atominfo/'
                             'array[@name="atoms"]/set/rc/c')[::2]
+
+        if entry is None:
+            return None
 
         spec = self._convert_species(entry)
 
@@ -955,8 +997,11 @@ class XmlParser(object):
 
         """
 
-        entry = xml.findall(
+        entry = self._findall(xml, 
             'kpoints/varray[@name="kpointlist"]/v')
+
+        if entry is None:
+            return None
 
         kpoints = self._convert_array2D_f(entry, 3)
 
@@ -978,8 +1023,11 @@ class XmlParser(object):
 
         """
 
-        entry = xml.findall(
+        entry = self._findall(xml, 
             'kpoints/varray[@name="weights"]/v')
+
+        if entry is None:
+            return None
 
         kpointsw = self._convert_array1D_f(entry)
 
@@ -1001,8 +1049,11 @@ class XmlParser(object):
 
         """
 
-        entry = xml.find(
+        entry = self._find(xml, 
             'kpoints/generation/v[@name="divisions"]')
+
+        if entry is None:
+            return None
 
         kpointdiv = self._convert_array_i(entry)
 
@@ -1026,14 +1077,18 @@ class XmlParser(object):
         """
 
         # spin 1
-        entry_ispin1 = xml.findall(
+        entry_ispin1 = self._findall(xml, 
             './/calculation/eigenvalues/array/set/'
             'set[@comment="spin 1"]/set/r')
 
         # spin 2
-        entry_ispin2 = xml.findall(
+        entry_ispin2 = self._findall(xml, 
             './/calculation/eigenvalues/array/set/'
             'set[@comment="spin 2"]/set/r')
+
+        # if we do not find spin 1 entries return right away
+        if entry_ispin1 is None:
+            return None, None
         
         eigenvalues, occupancies = self._extract_eigenvalues(entry_ispin1,
                                                              entry_ispin2)
@@ -1057,17 +1112,21 @@ class XmlParser(object):
         """
 
         # projectors spin 1
-        entry_ispin1 = xml.findall(
+        entry_ispin1 = self._findall(xml, 
             './/calculation/projected/array/set/'
             'set[@comment="spin1"]/set/set/r')
 
         # projectors spin 2
-        entry_ispin2 = xml.findall(
+        entry_ispin2 = self._findall(xml, 
             './/calculation/projected/array/set/'
             'set[@comment="spin2"]/set/set/r')
 
+        # if we do not find spin 1 entries return right away
+        if entry_ispin1 is None:
+            return None
+    
         projectors = self._extract_projectors(entry_ispin1,
-                                               entry_ispin2)        
+                                                  entry_ispin2)        
         return projectors
     
     def _fetch_totensw(self, xml):
@@ -1095,9 +1154,13 @@ class XmlParser(object):
         # elements and then only how many scstep there is pr. calc
         # and sort from there
         #
-        entries = xml.findall(
+        
+        entries = self._findall(xml, 
             './/calculation')
 
+        if entries is None:
+            return None
+        
         # this most likely takes too long for very long fpmd calculations,
         # so consider putting in a flag that only extract the
         # energies from each step in the calculation and not the scsteps as
@@ -1105,7 +1168,9 @@ class XmlParser(object):
         energies = {}
         for index, calc in enumerate(entries):
             # energy without entropy
-            data = calc.findall('.//scstep/energy/i[@name="e_wo_entrp"]')
+            data = self._findall(calc, './/scstep/energy/i[@name="e_wo_entrp"]')
+            if data is None:
+                return None
             data = self._convert_array1D_f(data)
             if index == 0:
                 energies["initial"] = {"energy_no_entropy":
@@ -1139,7 +1204,7 @@ class XmlParser(object):
         """
 
         # fetch the Fermi level
-        entry = xml.find(
+        entry = self._find(xml, 
             './/calculation/dos/i[@name="efermi"]')
 
         if entry is not None:
@@ -1148,21 +1213,25 @@ class XmlParser(object):
             fermi_level = None
 
         # spin 1
-        entry_total_ispin1 = xml.findall(
+        entry_total_ispin1 = self._findall(xml, 
             './/calculation/dos/total/array/set/set[@comment="spin 1"]/r')
 
         # spin 2
-        entry_total_ispin2 = xml.findall(
+        entry_total_ispin2 = self._findall(xml, 
             './/calculation/dos/total/array/set/set[@comment="spin 2"]/r')
 
         # partial spin 1
-        entry_partial_ispin1 = xml.findall(
+        entry_partial_ispin1 = self._findall(xml, 
             './/calculation/dos/partial/array/set/set/set[@comment="spin 1"]/r')
 
         # partial spin 2
-        entry_partial_ispin2 = xml.findall(
+        entry_partial_ispin2 = self._findall(xml, 
             './/calculation/dos/partial/array/set/set/set[@comment="spin 2"]/r')
 
+        # if no entries for spin 1, eject right away
+        if entry_total_ispin1 is None:
+            return None
+        
         # check if we have extracted the species (number of atoms)
         if self._lattice["species"] is None:
             self._logger.error("Before extracting the density of states, please"
@@ -1290,19 +1359,21 @@ class XmlParser(object):
                 tag = 'dielectricfunction'
 
             # imaginary part
-            entry = xml.findall(
+            entry = self._findall(xml, 
                 './/calculation/'+tag+'/imag/array/set/r')
-            if entry:
-                data = self._convert_array2D_f(entry, 7)
-                diel["energy"] = data[:,0]
-                diel["imag"] = data[:,1:7]
+            if entry is None:
+                return None
+            data = self._convert_array2D_f(entry, 7)
+            diel["energy"] = data[:,0]
+            diel["imag"] = data[:,1:7]
 
             # real part
-            entry = xml.findall(
+            entry = self._findall(xml, 
                 './/calculation/'+tag+'/real/array/set/r')
-            if entry:
-                data = self._convert_array2D_f(entry, 7)
-                diel["real"] = data[:,1:7]
+            if entry is None:
+                return None
+            data = self._convert_array2D_f(entry, 7)
+            diel["return eal"] = data[:,1:7]
 
             return diel
         
@@ -1439,7 +1510,7 @@ class XmlParser(object):
 
         data.append(self._convert_array2D_f(spin1, 2))
         data[0] = np.asarray(np.split(data[0], num_kpoints))
-        if spin2:
+        if spin2 is not None:
             if len(spin2) != num_bands * num_kpoints:
                 self._logger.error("The number of eigenvalues found does not match "
                                    "the number of located kpoints and NBANDS. "
@@ -1453,7 +1524,7 @@ class XmlParser(object):
         # swap axis if the band index should be before the kpoint index
         if not self._k_before_band:
             data = np.swapaxes(data, 1, 2)
-        if spin2:
+        if spin2 is not None:
             eigenvalues["up"] = np.ascontiguousarray(data[0, :, :, 0])
             occupancies["up"] = np.ascontiguousarray(data[0, :, :, 1])
             eigenvalues["down"] = np.ascontiguousarray(data[1, :, :, 0])
@@ -1505,14 +1576,13 @@ class XmlParser(object):
 
         num_atoms = 0
         # also need the number of atoms if the projected values are supplied
-        if spin1:
-            if self._lattice["species"] is None:
-                self._logger.error("Before extracting the projected "
-                                   "projectors, please extract NBANDS. "
-                                   "the species. Exiting.")
-                sys.exit(1)
-            else:
-                num_atoms = self._lattice["species"].shape[0]
+        if self._lattice["species"] is None:
+            self._logger.error("Before extracting the projected "
+                               "projectors, please extract NBANDS. "
+                               "the species. Exiting.")
+            sys.exit(1)
+        else:
+            num_atoms = self._lattice["species"].shape[0]
             
         # number of kpoints to disect the eigenvalue sets later
         num_kpoints = self._lattice["kpoints"].shape[0]
@@ -1536,7 +1606,7 @@ class XmlParser(object):
         pdata.append(self._convert_array2D_f(spin1, 9))
         pdata[0] = np.asarray(np.split(pdata[0], num_kpoints))
         pdata[0] = np.asarray(np.split(pdata[0], num_bands, axis=1))
-        if spin2:
+        if spin2 is not None:
             if len(spin2) != num_bands * num_kpoints * num_atoms:
                 self._logger.error("The number of projectors found "
                                    "does not match the number of located "
@@ -1556,7 +1626,7 @@ class XmlParser(object):
         if not self._k_before_band:
             pdata = np.swapaxes(pdata, 2, 3)
                 
-        if spin2:
+        if spin2 is not None:
             projectors["up"] = np.ascontiguousarray(pdata[:, 0, :, :])
             projectors["down"] = np.ascontiguousarray(pdata[:, 1, :, :])
         else:
@@ -1764,11 +1834,16 @@ class XmlParser(object):
 
         return species
 
-    def get_forces(self):
-        return np.array(self._all_forces)
-
+    def get_forces(self, status):
+        if status == "initial":
+            return self._data["forces"]
+        elif status == "final":
+            return self._data["forces"]
+        elif status == "all":
+            return self._data["forces"]
+        
     def get_stress(self):
-        return np.array(self._all_stress)
+        return self._data["stress"]
 
     def get_epsilon(self):
         return np.array(self._epsilon)
@@ -1800,6 +1875,57 @@ class XmlParser(object):
     def get_projectors(self):
         return self._projectors
 
+    def _find(self, xml, locator):
+        """Wrapper to check if the request returns something.
+
+        Parameters
+        ----------
+        xml : object
+            An ElementTree object to be used for parsing.
+        locator : string
+            The locator string to try.
+
+        Returns
+        -------
+        entry : object
+            An Element object if something is found, otherwise it
+            returns None.
+
+        """
+        
+        entry = xml.find(locator)
+
+        if entry is None:
+            return None
+        else:
+            return entry
+        
+    def _findall(self, xml, locator):
+        """Wrapper to check if the request returns something.
+
+        Parameters
+        ----------
+        xml : object
+            An ElementTree object to be used for parsing.
+        locator : string
+            The locator string to try.
+
+        Returns
+        -------
+        entry : object
+            An Element object if something is found, otherwise it
+            returns None.
+
+        """
+        
+        entry = xml.findall(locator)
+
+        if not entry:
+            return None
+        else:
+            return entry
+
+    
     def _check_file(self, file_path):
         """
         Check if a file exists
