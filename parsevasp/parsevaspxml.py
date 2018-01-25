@@ -228,7 +228,7 @@ class XmlParser(object):
                 extract_calculation = True
             if event == "end" and element.tag == "calculation":
                 data3 = self._convert_array1D_f(data3)
-                totens["step_"+str(calc)] = {"energy_wo_entropy":
+                totens[calc] = {"energy_wo_entropy":
                                              [data3[data3.shape[0]-1], data3]}
                 data3 = []
                 # update index for the calculation
@@ -359,7 +359,7 @@ class XmlParser(object):
                 
 
             if extract_calculation:
-                attribute = "step_" + str(calc)
+                attribute = calc
                 # it would be very tempting just to fill the data and disect
                 # it later, would be faster, but it is not so easy since
                 # we do not know how many calculations have been performed
@@ -593,40 +593,27 @@ class XmlParser(object):
                     data.append(element)                
 
         # now we need to update some elements
-        # first element should be initial
-        cell["initial"] = cell.pop("step_1")
-        pos["initial"] = pos.pop("step_1")
-        force["initial"] = force.pop("step_1")
-        stress["initial"] = stress.pop("step_1")
-        totens["initial"] = totens.pop("step_1")
         if len(cell) == 1:
             # for static runs, initial is equal to final
-            cell["final"] = cell["initial"]
-            pos["final"] = pos["initial"]
-            force["final"] = force["initial"]
-            stress["final"] = stress["initial"]
-            totens["final"] = totens["initial"]
-        else:
-            last_element = "step_"+str(len(cell)-1)
-            cell["final"] = cell.pop(last_element)
-            pos["final"] = pos.pop(last_element)
-            force["final"] = force.pop(last_element)
-            stress["final"] = stress.pop(last_element)
-            totens["final"] = totens.pop(last_element)
+            cell[2] = cell[1]
+            pos[2] = pos[1]
+            force[2] = force[1]
+            stress[2] = stress[1]
+            totens[2] = totens[1]            
 
         if not all:
             # only save initial and final
             self._lattice["unitcell"] = {key: cell[key]
-                                         for key in {"initial", "final"}}
+                                         for key in {1, 2}}
             self._lattice["positions"] = {key: cell[key]
-                                          for key in {"initial", "final"}}
+                                          for key in {1, 2}}
             self._data["forces"] = {key: force[key]
-                                         for key in {"initial", "final"}}
+                                         for key in {1, 2}}
             self._data["stress"] = {key: stress[key]
-                                         for key in {"initial", "final"}}
+                                         for key in {1, 2}}
             self._data["totens"] = {key: totens[key]
-                                         for key in {"initial", "final"}}
-                        
+                                         for key in {1, 2}}
+
         else:
             # save all
             self._lattice["unitcell"] = cell
@@ -872,27 +859,27 @@ class XmlParser(object):
             entry = self._findall(xml, 
                 './/structure[@name="finalpos"]/crystal/varray[@name="basis"]/v')
             if entry is not None:
-                cell["final"] = self._convert_array2D_f(entry, 3)
+                cell[2] = self._convert_array2D_f(entry, 3)
             else:
-                cell["final"] = None
+                cell[2] = None
             entry = self._findall(xml, 
                 './/structure[@name="initialpos"]/crystal/varray[@name="basis"]/v')
             if entry is not None:
-                cell["initial"] = self._convert_array2D_f(entry, 3)
+                cell[1] = self._convert_array2D_f(entry, 3)
             else:
-                cell["initial"] = None
+                cell[1] = None
             entry = self._findall(xml, 
                 './/structure[@name="finalpos"]/varray[@name="positions"]/v')
             if entry is not None:
-                pos["final"] = self._convert_array2D_f(entry, 3)
+                pos[2] = self._convert_array2D_f(entry, 3)
             else:
-                pos["final"] = None
+                pos[2] = None
             entry = self._findall(xml, 
                 './/structure[@name="initialpos"]/varray[@name="positions"]/v')
             if entry is not None:
-                pos["initial"] = self._convert_array2D_f(entry, 3)
+                pos[1] = self._convert_array2D_f(entry, 3)
             else:
-                pos["initial"] = None
+                pos[1] = None
         else:
             num_atoms = 0
             if self._lattice["species"] is not None:
@@ -914,43 +901,39 @@ class XmlParser(object):
             entries = len(entrycell)
             num_calcs = entries / 3
             if entrycell is not None:
-                cell["initial"] = self._convert_array2D_f(entrycell[0:3], 3)
-                cell["final"] = self._convert_array2D_f(entrycell[-3:], 3)
+                cell[1] = self._convert_array2D_f(entrycell[0:3], 3)
+                cell[2] = self._convert_array2D_f(entrycell[-3:], 3)
             else:
-                cell["initial"] = None
-                cell["final"] = None
+                cell[1] = None
+                cell[2] = None
             if entrypos is not None:
-                pos["initial"] = self._convert_array2D_f(entrypos[0:num_atoms], 3)
-                pos["final"] = self._convert_array2D_f(entrypos[-num_atoms:], 3)
+                pos[1] = self._convert_array2D_f(entrypos[0:num_atoms], 3)
+                pos[2] = self._convert_array2D_f(entrypos[-num_atoms:], 3)
             else:
-                pos["initial"] = None
-                pos["final"] = None
+                pos[1] = None
+                pos[2] = None
             if entryforce is not None:
-                force["initial"] = self._convert_array2D_f(entryforce[0:num_atoms], 3)
-                force["final"] = self._convert_array2D_f(entryforce[-num_atoms:], 3)
+                force[1] = self._convert_array2D_f(entryforce[0:num_atoms], 3)
+                force[2] = self._convert_array2D_f(entryforce[-num_atoms:], 3)
             else:
-                force["initial"] = None
-                force["final"] = None
+                force[1] = None
+                force[2] = None
             if entrystress is None:
-                stress["initial"] = self._convert_array2D_f(entrystress[0:3], 3)
-                stress["final"] = self._convert_array2D_f(entrystress[-3:], 3)
+                stress[1] = self._convert_array2D_f(entrystress[0:3], 3)
+                stress[2] = self._convert_array2D_f(entrystress[-3:], 3)
             else:
-                stress["initial"] = None
-                stress["final"] = None
+                stress[1] = None
+                stress[2] = None
             for calc in range(1, num_calcs - 1):
                 basecell = calc * 3
                 basepos = calc * num_atoms
-                cell[
-                    "step_" + str(calc + 1)] = self._convert_array2D_f(
+                cell[calc + 1] = self._convert_array2D_f(
                         entrycell[basecell:basecell + 3], 3)
-                pos[
-                    "step_" + str(calc + 1)] = self._convert_array2D_f(
+                pos[calc + 1] = self._convert_array2D_f(
                         entrypos[basepos:basepos + num_atoms], 3)
-                force[
-                    "step_" + str(calc + 1)] = self._convert_array2D_f(
+                force[calc + 1] = self._convert_array2D_f(
                         entryforce[basepos:basepos + num_atoms], 3)
-                stress[
-                    "step_" + str(calc + 1)] = self._convert_array2D_f(
+                stress[calc + 1] = self._convert_array2D_f(
                         entrystress[basecell:basecell + 3], 3)
                 
         return cell, pos, force, stress
@@ -1173,17 +1156,17 @@ class XmlParser(object):
                 return None
             data = self._convert_array1D_f(data)
             if index == 0:
-                energies["initial"] = {"energy_no_entropy":
+                energies[1] = {"energy_no_entropy":
                                        [data[data.shape[0]-1], data]}
             else:
-                energies["step_"+str(index+1)] = {"energy_no_entropy":
+                energies[index+1] = {"energy_no_entropy":
                                                   [data[data.shape[0]-1], data]}
                 
         if len(energies) == 1:
-            energies["final"] = energies["initial"]
+            energies[2] = energies[1]
         else:
             # replace key on the last element to final
-            energies["final"] = energies.pop("step_"+str(len(entries)))
+            energies[2] = energies.pop(len(entries))
 
         return energies        
 
@@ -1835,46 +1818,115 @@ class XmlParser(object):
         return species
 
     def get_forces(self, status):
+        self._check_calc_status(status)
         if status == "initial":
-            return self._data["forces"]
+            return self._data["forces"][1]
         elif status == "final":
-            return self._data["forces"]
+            return self._data["forces"][2]
         elif status == "all":
             return self._data["forces"]
         
-    def get_stress(self):
-        return self._data["stress"]
+    def get_stress(self, status):
+        self._check_calc_status(status)
+        if status == "initial":
+            return self._data["stess"][1]
+        elif status == "final":
+            return self._data["stress"][2]
+        elif status == "all":
+            return self._data["stress"]
 
-    def get_epsilon(self):
-        return np.array(self._epsilon)
+    def get_epsislon(self):
+        return self._data["dielectics"]
 
     def get_efermi(self):
-        return self._efermi
+        return self._data["fermi_level"]
 
     def get_born(self):
-        return np.array(self._born)
+        return self._data["born"]
 
     def get_points(self):
         return np.array(self._all_points)
 
-    def get_lattice(self):
-        return np.array(self._all_lattice)
+    def get_unitcell(self, status):
+        self._check_calc_status(status)
+        if status == "initial":
+            return self._lattice["unitcell"][1]
+        elif status == "final":
+            return self._lattice["unitcell"][2]
+        elif status == "all":
+            return self._lattice["unitcell"]        
 
+    def get_positions(self, status):
+        self._check_calc_status(status)
+        if status == "initial":
+            return self._lattice["positions"][1]
+        elif status == "final":
+            return self._lattice["positions"][2]
+        elif status == "all":
+            return self._lattice["positions"]                
+
+    def get_species(self):
+        return self._lattice["species"]
+
+    def get_lattice(self, status):
+        unitcell = self.get_unitcell(status)
+        positions = self.get_positions(status)
+        species = self.get_species()
+        return {"unitcell": unitcell, "positions": positions,
+                "species": species}
+        
     def get_symbols(self):
-        return self._symbols
+        return self._parameters
 
-    def get_energies(self):
-        return np.array(self._all_energies)
-
+    def get_energies(self, status, etype = None, nosc = True):
+        if etype is None:
+            etype = "energy_no_entropy"
+        if etype == "energy_no_entropy":
+            return self._get_energies_no_entropy(status, nosc)
+        
+    def _get_energies_no_entropy(self, status, nosc):
+        self._check_calc_status(status)
+        energies = []
+        if status == "initial":
+            if nosc:
+                energies.append(self._data["totens"][1]["energy_no_entropy"][0])
+            else:
+                energies.append(self._data["totens"][1]["energy_no_entropy"])
+        elif status == "final":
+            if nosc:
+                energies.append(self._data["totens"][2]["energy_no_entropy"][0])
+            else:
+                energies.append(self._data["totens"][2]["energy_no_entropy"])
+        elif status == "all":
+            # here we need to pull out energy_no_entropy of all the calc
+            # steps...right now I did not find a smart way to do this, would
+            # like to avoid explicit loops...but here it is anyway
+            # first sort (might consider doing this initially...not so sure)
+            _energies = sorted(self._data["totens"].items())
+            for index, element in _energies:
+                if nosc:
+                    energies.append(element["energy_no_entropy"][0])
+                else:
+                    energies.append(element["energy_no_entropy"][1])
+        return energies
+    
     def get_k_weights(self):
-        return self._k_weights
+        return self._lattice["kpointsw"]
 
     def get_eigenvalues(self):
-        return self._eigenvalues
+        return self._data["eigenvalues"]
 
     def get_projectors(self):
-        return self._projectors
+        return self._data["projectors"]
 
+    def _check_calc_status(self,status):
+        allowed_entries = ["initial", "final", "all"]
+        if status not in allowed_entries:
+            self._logger.error("The supplied status is not supported, "
+                               "please use any of the following values "
+                               +str(allowed_entries)+". Exiting.")
+            sys.exit(1)
+            
     def _find(self, xml, locator):
         """Wrapper to check if the request returns something.
 
