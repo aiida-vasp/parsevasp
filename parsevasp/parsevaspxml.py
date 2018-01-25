@@ -87,12 +87,12 @@ class XmlParser(object):
                       "stress": None,
                       "dielectrics": None,
                       "projectors": None}
-        
+
         if lxml:
             self._logger.info("We are utilizing lxml!")
         else:
             self._logger.info("We are not uitilizing lxml!")
-        
+
         # parse parse parse
         self._parse()
 
@@ -114,11 +114,11 @@ class XmlParser(object):
         # not necessary and is too slow.
         if self._file_size(self._file_path) < self._sizecutoff:
             # run event based for small files for testing?
-            self._parsew()
-            #self._parsee()
+            # self._parsew()
+            self._parsee()
         else:
             self._parsee()
-        
+
     def _parsew(self):
         """Performs parsing on the whole XML files. For smaller files
 
@@ -144,7 +144,7 @@ class XmlParser(object):
         self._lattice["species"] = self._fetch_speciesw(vaspxml)
         self._lattice["unitcell"], self._lattice["positions"], \
             self._data["forces"], self._data["stress"] = \
-                self._fetch_upfsw(vaspxml, all=all)
+            self._fetch_upfsw(vaspxml, all=all)
         self._lattice["kpoints"] = self._fetch_kpointsw(vaspxml)
         self._lattice["kpointsw"] = self._fetch_kpointsww(vaspxml)
         self._lattice["kpointdiv"] = self._fetch_kpointdivw(vaspxml)
@@ -229,7 +229,7 @@ class XmlParser(object):
             if event == "end" and element.tag == "calculation":
                 data3 = self._convert_array1D_f(data3)
                 totens[calc] = {"energy_wo_entropy":
-                                             [data3[data3.shape[0]-1], data3]}
+                                [data3[data3.shape[0] - 1], data3]}
                 data3 = []
                 # update index for the calculation
                 calc = calc + 1
@@ -256,18 +256,18 @@ class XmlParser(object):
             if event == "end" and element.tag == "total":
                 if data2:
                     dos_ispin = self._convert_array2D_f(data, 3)
-                    _dos["energy"] = dos_ispin[:,0]
-                    _dos["total"] = dos_ispin[:,1]
-                    _dos["integrated"] = dos_ispin[:,2]
+                    _dos["energy"] = dos_ispin[:, 0]
+                    _dos["total"] = dos_ispin[:, 1]
+                    _dos["integrated"] = dos_ispin[:, 2]
                     dos_ispin = self._convert_array2D_f(data2, 3)
-                    _dos2["energy"] = dos_ispin[:,0]
-                    _dos2["total"] = dos_ispin[:,1]
-                    _dos2["integrated"] = dos_ispin[:,2]
+                    _dos2["energy"] = dos_ispin[:, 0]
+                    _dos2["total"] = dos_ispin[:, 1]
+                    _dos2["integrated"] = dos_ispin[:, 2]
                 else:
                     dos_ispin = self._convert_array2D_f(data, 3)
-                    _dos["energy"] = dos_ispin[:,0]
-                    _dos["total"] = dos_ispin[:,1]
-                    _dos["integrated"] = dos_ispin[:,2]
+                    _dos["energy"] = dos_ispin[:, 0]
+                    _dos["total"] = dos_ispin[:, 1]
+                    _dos["integrated"] = dos_ispin[:, 2]
                 data = []
                 data2 = []
             if event == "end" and element.tag == "partial":
@@ -283,16 +283,16 @@ class XmlParser(object):
                     dos_ispin = self._convert_array2D_f(data, 10)
                     # do not need the energy term (similar to total)
                     _dos["partial"] = np.asarray(
-                        np.split(dos_ispin[:,1:10], num_atoms))
+                        np.split(dos_ispin[:, 1:10], num_atoms))
                     dos_ispin = self._convert_array2D_f(data2, 10)
                     # do not need the energy term (similar to total)
                     _dos2["partial"] = np.asarray(
-                        np.split(dos_ispin[:,1:10], num_atoms))
+                        np.split(dos_ispin[:, 1:10], num_atoms))
                 else:
                     dos_ispin = self._convert_array2D_f(data, 10)
                     # do not need the energy term (similar to total)
                     _dos["partial"] = np.asarray(
-                        np.split(dos_ispin[:,1:10], num_atoms))
+                        np.split(dos_ispin[:, 1:10], num_atoms))
                 data = []
                 data2 = []
             if event == "end" and element.tag == "dos":
@@ -305,7 +305,7 @@ class XmlParser(object):
                     sys.exit(1)
                 else:
                     fermi_level = None
-                    
+
                 if data2:
                     dos["up"] = _dos
                     dos["down"] = _dos2
@@ -318,7 +318,7 @@ class XmlParser(object):
                 data2 = []
                 data4 = []
                 extract_dos = False
-                 
+
             # now fetch the data
             if extract_parameters:
                 try:
@@ -356,7 +356,6 @@ class XmlParser(object):
                         self._parameters["system"] = element.text
                 except KeyError:
                     pass
-                
 
             if extract_calculation:
                 attribute = calc
@@ -387,8 +386,12 @@ class XmlParser(object):
                 if event == "start" and element.tag == "eigenvalues":
                     extract_eigenvalues = True
                 if event == "end" and element.tag == "eigenvalues":
-                    eigenvalues, occupancies = self._extract_eigenvalues(
-                        data, data2)
+                    if not data2:
+                        eigenvalues, occupancies = self._extract_eigenvalues(
+                            data, None)
+                    else:
+                        eigenvalues, occupancies = self._extract_eigenvalues(
+                            data, data2)
                     self._data["eigenvalues"] = eigenvalues
                     self._data["occupancies"] = occupancies
                     data = []
@@ -399,16 +402,16 @@ class XmlParser(object):
                 if event == "end" and element.tag == "dielectricfunction":
                     _diel = {}
                     diel = np.split(self._convert_array2D_f(data, 7), 2)
-                    _diel["energies"] = diel[0][:,0]
-                    _diel["imag"] = diel[0][:,1-7]
-                    _diel["real"] = diel[1][:,1-7]
+                    _diel["energies"] = diel[0][:, 0]
+                    _diel["imag"] = diel[0][:, 1 - 7]
+                    _diel["real"] = diel[1][:, 1 - 7]
                     self._data["dielectrics"] = _diel
                     data = []
                     extract_dielectrics = False
-                    
+
                 # now extract data
                 if extract_scstep:
-                    #print element.tag, element.attrib, element.text
+                    # print element.tag, element.attrib, element.text
                     # energy without entropy
                     if event == "start" and element.tag == "i" and \
                        element.attrib["name"] == "e_wo_entrp":
@@ -494,7 +497,10 @@ class XmlParser(object):
                         extract_eig_proj = True
                     if event == "end" and element.tag == "array" and \
                        extract_eig_proj:
-                        projectors = self._extract_projectors(data, data2)
+                        if not data2:
+                            projectors = self._extract_projectors(data, None)
+                        else:
+                            projectors = self._extract_projectors(data, data2)
                         self._data["projectors"] = projectors
                         data = []
                         data2 = []
@@ -520,7 +526,6 @@ class XmlParser(object):
                             if event == "start" and element.tag == "r":
                                 data2.append(element)
 
-                        
             if extract_species:
                 if event == "start" and element.tag == "c":
                     data.append(element)
@@ -583,14 +588,14 @@ class XmlParser(object):
                 if extract_dos_ispin2:
                     if event == "start" and element.tag == "r":
                         data2.append(element)
-                        
+
             if extract_force:
                 if event == "start" and element.tag == "v":
                     data.append(element)
 
             if extract_stress:
                 if event == "start" and element.tag == "v":
-                    data.append(element)                
+                    data.append(element)
 
         # now we need to update some elements
         if len(cell) == 1:
@@ -599,7 +604,7 @@ class XmlParser(object):
             pos[2] = pos[1]
             force[2] = force[1]
             stress[2] = stress[1]
-            totens[2] = totens[1]            
+            totens[2] = totens[1]
 
         if not all:
             # only save initial and final
@@ -608,11 +613,11 @@ class XmlParser(object):
             self._lattice["positions"] = {key: cell[key]
                                           for key in {1, 2}}
             self._data["forces"] = {key: force[key]
-                                         for key in {1, 2}}
+                                    for key in {1, 2}}
             self._data["stress"] = {key: stress[key]
-                                         for key in {1, 2}}
+                                    for key in {1, 2}}
             self._data["totens"] = {key: totens[key]
-                                         for key in {1, 2}}
+                                    for key in {1, 2}}
 
         else:
             # save all
@@ -642,7 +647,7 @@ class XmlParser(object):
         """
 
         entry = self._find(xml, './/parameters/separator[@name="symmetry"]/'
-                         'i[@name="SYMPREC"]')
+                           'i[@name="SYMPREC"]')
 
         if entry is None:
             return None
@@ -671,8 +676,8 @@ class XmlParser(object):
         """
 
         entry = self._find(xml, './/parameters/separator[@name="electronic"]/'
-                         'separator[@name="electronic smearing"]/'
-                         'i[@name="SIGMA"]')
+                           'separator[@name="electronic smearing"]/'
+                           'i[@name="SIGMA"]')
 
         if entry is None:
             return None
@@ -701,11 +706,11 @@ class XmlParser(object):
         """
 
         entry = self._find(xml, './/parameters/separator[@name="electronic"]/'
-                         'separator[@name="electronic spin"]/'
-                         'i[@name="ISPIN"]')
+                           'separator[@name="electronic spin"]/'
+                           'i[@name="ISPIN"]')
         if entry is None:
             return None
-        
+
         ispin = self._convert_i(entry)
 
         return ispin
@@ -730,12 +735,12 @@ class XmlParser(object):
         """
 
         entry = self._find(xml, './/parameters/separator[@name="electronic"]/'
-                         'separator[@name="electronic smearing"]/'
-                         'i[@name="ISMEAR"]')
+                           'separator[@name="electronic smearing"]/'
+                           'i[@name="ISMEAR"]')
 
         if entry is None:
             return None
-        
+
         ismear = self._convert_i(entry)
 
         return ismear
@@ -760,10 +765,10 @@ class XmlParser(object):
         """
 
         entry = self._find(xml, './/parameters/separator[@name="electronic"]/'
-                         'i[@name="NBANDS"]')
+                           'i[@name="NBANDS"]')
         if entry is None:
             return None
-        
+
         nbands = self._convert_i(entry)
 
         return nbands
@@ -788,11 +793,11 @@ class XmlParser(object):
         """
 
         entry = self._find(xml, './/parameters/separator[@name="electronic"]/'
-                         'i[@name="NELECT"]')
-        
+                           'i[@name="NELECT"]')
+
         if entry is None:
             return None
-        
+
         nelect = self._convert_f(entry)
 
         return nelect
@@ -817,15 +822,15 @@ class XmlParser(object):
         """
 
         entry = self._find(xml, './/parameters/separator[@name="general"]/'
-                         'i[@name="SYSTEM"]')
-        
+                           'i[@name="SYSTEM"]')
+
         if entry is None:
             return None
-        
+
         system = entry.text
-            
+
         return system
-    
+
     def _fetch_upfsw(self, xml, all=False):
         """Fetch the unitcell, atomic positions, force and stress.
 
@@ -856,26 +861,26 @@ class XmlParser(object):
         force = {}
         stress = {}
         if not all:
-            entry = self._findall(xml, 
-                './/structure[@name="finalpos"]/crystal/varray[@name="basis"]/v')
+            entry = self._findall(xml,
+                                  './/structure[@name="finalpos"]/crystal/varray[@name="basis"]/v')
             if entry is not None:
                 cell[2] = self._convert_array2D_f(entry, 3)
             else:
                 cell[2] = None
-            entry = self._findall(xml, 
-                './/structure[@name="initialpos"]/crystal/varray[@name="basis"]/v')
+            entry = self._findall(xml,
+                                  './/structure[@name="initialpos"]/crystal/varray[@name="basis"]/v')
             if entry is not None:
                 cell[1] = self._convert_array2D_f(entry, 3)
             else:
                 cell[1] = None
-            entry = self._findall(xml, 
-                './/structure[@name="finalpos"]/varray[@name="positions"]/v')
+            entry = self._findall(xml,
+                                  './/structure[@name="finalpos"]/varray[@name="positions"]/v')
             if entry is not None:
                 pos[2] = self._convert_array2D_f(entry, 3)
             else:
                 pos[2] = None
-            entry = self._findall(xml, 
-                './/structure[@name="initialpos"]/varray[@name="positions"]/v')
+            entry = self._findall(xml,
+                                  './/structure[@name="initialpos"]/varray[@name="positions"]/v')
             if entry is not None:
                 pos[1] = self._convert_array2D_f(entry, 3)
             else:
@@ -889,15 +894,15 @@ class XmlParser(object):
                                    "positions please extract the species. "
                                    "Exiting.")
                 sys.exit(1)
-        
-            entrycell = self._findall(xml, 
-                './/calculation/structure/crystal/varray[@name="basis"]/v')
-            entrypos = self._findall(xml, 
-                './/calculation/structure/varray[@name="positions"]/v')
-            entryforce = self._findall(xml, 
-                './/calculation/varray[@name="forces"]/v')
-            entrystress = self._findall(xml, 
-                './/calculation/varray[@name="stress"]/v')        
+
+            entrycell = self._findall(xml,
+                                      './/calculation/structure/crystal/varray[@name="basis"]/v')
+            entrypos = self._findall(xml,
+                                     './/calculation/structure/varray[@name="positions"]/v')
+            entryforce = self._findall(xml,
+                                       './/calculation/varray[@name="forces"]/v')
+            entrystress = self._findall(xml,
+                                        './/calculation/varray[@name="stress"]/v')
             entries = len(entrycell)
             num_calcs = entries / 3
             if entrycell is not None:
@@ -928,14 +933,14 @@ class XmlParser(object):
                 basecell = calc * 3
                 basepos = calc * num_atoms
                 cell[calc + 1] = self._convert_array2D_f(
-                        entrycell[basecell:basecell + 3], 3)
+                    entrycell[basecell:basecell + 3], 3)
                 pos[calc + 1] = self._convert_array2D_f(
-                        entrypos[basepos:basepos + num_atoms], 3)
+                    entrypos[basepos:basepos + num_atoms], 3)
                 force[calc + 1] = self._convert_array2D_f(
-                        entryforce[basepos:basepos + num_atoms], 3)
+                    entryforce[basepos:basepos + num_atoms], 3)
                 stress[calc + 1] = self._convert_array2D_f(
-                        entrystress[basecell:basecell + 3], 3)
-                
+                    entrystress[basecell:basecell + 3], 3)
+
         return cell, pos, force, stress
 
     def _fetch_speciesw(self, xml):
@@ -955,7 +960,7 @@ class XmlParser(object):
         """
 
         entry = self._findall(xml, './/atominfo/'
-                            'array[@name="atoms"]/set/rc/c')[::2]
+                              'array[@name="atoms"]/set/rc/c')[::2]
 
         if entry is None:
             return None
@@ -980,8 +985,8 @@ class XmlParser(object):
 
         """
 
-        entry = self._findall(xml, 
-            'kpoints/varray[@name="kpointlist"]/v')
+        entry = self._findall(xml,
+                              'kpoints/varray[@name="kpointlist"]/v')
 
         if entry is None:
             return None
@@ -1006,8 +1011,8 @@ class XmlParser(object):
 
         """
 
-        entry = self._findall(xml, 
-            'kpoints/varray[@name="weights"]/v')
+        entry = self._findall(xml,
+                              'kpoints/varray[@name="weights"]/v')
 
         if entry is None:
             return None
@@ -1032,8 +1037,8 @@ class XmlParser(object):
 
         """
 
-        entry = self._find(xml, 
-            'kpoints/generation/v[@name="divisions"]')
+        entry = self._find(xml,
+                           'kpoints/generation/v[@name="divisions"]')
 
         if entry is None:
             return None
@@ -1060,19 +1065,19 @@ class XmlParser(object):
         """
 
         # spin 1
-        entry_ispin1 = self._findall(xml, 
-            './/calculation/eigenvalues/array/set/'
-            'set[@comment="spin 1"]/set/r')
+        entry_ispin1 = self._findall(xml,
+                                     './/calculation/eigenvalues/array/set/'
+                                     'set[@comment="spin 1"]/set/r')
 
         # spin 2
-        entry_ispin2 = self._findall(xml, 
-            './/calculation/eigenvalues/array/set/'
-            'set[@comment="spin 2"]/set/r')
+        entry_ispin2 = self._findall(xml,
+                                     './/calculation/eigenvalues/array/set/'
+                                     'set[@comment="spin 2"]/set/r')
 
         # if we do not find spin 1 entries return right away
         if entry_ispin1 is None:
             return None, None
-        
+
         eigenvalues, occupancies = self._extract_eigenvalues(entry_ispin1,
                                                              entry_ispin2)
 
@@ -1095,23 +1100,23 @@ class XmlParser(object):
         """
 
         # projectors spin 1
-        entry_ispin1 = self._findall(xml, 
-            './/calculation/projected/array/set/'
-            'set[@comment="spin1"]/set/set/r')
+        entry_ispin1 = self._findall(xml,
+                                     './/calculation/projected/array/set/'
+                                     'set[@comment="spin1"]/set/set/r')
 
         # projectors spin 2
-        entry_ispin2 = self._findall(xml, 
-            './/calculation/projected/array/set/'
-            'set[@comment="spin2"]/set/set/r')
+        entry_ispin2 = self._findall(xml,
+                                     './/calculation/projected/array/set/'
+                                     'set[@comment="spin2"]/set/set/r')
 
         # if we do not find spin 1 entries return right away
         if entry_ispin1 is None:
             return None
-    
+
         projectors = self._extract_projectors(entry_ispin1,
-                                                  entry_ispin2)        
+                                              entry_ispin2)
         return projectors
-    
+
     def _fetch_totensw(self, xml):
         """Fetch the total energies
 
@@ -1137,13 +1142,13 @@ class XmlParser(object):
         # elements and then only how many scstep there is pr. calc
         # and sort from there
         #
-        
-        entries = self._findall(xml, 
-            './/calculation')
+
+        entries = self._findall(xml,
+                                './/calculation')
 
         if entries is None:
             return None
-        
+
         # this most likely takes too long for very long fpmd calculations,
         # so consider putting in a flag that only extract the
         # energies from each step in the calculation and not the scsteps as
@@ -1151,24 +1156,25 @@ class XmlParser(object):
         energies = {}
         for index, calc in enumerate(entries):
             # energy without entropy
-            data = self._findall(calc, './/scstep/energy/i[@name="e_wo_entrp"]')
+            data = self._findall(
+                calc, './/scstep/energy/i[@name="e_wo_entrp"]')
             if data is None:
                 return None
             data = self._convert_array1D_f(data)
             if index == 0:
                 energies[1] = {"energy_no_entropy":
-                                       [data[data.shape[0]-1], data]}
+                               [data[data.shape[0] - 1], data]}
             else:
-                energies[index+1] = {"energy_no_entropy":
-                                                  [data[data.shape[0]-1], data]}
-                
+                energies[index + 1] = {"energy_no_entropy":
+                                       [data[data.shape[0] - 1], data]}
+
         if len(energies) == 1:
             energies[2] = energies[1]
         else:
             # replace key on the last element to final
             energies[2] = energies.pop(len(entries))
 
-        return energies        
+        return energies
 
     def _fetch_dosw(self, xml):
         """Fetch the density of states.
@@ -1187,8 +1193,8 @@ class XmlParser(object):
         """
 
         # fetch the Fermi level
-        entry = self._find(xml, 
-            './/calculation/dos/i[@name="efermi"]')
+        entry = self._find(xml,
+                           './/calculation/dos/i[@name="efermi"]')
 
         if entry is not None:
             fermi_level = self._convert_f(entry)
@@ -1196,25 +1202,25 @@ class XmlParser(object):
             fermi_level = None
 
         # spin 1
-        entry_total_ispin1 = self._findall(xml, 
-            './/calculation/dos/total/array/set/set[@comment="spin 1"]/r')
+        entry_total_ispin1 = self._findall(xml,
+                                           './/calculation/dos/total/array/set/set[@comment="spin 1"]/r')
 
         # spin 2
-        entry_total_ispin2 = self._findall(xml, 
-            './/calculation/dos/total/array/set/set[@comment="spin 2"]/r')
+        entry_total_ispin2 = self._findall(xml,
+                                           './/calculation/dos/total/array/set/set[@comment="spin 2"]/r')
 
         # partial spin 1
-        entry_partial_ispin1 = self._findall(xml, 
-            './/calculation/dos/partial/array/set/set/set[@comment="spin 1"]/r')
+        entry_partial_ispin1 = self._findall(xml,
+                                             './/calculation/dos/partial/array/set/set/set[@comment="spin 1"]/r')
 
         # partial spin 2
-        entry_partial_ispin2 = self._findall(xml, 
-            './/calculation/dos/partial/array/set/set/set[@comment="spin 2"]/r')
+        entry_partial_ispin2 = self._findall(xml,
+                                             './/calculation/dos/partial/array/set/set/set[@comment="spin 2"]/r')
 
         # if no entries for spin 1, eject right away
         if entry_total_ispin1 is None:
             return None
-        
+
         # check if we have extracted the species (number of atoms)
         if self._lattice["species"] is None:
             self._logger.error("Before extracting the density of states, please"
@@ -1223,31 +1229,33 @@ class XmlParser(object):
 
         # number of atoms
         num_atoms = self._lattice["species"].shape[0]
-        
+
         if entry_total_ispin2:
             dos = {}
             dos = {"up": None, "down": None}
             dos_ispin = self._convert_array2D_f(entry_total_ispin1, 3)
             _dos = {}
-            _dos["energy"] = dos_ispin[:,0]
-            _dos["total"] = dos_ispin[:,1]
-            _dos["integrated"] = dos_ispin[:,2]
+            _dos["energy"] = dos_ispin[:, 0]
+            _dos["total"] = dos_ispin[:, 1]
+            _dos["integrated"] = dos_ispin[:, 2]
             # check if partial exists
             if entry_partial_ispin1:
                 dos_ispin = self._convert_array2D_f(entry_partial_ispin1, 10)
                 # do not need the energy term (similar to total)
-                _dos["partial"] = np.asarray(np.split(dos_ispin[:,1:10],num_atoms))
+                _dos["partial"] = np.asarray(
+                    np.split(dos_ispin[:, 1:10], num_atoms))
             else:
                 _dos["partial"] = None
             dos["up"] = _dos
             dos_ispin = self._convert_array2D_f(entry_total_ispin2, 3)
-            _dos["energy"] = dos_ispin[:,0]
-            _dos["total"] = dos_ispin[:,1]
-            _dos["integrated"] = dos_ispin[:,2]
+            _dos["energy"] = dos_ispin[:, 0]
+            _dos["total"] = dos_ispin[:, 1]
+            _dos["integrated"] = dos_ispin[:, 2]
             if entry_partial_ispin2:
                 dos_ispin = self._convert_array2D_f(entry_partial_ispin2, 10)
                 # do not need the energy term (similar to total)
-                _dos["partial"] = np.asarray(np.split(dos_ispin[:,1:10],num_atoms))
+                _dos["partial"] = np.asarray(
+                    np.split(dos_ispin[:, 1:10], num_atoms))
             dos["down"] = _dos
             dos["total"] = {"fermi_level": fermi_level}
         else:
@@ -1255,19 +1263,20 @@ class XmlParser(object):
             dos = {"total": None}
             dos_ispin = self._convert_array2D_f(entry_total_ispin1, 3)
             _dos = {}
-            _dos["energy"] = dos_ispin[:,0]
-            _dos["total"] = dos_ispin[:,1]
-            _dos["integrated"] = dos_ispin[:,2]
+            _dos["energy"] = dos_ispin[:, 0]
+            _dos["total"] = dos_ispin[:, 1]
+            _dos["integrated"] = dos_ispin[:, 2]
             # check if partial exists
             if entry_partial_ispin1:
                 dos_ispin = self._convert_array2D_f(entry_partial_ispin1, 10)
                 # do not need the energy term (similar to total)
-                _dos["partial"] = np.asarray(np.split(dos_ispin[:,1:10],num_atoms))
+                _dos["partial"] = np.asarray(
+                    np.split(dos_ispin[:, 1:10], num_atoms))
             else:
                 _dos["partial"] = None
             _dos["fermi_level"] = fermi_level
             dos["total"] = _dos
-        
+
         return dos
 
     def _fetch_dielectricsw(self, xml, method="dft", transfer=None):
@@ -1331,7 +1340,7 @@ class XmlParser(object):
             See `diel_imag` at the top for layout.
 
         """
-    
+
         if method == "dft":
             diel = {}
             if transfer == "density":
@@ -1342,24 +1351,24 @@ class XmlParser(object):
                 tag = 'dielectricfunction'
 
             # imaginary part
-            entry = self._findall(xml, 
-                './/calculation/'+tag+'/imag/array/set/r')
+            entry = self._findall(xml,
+                                  './/calculation/' + tag + '/imag/array/set/r')
             if entry is None:
                 return None
             data = self._convert_array2D_f(entry, 7)
-            diel["energy"] = data[:,0]
-            diel["imag"] = data[:,1:7]
+            diel["energy"] = data[:, 0]
+            diel["imag"] = data[:, 1:7]
 
             # real part
-            entry = self._findall(xml, 
-                './/calculation/'+tag+'/real/array/set/r')
+            entry = self._findall(xml,
+                                  './/calculation/' + tag + '/real/array/set/r')
             if entry is None:
                 return None
             data = self._convert_array2D_f(entry, 7)
-            diel["return eal"] = data[:,1:7]
+            diel["return eal"] = data[:, 1:7]
 
             return diel
-        
+
         # if method == "qp":
         #     try:
         #         dielectric_xml = root.findall('dielectricfunction')
@@ -1382,7 +1391,7 @@ class XmlParser(object):
         #     # then real part
         #     for energy in diel_real_xml.iter('r'):
         #         diel_real_mac.append([float(x) for x in energy.text.split()])
-    
+
         #     # then polarized
         #     diel_imag_xml = dielectric_xml[1].find(
         #         'imag').find('array').find('set')
@@ -1483,7 +1492,7 @@ class XmlParser(object):
         # set dicts
         eigenvalues = {}
         occupancies = {}
-        
+
         data = []
         if len(spin1) != num_bands * num_kpoints:
             self._logger.error("The number of eigenvalues found does not match "
@@ -1501,7 +1510,7 @@ class XmlParser(object):
                 sys.exit(1)
             data.append(self._convert_array2D_f(spin2, 2))
             data[1] = np.asarray(np.split(data[1], num_kpoints))
-                
+
         # convert to numpy arrays
         data = np.asarray(data)
         # swap axis if the band index should be before the kpoint index
@@ -1515,7 +1524,7 @@ class XmlParser(object):
         else:
             eigenvalues["total"] = np.ascontiguousarray(data[0, :, :, 0])
             occupancies["total"] = np.ascontiguousarray(data[0, :, :, 1])
-            
+
         return eigenvalues, occupancies
 
     def _extract_projectors(self, spin1, spin2):
@@ -1566,7 +1575,7 @@ class XmlParser(object):
             sys.exit(1)
         else:
             num_atoms = self._lattice["species"].shape[0]
-            
+
         # number of kpoints to disect the eigenvalue sets later
         num_kpoints = self._lattice["kpoints"].shape[0]
 
@@ -1599,7 +1608,7 @@ class XmlParser(object):
             pdata.append(self._convert_array2D_f(spin2, 9))
             pdata[1] = np.asarray(np.split(pdata[1], num_kpoints))
             pdata[1] = np.asarray(np.split(pdata[1], num_bands, axis=1))
-                
+
         # convert to numpy arrays
         pdata = np.asarray(pdata)
         # swap axis if the band index should be before the kpoint index
@@ -1608,15 +1617,15 @@ class XmlParser(object):
         pdata = np.swapaxes(pdata, 1, 3)
         if not self._k_before_band:
             pdata = np.swapaxes(pdata, 2, 3)
-                
+
         if spin2 is not None:
             projectors["up"] = np.ascontiguousarray(pdata[:, 0, :, :])
             projectors["down"] = np.ascontiguousarray(pdata[:, 1, :, :])
         else:
             projectors["total"] = np.ascontiguousarray(pdata[:, 0, :, :])
-                
+
         return projectors
-    
+
     def _convert_array_i(self, entry):
         """Convert the input entry to numpy array
 
@@ -1742,7 +1751,7 @@ class XmlParser(object):
             data[index] = np.fromstring(element.text, sep=' ')
 
         return data
-    
+
     def _convert_f(self, entry):
         """Convert the input entry to a float.
 
@@ -1825,7 +1834,7 @@ class XmlParser(object):
             return self._data["forces"][2]
         elif status == "all":
             return self._data["forces"]
-        
+
     def get_stress(self, status):
         self._check_calc_status(status)
         if status == "initial":
@@ -1854,7 +1863,7 @@ class XmlParser(object):
         elif status == "final":
             return self._lattice["unitcell"][2]
         elif status == "all":
-            return self._lattice["unitcell"]        
+            return self._lattice["unitcell"]
 
     def get_positions(self, status):
         self._check_calc_status(status)
@@ -1863,7 +1872,7 @@ class XmlParser(object):
         elif status == "final":
             return self._lattice["positions"][2]
         elif status == "all":
-            return self._lattice["positions"]                
+            return self._lattice["positions"]
 
     def get_species(self):
         return self._lattice["species"]
@@ -1874,27 +1883,29 @@ class XmlParser(object):
         species = self.get_species()
         return {"unitcell": unitcell, "positions": positions,
                 "species": species}
-        
+
     def get_symbols(self):
         return self._parameters
 
-    def get_energies(self, status, etype = None, nosc = True):
+    def get_energies(self, status, etype=None, nosc=True):
         if etype is None:
             etype = "energy_no_entropy"
         if etype == "energy_no_entropy":
             return self._get_energies_no_entropy(status, nosc)
-        
+
     def _get_energies_no_entropy(self, status, nosc):
         self._check_calc_status(status)
         energies = []
         if status == "initial":
             if nosc:
-                energies.append(self._data["totens"][1]["energy_no_entropy"][0])
+                energies.append(self._data["totens"][1][
+                                "energy_no_entropy"][0])
             else:
                 energies.append(self._data["totens"][1]["energy_no_entropy"])
         elif status == "final":
             if nosc:
-                energies.append(self._data["totens"][2]["energy_no_entropy"][0])
+                energies.append(self._data["totens"][2][
+                                "energy_no_entropy"][0])
             else:
                 energies.append(self._data["totens"][2]["energy_no_entropy"])
         elif status == "all":
@@ -1909,7 +1920,7 @@ class XmlParser(object):
                 else:
                     energies.append(element["energy_no_entropy"][1])
         return energies
-    
+
     def get_k_weights(self):
         return self._lattice["kpointsw"]
 
@@ -1919,14 +1930,14 @@ class XmlParser(object):
     def get_projectors(self):
         return self._data["projectors"]
 
-    def _check_calc_status(self,status):
+    def _check_calc_status(self, status):
         allowed_entries = ["initial", "final", "all"]
         if status not in allowed_entries:
             self._logger.error("The supplied status is not supported, "
                                "please use any of the following values "
-                               +str(allowed_entries)+". Exiting.")
+                               + str(allowed_entries) + ". Exiting.")
             sys.exit(1)
-            
+
     def _find(self, xml, locator):
         """Wrapper to check if the request returns something.
 
@@ -1944,14 +1955,14 @@ class XmlParser(object):
             returns None.
 
         """
-        
+
         entry = xml.find(locator)
 
         if entry is None:
             return None
         else:
             return entry
-        
+
     def _findall(self, xml, locator):
         """Wrapper to check if the request returns something.
 
@@ -1969,7 +1980,7 @@ class XmlParser(object):
             returns None.
 
         """
-        
+
         entry = xml.findall(locator)
 
         if not entry:
@@ -1977,7 +1988,6 @@ class XmlParser(object):
         else:
             return entry
 
-    
     def _check_file(self, file_path):
         """
         Check if a file exists
