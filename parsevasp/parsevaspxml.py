@@ -152,8 +152,8 @@ class XmlParser(object):
         # perform event driven parsing. For smaller files this is
         # not necessary and is too slow.
         if self._file_size(self._file_path) < self._sizecutoff:
-            self._parsew()
-            #self._parsee()
+            #self._parsew()
+            self._parsee()
         else:
             self._parsee()
         #print self._data["dos"]
@@ -246,6 +246,7 @@ class XmlParser(object):
         extract_stres = False
         extract_ewoe = False
         extract_scstep = False
+        extract_dielectrics = False
 
         # do we want to extract data from all calculations (e.g. ionic steps)
         all = self._extract_all
@@ -438,7 +439,18 @@ class XmlParser(object):
                     data = []
                     data2 = []
                     extract_eigenvalues = False
-
+                if event == "start" and element.tag == "dielectricfunction":
+                    extract_dielectrics = True
+                if event == "end" and element.tag == "dielectricfunction":
+                    _diel = {}
+                    diel = np.split(self._convert_array2D7_f(data), 2)
+                    _diel["energies"] = diel[0][:,0]
+                    _diel["imag"] = diel[0][:,1-7]
+                    _diel["real"] = diel[1][:,1-7]
+                    self._data["dielectrics"] = _diel
+                    data = []
+                    extract_dielectrics = False
+                    
                 # now extract data
                 if extract_scstep:
                     #print element.tag, element.attrib, element.text
@@ -515,6 +527,10 @@ class XmlParser(object):
                     if extract_eigenvalues_spin2:
                         if event == "start" and element.tag == "r":
                             data2.append(element)
+
+                if extract_dielectrics:
+                    if event == "start" and element.tag == "r":
+                        data.append(element)
                         
             if extract_species:
                 if event == "start" and element.tag == "c":
