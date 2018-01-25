@@ -55,51 +55,6 @@ class XmlParser(object):
         self._file_path = file_path
         self._sizecutoff = 500
 
-        self._is_forces = False
-        self._is_stress = False
-        self._is_positions = False
-        self._is_symbols = False
-        self._is_basis = False
-        self._is_energy = False
-        self._is_k_weights = False
-        self._is_eigenvalues = False
-        self._is_epsilon = False
-        self._is_born = False
-        self._is_efermi = False
-
-        self._is_v = False
-        self._is_i = False
-        self._is_rc = False
-        self._is_c = False
-        self._is_set = False
-        self._is_r = False
-
-        self._is_scstep = False
-        self._is_structure = False
-        self._is_projected = False
-        self._is_proj_eig = False
-
-        self._all_forces = []
-        self._all_stress = []
-        self._all_points = []
-        self._all_lattice = []
-        self._symbols = []
-        self._all_energies = []
-        self._born = []
-        self._forces = None
-        self._stress = None
-        self._points = None
-        self._lattice = None
-        self._energies = None
-        self._epsilon = None
-        self._born_atom = None
-        self._efermi = None
-        self._k_weights = None
-        self._eigenvalues = None
-        self._eig_state = [0, 0]
-        self._projectors = None
-        self._proj_state = [0, 0, 0]
-
         # set logger
         self._logger = logger
 
