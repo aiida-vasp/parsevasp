@@ -86,7 +86,9 @@ class XmlParser(object):
                       "forces": None,
                       "stress": None,
                       "dielectrics": None,
-                      "projectors": None}
+                      "projectors": None,
+                      "hessian": None,
+                      "dynat": None}
 
         if lxml:
             self._logger.info("We are utilizing lxml!")
@@ -118,6 +120,8 @@ class XmlParser(object):
             self._parsee()
         else:
             self._parsee()
+        print self._data["dynmat"]
+        print self._data["hessian"]
 
     def _parsew(self):
         """Performs parsing on the whole XML files. For smaller files
@@ -154,6 +158,8 @@ class XmlParser(object):
         self._data["totens"] = self._fetch_totensw(vaspxml)
         self._data["dielectrics"] = self._fetch_dielectricsw(vaspxml)
         self._data["projectors"] = self._fetch_projectorsw(vaspxml)
+        self._data["hessian"] = self._fetch_hessian(vaspxml)
+        self._data["dynmat"] = self._fetch_dynmatw(vaspxml)
 
     def _parsee(self):
         """Performs parsing in an event driven fashion on the XML file.
@@ -177,6 +183,7 @@ class XmlParser(object):
         stress = {}
         dos = {}
         totens = {}
+        dynmat = {}
         _dos = {}
         _dos2 = {}
 
@@ -210,6 +217,9 @@ class XmlParser(object):
         extract_eig_proj = False
         extract_eig_proj_ispin1 = False
         extract_eig_proj_ispin2 = False
+        extract_dynmat = False
+        extract_dynmat_eigen = False
+        extract_hessian = False
 
         # do we want to extract data from all calculations (e.g. ionic steps)
         all = self._extract_all
@@ -408,6 +418,11 @@ class XmlParser(object):
                     self._data["dielectrics"] = _diel
                     data = []
                     extract_dielectrics = False
+                if event == "start" and element.tag == "dynmat":
+                    extract_dynmat = True
+                if event == "end" and element.tag == "dynmat":
+                    self._data["dynmat"] = dynmat
+                    extract_dynmat = False
 
                 # now extract data
                 if extract_scstep:
@@ -525,6 +540,59 @@ class XmlParser(object):
                         if extract_eig_proj_ispin2:
                             if event == "start" and element.tag == "r":
                                 data2.append(element)
+
+                if extract_dynmat:
+                    if event == "start" and element.tag == "varray" \
+                       and element.attrib.get("name") == "hessian":
+                        extract_hessian = True
+                    if event == "end" and element.tag == "varray" \
+                       and element.attrib.get("name") == "hessian":
+                        num_atoms = 0
+                        if self._lattice["species"] is not None:
+                            num_atoms = self._lattice["species"].shape[0]
+                        else:
+                            self._logger.error("Before extracting the "
+                                               "density of states, please "
+                                               "extract the species. "
+                                               "Exiting.")
+                            sys.exit(1)
+                        hessian = self._convert_array2D_f(
+                            data, num_atoms * 3)
+                        self._data["hessian"] = hessian
+                        data = []
+                        extract_hessian = False
+                    if event == "start" and element.tag == "varray" \
+                       and element.attrib.get("name") == "eigenvectors":
+                        extract_dynmat_eigen = True
+                    if event == "end" and element.tag == "varray" \
+                       and element.attrib.get("name") == "eigenvectors":
+                        num_atoms = 0
+                        if self._lattice["species"] is not None:
+                            num_atoms = self._lattice["species"].shape[0]
+                        else:
+                            self._logger.error("Before extracting the "
+                                               "density of states, please "
+                                               "extract the species. "
+                                               "Exiting.")
+                            sys.exit(1)
+                        eigenvec = self._convert_array2D_f(
+                            data, num_atoms * 3)
+                        dynmat["eigenvectors"] = eigenvec
+                        data = []
+                        extract_dynmat_eigen = False
+                    if extract_hessian:
+                        if event == "start" and element.tag == "v":
+                            data.append(element)
+                    if extract_dynmat_eigen:
+                        if event == "start" and element.tag == "v":
+                            data.append(element)
+                    try:
+                        if event == "start" and \
+                           element.attrib["name"] == "eigenvalues":
+                            dynmat["eigenvalues"] = self._convert_array_f(
+                                element)
+                    except KeyError:
+                        pass
 
             if extract_species:
                 if event == "start" and element.tag == "c":
@@ -838,8 +906,8 @@ class XmlParser(object):
         ----------
         xml : object
             An ElementTree object to be used for parsing.
-        all : bool 
-            Determines which unitcell and positions to get. 
+        all : bool
+            Determines which unitcell and positions to get.
             Defaults to the initial and final. If True, extract all.
 
         Returns
@@ -969,6 +1037,87 @@ class XmlParser(object):
 
         return spec
 
+    def _fetch_hessian(self, xml):
+        """Fetch the hessian.
+
+        Parameters
+        ----------
+        xml : object
+            An ElementTree object to be used for parsing.
+
+        Returns
+        -------
+        hessian : ndarray
+            An array containing the Hessian matrix.
+
+        """
+
+        # check if we have extracted the species (number of atoms)
+        if self._lattice["species"] is None:
+            self._logger.error("Before extracting the dynamical "
+                               "matrix, please extract the species. "
+                               "Exiting.")
+            sys.exit(1)
+
+        # number of atoms
+        num_atoms = self._lattice["species"].shape[0]
+
+        entry = self._findall(xml, './/calculation/dynmat/'
+                              'varray[@name="hessian"]/v')
+
+        if entry is None:
+            return None
+
+        hessian = self._convert_array2D_f(entry, num_atoms * 3)
+
+        return hessian
+
+    def _fetch_dynmatw(self, xml):
+        """Fetch the dynamical matrix data.
+
+        Parameters
+        ----------
+        xml : object
+            An ElementTree object to be used for parsing.
+
+        Returns
+        -------
+        dynmat : dict
+            An dict containing the eigenvalues and eigenvectors.
+
+        """
+
+        # check if we have extracted the species (number of atoms)
+        if self._lattice["species"] is None:
+            self._logger.error("Before extracting the dynamical "
+                               "matrix, please extract the species. "
+                               "Exiting.")
+            sys.exit(1)
+
+        # number of atoms
+        num_atoms = self._lattice["species"].shape[0]
+
+        entry = self._find(xml, './/calculation/dynmat/'
+                           'v[@name="eigenvalues"]')
+
+        if entry is None:
+            return None
+
+        eigenvalues = self._convert_array_f(entry)
+
+        entry = self._find(xml, './/calculation/dynmat/'
+                           'varray[@name="eigenvectors"]')
+
+        if entry is None:
+            return None
+
+        eigenvectors = self._convert_array2D_f(entry, num_atoms * 3)
+
+        dynmat = {"eigenvalues": eigenvalues,
+                  "eigenvectors": eigenvectors}
+
+        return dynmat
+
     def _fetch_kpointsw(self, xml):
         """Fetch the kpoints.
 
@@ -980,7 +1129,7 @@ class XmlParser(object):
         Returns
         -------
         kpoints : ndarray
-            An array containing the kpoints used in the calculation 
+            An array containing the kpoints used in the calculation
             in direct coordinates.
 
         """
@@ -1006,7 +1155,7 @@ class XmlParser(object):
         Returns
         -------
         kpointw : ndarray
-            An array containing the kpoint weights used in the 
+            An array containing the kpoint weights used in the
             calculation.
 
         """
@@ -1032,7 +1181,7 @@ class XmlParser(object):
         Returns
         -------
         kpointdiv : list
-            An list containing the kpoint divisions used in the 
+            An list containing the kpoint divisions used in the
             calculation for the full BZ.
 
         """
@@ -1058,8 +1207,8 @@ class XmlParser(object):
         Returns
         -------
         eigenvalues, occupancies : tupple
-            An tupple of dicts containing ndarrays containing the 
-            eigenvalues and occupancies for each spin, band and 
+            An tupple of dicts containing ndarrays containing the
+            eigenvalues and occupancies for each spin, band and
             kpoint index.
 
         """
@@ -1221,6 +1370,7 @@ class XmlParser(object):
         if entry_total_ispin1 is None:
             return None
 
+        num_atoms = 0
         # check if we have extracted the species (number of atoms)
         if self._lattice["species"] is None:
             self._logger.error("Before extracting the density of states, please"
@@ -1544,7 +1694,7 @@ class XmlParser(object):
         -------
         projectors : dict
             A dict containing ndarrays with the projectors for each atom,
-            band and kpoint index. 
+            band and kpoint index.
 
         """
 
