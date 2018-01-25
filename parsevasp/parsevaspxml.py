@@ -113,14 +113,11 @@ class XmlParser(object):
         # perform event driven parsing. For smaller files this is
         # not necessary and is too slow.
         if self._file_size(self._file_path) < self._sizecutoff:
+            # run event based for small files for testing?
             self._parsew()
             #self._parsee()
         else:
             self._parsee()
-        #print self._data["dos"]
-        #print self._parameters
-        #print self._data["dielectrics"]
-        print self._data["projectors"]
         
     def _parsew(self):
         """Performs parsing on the whole XML files. For smaller files
