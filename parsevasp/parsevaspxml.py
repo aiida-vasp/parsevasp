@@ -88,7 +88,8 @@ class XmlParser(object):
                       "dielectrics": None,
                       "projectors": None,
                       "hessian": None,
-                      "dynat": None}
+                      "dynmat": None,
+                      "born": None}
 
         if lxml:
             self._logger.info("We are utilizing lxml!")
@@ -116,12 +117,10 @@ class XmlParser(object):
         # not necessary and is too slow.
         if self._file_size(self._file_path) < self._sizecutoff:
             # run event based for small files for testing?
-            # self._parsew()
-            self._parsee()
+            self._parsew()
+            #self._parsee()
         else:
             self._parsee()
-        print self._data["dynmat"]
-        print self._data["hessian"]
 
     def _parsew(self):
         """Performs parsing on the whole XML files. For smaller files
@@ -160,6 +159,7 @@ class XmlParser(object):
         self._data["projectors"] = self._fetch_projectorsw(vaspxml)
         self._data["hessian"] = self._fetch_hessian(vaspxml)
         self._data["dynmat"] = self._fetch_dynmatw(vaspxml)
+        self._data["born"] = self._fetch_bornw(vaspxml)
 
     def _parsee(self):
         """Performs parsing in an event driven fashion on the XML file.
@@ -220,6 +220,7 @@ class XmlParser(object):
         extract_dynmat = False
         extract_dynmat_eigen = False
         extract_hessian = False
+        extract_born = False
 
         # do we want to extract data from all calculations (e.g. ionic steps)
         all = self._extract_all
@@ -423,6 +424,35 @@ class XmlParser(object):
                 if event == "end" and element.tag == "dynmat":
                     self._data["dynmat"] = dynmat
                     extract_dynmat = False
+                if event == "start" and element.tag == "array":
+                    # a bit of special threatment here as there is
+                    # an array element without attributes, so we get
+                    # KeyErrors
+                    try:
+                        if element.attrib["name"] == "born_charges":
+                            extract_born = True
+                    except KeyError:
+                        pass
+                if event == "end" and element.tag == "array":
+                    # again a bit special
+                    try:
+                        if element.attrib["name"] == "born_charges":
+                            num_atoms = 0
+                            if self._lattice["species"] is not None:
+                                num_atoms = self._lattice["species"].shape[0]
+                            else:
+                                self._logger.error("Before extracting the "
+                                                   "density of states, please "
+                                                   "extract the species. "
+                                                   "Exiting.")
+                                sys.exit(1)
+                            data = self._convert_array2D_f(data, 3)
+                            data = np.split(data, num_atoms)
+                            self._data["born"] = data
+                            data = []
+                            extract_born = False
+                    except KeyError:
+                        pass
 
                 # now extract data
                 if extract_scstep:
@@ -567,7 +597,7 @@ class XmlParser(object):
                     if event == "end" and element.tag == "varray" \
                        and element.attrib.get("name") == "eigenvectors":
                         num_atoms = 0
-                        if self._lattice["species"] is not None:
+                        if selfelf._lattice["species"] is not None:
                             num_atoms = self._lattice["species"].shape[0]
                         else:
                             self._logger.error("Before extracting the "
@@ -593,6 +623,10 @@ class XmlParser(object):
                                 element)
                     except KeyError:
                         pass
+
+                if extract_born:
+                    if event == "start" and element.tag == "v":
+                        data.append(element)
 
             if extract_species:
                 if event == "start" and element.tag == "c":
@@ -899,6 +933,44 @@ class XmlParser(object):
 
         return system
 
+    def _fetch_bornw(self, xml):
+        """Fetch the Born effetive charges.
+
+        Parameters
+        ----------
+        xml : object
+            An ElementTree object to be used for parsing.
+
+        Returns
+        -------
+        born : ndarray
+            A ndarray containing the born effective charge
+            tensor for each atom.
+
+        """
+
+        num_atoms = 0
+        if self._lattice["species"] is not None:
+            num_atoms = self._lattice["species"].shape[0]
+        else:
+            self._logger.error("Before extracting the Born effective "
+                               "charges please extract the species first. "
+                               "Exiting.")
+            sys.exit(1)
+
+        
+        entry = self._findall(xml, './/calculation/array[@name="born_charges"]/'
+                           'set/v')
+
+        if entry is None:
+            return None
+
+        born = self._convert_array2D_f(entry, 3)
+
+        born = np.split(born, num_atoms)
+
+        return born
+    
     def _fetch_upfsw(self, xml, all=False):
         """Fetch the unitcell, atomic positions, force and stress.
 
