@@ -32,7 +32,7 @@ except ImportError:
                     logging.error(
                         "Failed to import ElementTree. Exiting.")
                     sys.exit(1)
-                    
+
 
 class XmlParser(object):
 
@@ -51,12 +51,16 @@ class XmlParser(object):
         -----
         lxml should be used and is required for large files
         """
-    
+
         self._file_path = file_path
         self._sizecutoff = 500
 
         # set logger
-        self._logger = logger
+        if logger is not None:
+            self._logger = logger
+        else:
+            logging.basicConfig(level=logging.DEBUG)
+            logger = logging.getLogger('XmlParser')
 
         # extract data from all calculations (e.g. ionic steps)
         self._extract_all = True
@@ -118,7 +122,7 @@ class XmlParser(object):
         if self._file_size(self._file_path) < self._sizecutoff:
             # run event based for small files for testing?
             self._parsew()
-            #self._parsee()
+            # self._parsee()
         else:
             self._parsee()
 
@@ -958,9 +962,8 @@ class XmlParser(object):
                                "Exiting.")
             sys.exit(1)
 
-        
         entry = self._findall(xml, './/calculation/array[@name="born_charges"]/'
-                           'set/v')
+                              'set/v')
 
         if entry is None:
             return None
@@ -970,7 +973,7 @@ class XmlParser(object):
         born = np.split(born, num_atoms)
 
         return born
-    
+
     def _fetch_upfsw(self, xml, all=False):
         """Fetch the unitcell, atomic positions, force and stress.
 
@@ -2117,7 +2120,7 @@ class XmlParser(object):
 
     def get_kpointsw(self):
         return self._lattice["kpointsw"]
-    
+
     def get_symbols(self):
         return self._parameters
 
@@ -2135,7 +2138,7 @@ class XmlParser(object):
                 energies.append(self._data["totens"][1][
                                 "energy_no_entropy"][0])
             else:
-                energies.append(self._data["totens"][1] \
+                energies.append(self._data["totens"][1]
                                 ["energy_no_entropy"])
         elif status == "final":
             largest_key = max(self._lattice["totens"].keys())
@@ -2143,7 +2146,7 @@ class XmlParser(object):
                 energies.append(self._data["totens"][largest_key][
                                 "energy_no_entropy"][0])
             else:
-                energies.append(self._data["totens"][largest_key] \
+                energies.append(self._data["totens"][largest_key]
                                 ["energy_no_entropy"])
         elif status == "all":
             # here we need to pull out energy_no_entropy of all the calc
