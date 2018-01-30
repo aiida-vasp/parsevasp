@@ -2053,7 +2053,8 @@ class XmlParser(object):
         if status == "initial":
             return self._data["forces"][1]
         elif status == "final":
-            return self._data["forces"][2]
+            largest_key = max(self._lattice["totens"].keys())
+            return self._data["forces"][largest_key]
         elif status == "all":
             return self._data["forces"]
 
@@ -2062,14 +2063,15 @@ class XmlParser(object):
         if status == "initial":
             return self._data["stess"][1]
         elif status == "final":
-            return self._data["stress"][2]
+            largest_key = max(self._lattice["totens"].keys())
+            return self._data["stress"][largest_key]
         elif status == "all":
             return self._data["stress"]
 
     def get_epsislon(self):
         return self._data["dielectics"]
 
-    def get_efermi(self):
+    def get_fermi_level(self):
         return self._data["fermi_level"]
 
     def get_born(self):
@@ -2083,7 +2085,9 @@ class XmlParser(object):
         if status == "initial":
             return self._lattice["unitcell"][1]
         elif status == "final":
-            return self._lattice["unitcell"][2]
+            largest_key = max(
+                self._lattice["positions"].keys())
+            return self._lattice["unitcell"][largest_key]
         elif status == "all":
             return self._lattice["unitcell"]
 
@@ -2092,7 +2096,9 @@ class XmlParser(object):
         if status == "initial":
             return self._lattice["positions"][1]
         elif status == "final":
-            return self._lattice["positions"][2]
+            largest_key = max(
+                self._lattice["positions"].keys())
+            return self._lattice["positions"][largest_key]
         elif status == "all":
             return self._lattice["positions"]
 
@@ -2129,13 +2135,16 @@ class XmlParser(object):
                 energies.append(self._data["totens"][1][
                                 "energy_no_entropy"][0])
             else:
-                energies.append(self._data["totens"][1]["energy_no_entropy"])
+                energies.append(self._data["totens"][1] \
+                                ["energy_no_entropy"])
         elif status == "final":
+            largest_key = max(self._lattice["totens"].keys())
             if nosc:
-                energies.append(self._data["totens"][2][
+                energies.append(self._data["totens"][largest_key][
                                 "energy_no_entropy"][0])
             else:
-                energies.append(self._data["totens"][2]["energy_no_entropy"])
+                energies.append(self._data["totens"][largest_key] \
+                                ["energy_no_entropy"])
         elif status == "all":
             # here we need to pull out energy_no_entropy of all the calc
             # steps...right now I did not find a smart way to do this, would

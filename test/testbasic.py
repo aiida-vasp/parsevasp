@@ -13,5 +13,5 @@ logger = logging.getLogger('Testing')
 
 vaspxml = parsevaspxml.XmlParser(logger, testdir + "/vasprunbasic.xml")
 
-print vaspzml.get_lattice("all")
+print vaspxml.get_lattice("all")
 print vaspxml.get_lattice("final")
