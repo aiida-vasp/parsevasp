@@ -6,6 +6,34 @@ import logging
 
 import constants
 
+# Try to import lxml, if not present fall back to
+# intrinsic ElementTree
+lxml = False
+try:
+    from lxml import etree
+    lxml = True
+except ImportError:
+    try:
+        # Python 2.5
+        import xml.etree.cElementTree as etree
+    except ImportError:
+        try:
+            # Python 2.5
+            import xml.etree.ElementTree as etree
+        except ImportError:
+            try:
+                # normal cElementTree
+                import cElementTree as etree
+            except ImportError:
+                try:
+                    # normal ElementTree
+                    import elementtree.ElementTree as etree
+                except ImportError:
+                    logging.error(
+                        "Failed to import ElementTree. Exiting.")
+                    sys.exit(1)
+                    
+
 class XmlParser(object):
 
     def __init__(self, logger, file_path):
@@ -23,35 +51,7 @@ class XmlParser(object):
         -----
         lxml should be used and is required for large files
         """
-
-        # Try to import lxml, if not present fall back to
-        # intrinsic ElementTree
-        self.lxml = False
-        try:
-            from lxml import etree
-            self.lxml = True
-        except ImportError:
-            try:
-                # Python 2.5
-                import xml.etree.cElementTree as etree
-            except ImportError:
-                try:
-                    # Python 2.5
-                    import xml.etree.ElementTree as etree
-                except ImportError:
-                    try:
-                        # normal cElementTree
-                        import cElementTree as etree
-                    except ImportError:
-                        try:
-                            # normal ElementTree
-                            import elementtree.ElementTree as etree
-                        except ImportError:
-                            logging.error(
-                                "Failed to import ElementTree. Exiting.")
-                            sys.exit(1)
-        
-
+    
         self._file_path = file_path
         self._sizecutoff = 500
 
@@ -91,7 +91,7 @@ class XmlParser(object):
                       "dynmat": None,
                       "born": None}
 
-        if self.lxml:
+        if lxml:
             self._logger.info("We are utilizing lxml!")
         else:
             self._logger.info("We are not uitilizing lxml!")
@@ -2106,6 +2106,12 @@ class XmlParser(object):
         return {"unitcell": unitcell, "positions": positions,
                 "species": species}
 
+    def get_kpoints(self):
+        return self._lattice["kpoints"]
+
+    def get_kpointsw(self):
+        return self._lattice["kpointsw"]
+    
     def get_symbols(self):
         return self._parameters
 
