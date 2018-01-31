@@ -36,7 +36,9 @@ except ImportError:
 
 class XmlParser(object):
 
-    def __init__(self, logger, file_path):
+    def __init__(self, logger, file_path,
+                 k_before_band = False,
+                 extract_all = True):
         """Initialize the XmlParser by first trying the lxml and
         fall back to the standard ElementTree if that is not present.
 
@@ -46,6 +48,11 @@ class XmlParser(object):
             The logger to be used for outputting messages
         file_path : string
             The path of the XML file that is to be opened
+        k_before_band : bool
+            If True the kpoint index runs before the bands
+            index.
+        extract_all : bool
+            Extract data from all calculation (i.e. ionic steps)
 
         Notes
         -----
@@ -59,11 +66,11 @@ class XmlParser(object):
         self._logger = logger
 
         # extract data from all calculations (e.g. ionic steps)
-        self._extract_all = True
+        self._extract_all = extract_all
 
         # kpoint index before band index (for instance for the ordering
         # of the eigenvalue data etc.)?
-        self._k_before_band = False
+        self._k_before_band = k_before_band
 
         # dictionaries that contain the output of the parsing
         self._parameters = {"symprec": None,
@@ -98,6 +105,8 @@ class XmlParser(object):
 
         # parse parse parse
         self._parse()
+
+        print(self._data["dos"])
 
     def _parse(self):
         """Perform the actual parsing
@@ -266,19 +275,23 @@ class XmlParser(object):
                 extract_dos = True
             if event == "end" and element.tag == "total":
                 if data2:
+                    # only store energy for one part as
+                    # this is the same for both
                     dos_ispin = self._convert_array2D_f(data, 3)
-                    _dos["energy"] = dos_ispin[:, 0]
+                    _dos["energy"] = dos_ispin[:,0]
                     _dos["total"] = dos_ispin[:, 1]
                     _dos["integrated"] = dos_ispin[:, 2]
+                    _dos["partial"] = None
                     dos_ispin = self._convert_array2D_f(data2, 3)
-                    _dos2["energy"] = dos_ispin[:, 0]
                     _dos2["total"] = dos_ispin[:, 1]
                     _dos2["integrated"] = dos_ispin[:, 2]
+                    _dos2["partial"] = None
                 else:
                     dos_ispin = self._convert_array2D_f(data, 3)
                     _dos["energy"] = dos_ispin[:, 0]
                     _dos["total"] = dos_ispin[:, 1]
                     _dos["integrated"] = dos_ispin[:, 2]
+                    _dos["partial"] = None
                 data = []
                 data2 = []
             if event == "end" and element.tag == "partial":
@@ -317,10 +330,12 @@ class XmlParser(object):
                 else:
                     fermi_level = None
 
-                if data2:
+                if _dos2:
                     dos["up"] = _dos
                     dos["down"] = _dos2
-                    dos["total"] = {"fermi_level": fermi_level}
+                    dos["total"] = {"fermi_level": fermi_level,
+                                    "energy": _dos["energy"]}
+                    del dos["up"]["energy"]
                 else:
                     _dos["fermi_level"] = fermi_level
                     dos["total"] = _dos
@@ -328,6 +343,8 @@ class XmlParser(object):
                 data = []
                 data2 = []
                 data4 = []
+                _dos = {}
+                _dos2 = {}
                 extract_dos = False
 
             # now fetch the data
@@ -1044,7 +1061,7 @@ class XmlParser(object):
             entrystress = self._findall(xml,
                                         './/calculation/varray[@name="stress"]/v')
             entries = len(entrycell)
-            num_calcs = entries / 3
+            num_calcs = int(entries / 3)
             if entrycell is not None:
                 cell[1] = self._convert_array2D_f(entrycell[0:3], 3)
                 cell[2] = self._convert_array2D_f(entrycell[-3:], 3)
@@ -1457,7 +1474,7 @@ class XmlParser(object):
             dos = {"up": None, "down": None}
             dos_ispin = self._convert_array2D_f(entry_total_ispin1, 3)
             _dos = {}
-            _dos["energy"] = dos_ispin[:, 0]
+            enrgy = dos_ispin[:, 0]
             _dos["total"] = dos_ispin[:, 1]
             _dos["integrated"] = dos_ispin[:, 2]
             # check if partial exists
@@ -1470,7 +1487,6 @@ class XmlParser(object):
                 _dos["partial"] = None
             dos["up"] = _dos
             dos_ispin = self._convert_array2D_f(entry_total_ispin2, 3)
-            _dos["energy"] = dos_ispin[:, 0]
             _dos["total"] = dos_ispin[:, 1]
             _dos["integrated"] = dos_ispin[:, 2]
             if entry_partial_ispin2:
@@ -1479,7 +1495,7 @@ class XmlParser(object):
                 _dos["partial"] = np.asarray(
                     np.split(dos_ispin[:, 1:10], num_atoms))
             dos["down"] = _dos
-            dos["total"] = {"fermi_level": fermi_level}
+            dos["total"] = {"fermi_level": fermi_level, "energy": enrgy}
         else:
             dos = {}
             dos = {"total": None}
@@ -2161,9 +2177,15 @@ class XmlParser(object):
     def get_k_weights(self):
         return self._lattice["kpointsw"]
 
+    def get_dos(self):
+        return self._data["dos"]
+    
     def get_eigenvalues(self):
         return self._data["eigenvalues"]
 
+    def get_occupancies(self):
+        return self._data["occupancies"]
+    
     def get_projectors(self):
         return self._data["projectors"]
 
