@@ -67,7 +67,7 @@ class XmlParser(object):
             self._logger = logger
         else:
             logging.basicConfig(level=logging.DEBUG)
-            logger = logging.getLogger('XmlParser')
+            self._logger = logging.getLogger('XmlParser')
 
         # extract data from all calculations (e.g. ionic steps)
         self._extract_all = extract_all
