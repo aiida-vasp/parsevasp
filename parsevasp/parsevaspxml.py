@@ -109,8 +109,6 @@ class XmlParser(object):
         # parse parse parse
         self._parse()
 
-        print(self._data["dos"])
-
     def _parse(self):
         """Perform the actual parsing
 
