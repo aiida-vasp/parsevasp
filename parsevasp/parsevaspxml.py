@@ -58,7 +58,6 @@ class XmlParser(object):
         -----
         lxml should be used and is required for large files
         """
-
         self._file_path = file_path
         self._sizecutoff = 500
 
@@ -128,7 +127,11 @@ class XmlParser(object):
         # Check size of the XML file. For large files we need to
         # perform event driven parsing. For smaller files this is
         # not necessary and is too slow.
-        if self._file_size(self._file_path) < self._sizecutoff:
+        file_size = self._file_size(self._file_path)
+        if file_size is None:
+            return None
+        
+        if file_size < self._sizecutoff:
             # run event based for small files for testing?
             self._parsew()
             # self._parsee()
@@ -2068,63 +2071,93 @@ class XmlParser(object):
         return species
 
     def get_forces(self, status):
+
+        forces = self._data["forces"]
+        if forces is None:
+            return None
         self._check_calc_status(status)
         if status == "initial":
-            return self._data["forces"][1]
+            return forces[1]
         elif status == "final":
             largest_key = max(self._lattice["totens"].keys())
-            return self._data["forces"][largest_key]
+            return forces[largest_key]
         elif status == "all":
-            return self._data["forces"]
+            return forces
 
     def get_stress(self, status):
+
+        stress = self._data["stress"]
+        if stress is None:
+            return None
         self._check_calc_status(status)
         if status == "initial":
-            return self._data["stess"][1]
+            return stress[1]
         elif status == "final":
             largest_key = max(self._lattice["totens"].keys())
-            return self._data["stress"][largest_key]
+            return stress[largest_key]
         elif status == "all":
-            return self._data["stress"]
+            return stress
 
     def get_epsislon(self):
-        return self._data["dielectics"]
+
+        dielectrics = self._data["dielectics"]
+        if dielectrics is None:
+            return None
+        return dielectrics
 
     def get_fermi_level(self):
-        return self._data["fermi_level"]
+
+        fermi_level = self._data["fermi_level"]
+        if fermi_level is None:
+            return None
+        return fermi_level
 
     def get_born(self):
-        return self._data["born"]
 
-    def get_points(self):
-        return np.array(self._all_points)
+        born = self._data["born"]
+        if born is None:
+            return None
+        return born
 
     def get_unitcell(self, status):
+        
+        unitcell = self._lattice["unitcell"]
+        if unitcell is None:
+            return None
         self._check_calc_status(status)
         if status == "initial":
-            return self._lattice["unitcell"][1]
+            return unitcell[1]
         elif status == "final":
             largest_key = max(
                 self._lattice["positions"].keys())
-            return self._lattice["unitcell"][largest_key]
+            return unitcell[largest_key]
         elif status == "all":
-            return self._lattice["unitcell"]
+            return unitcell
 
     def get_positions(self, status):
+        
+        positions = self._lattice["positions"]
+        if positions is None:
+            return None
         self._check_calc_status(status)
         if status == "initial":
-            return self._lattice["positions"][1]
+            return positions[1]
         elif status == "final":
             largest_key = max(
                 self._lattice["positions"].keys())
-            return self._lattice["positions"][largest_key]
+            return positions[largest_key]
         elif status == "all":
-            return self._lattice["positions"]
+            return positions
 
     def get_species(self):
-        return self._lattice["species"]
+        
+        species = self._lattice["species"]
+        if species is None:
+            return None
+        return species
 
     def get_lattice(self, status):
+        
         unitcell = self.get_unitcell(status)
         positions = self.get_positions(status)
         species = self.get_species()
@@ -2132,44 +2165,55 @@ class XmlParser(object):
                 "species": species}
 
     def get_kpoints(self):
-        return self._lattice["kpoints"]
+        
+        kpoints = self._lattice["kpoints"]
+        if kpoints is None:
+            return None
+        return kpoints
 
     def get_kpointsw(self):
-        return self._lattice["kpointsw"]
-
-    def get_symbols(self):
-        return self._parameters
+        kpointsw = self._lattice["kpointsw"]
+        if kpointsw is None:
+            return None
+        return kpointsw
 
     def get_energies(self, status, etype=None, nosc=True):
+        
         if etype is None:
             etype = "energy_no_entropy"
         if etype == "energy_no_entropy":
             return self._get_energies_no_entropy(status, nosc)
+        else:
+            raise NotImplementedError
 
     def _get_energies_no_entropy(self, status, nosc):
+        
+        enrgies = self._data["totens"]
+        if enrgies is None:
+            return None
         self._check_calc_status(status)
         energies = []
         if status == "initial":
             if nosc:
-                energies.append(self._data["totens"][1][
+                energies.append(enrgies[1][
                                 "energy_no_entropy"][0])
             else:
-                energies.append(self._data["totens"][1]
+                energies.append(enrgies[1]
                                 ["energy_no_entropy"])
         elif status == "final":
             largest_key = max(self._lattice["totens"].keys())
             if nosc:
-                energies.append(self._data["totens"][largest_key][
+                energies.append(enrgies[largest_key][
                                 "energy_no_entropy"][0])
             else:
-                energies.append(self._data["totens"][largest_key]
+                energies.append(enrgies[largest_key]
                                 ["energy_no_entropy"])
         elif status == "all":
             # here we need to pull out energy_no_entropy of all the calc
             # steps...right now I did not find a smart way to do this, would
             # like to avoid explicit loops...but here it is anyway
             # first sort (might consider doing this initially...not so sure)
-            _energies = sorted(self._data["totens"].items())
+            _energies = sorted(enrgies.items())
             for index, element in _energies:
                 if nosc:
                     energies.append(element["energy_no_entropy"][0])
@@ -2177,20 +2221,33 @@ class XmlParser(object):
                     energies.append(element["energy_no_entropy"][1])
         return energies
 
-    def get_k_weights(self):
-        return self._lattice["kpointsw"]
-
     def get_dos(self):
-        return self._data["dos"]
+
+        dos = self._data["dos"]
+        if dos is None:
+            return None
+        return dos
     
     def get_eigenvalues(self):
-        return self._data["eigenvalues"]
+
+        eigenvalues = self._data["eigenvalues"]
+        if eigenvalues is None:
+            return None
+        return eigenvalues
 
     def get_occupancies(self):
-        return self._data["occupancies"]
+
+        occupancies = self._data["occupancies"]
+        if occupancies is None:
+            return None
+        return occupancies
     
     def get_projectors(self):
-        return self._data["projectors"]
+
+        projectors = self._data["projectors"]
+        if projectors is None:
+            return None
+        return projectors
 
     def _check_calc_status(self, status):
         allowed_entries = ["initial", "final", "all"]
@@ -2286,6 +2343,14 @@ class XmlParser(object):
         The file size in megabytes.
 
         """
-        file_info = os.stat(file_path)
+
+        file_info = None
+        try:
+            file_info = os.stat(file_path)
+        except OSError:
+            self._logger.error("Could not locate "+file_path+
+                               ". Returning None.")
+            return file_info
+            
         file_size = file_info.st_size
         return file_size / 1048576.0
