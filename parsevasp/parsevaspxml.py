@@ -108,6 +108,8 @@ class XmlParser(object):
 
         # parse parse parse
         self._parse()
+        print(self._data["dielectrics"])
+        #print(self._data["dos"])
 
     def _parse(self):
         """Perform the actual parsing
@@ -1605,7 +1607,7 @@ class XmlParser(object):
             if entry is None:
                 return None
             data = self._convert_array2D_f(entry, 7)
-            diel["return eal"] = data[:, 1:7]
+            diel["real"] = data[:, 1:7]
 
             return diel
 
@@ -2094,7 +2096,7 @@ class XmlParser(object):
         elif status == "all":
             return stress
 
-    def get_epsislon(self):
+    def get_dielectrics(self):
 
         dielectrics = self._data["dielectics"]
         if dielectrics is None:
