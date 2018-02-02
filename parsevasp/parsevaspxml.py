@@ -132,7 +132,7 @@ class XmlParser(object):
         if file_size < self._sizecutoff:
             # run event based for small files for testing?
             self._parsew()
-            # self._parsee()
+            #self._parsee()
         else:
             self._parsee()
 
@@ -225,7 +225,7 @@ class XmlParser(object):
         extract_force = False
         extract_stress = False
         extract_stres = False
-        extract_ewoe = False
+        extract_e0 = False
         extract_scstep = False
         extract_dielectrics = False
         extract_eig_proj = False
@@ -253,7 +253,7 @@ class XmlParser(object):
                 extract_calculation = True
             if event == "end" and element.tag == "calculation":
                 data3 = self._convert_array1D_f(data3)
-                totens[calc] = {"energy_wo_entropy":
+                totens[calc] = {"energy_no_entropy":
                                 [data3[data3.shape[0] - 1], data3]}
                 data3 = []
                 # update index for the calculation
@@ -481,12 +481,12 @@ class XmlParser(object):
                     # print element.tag, element.attrib, element.text
                     # energy without entropy
                     if event == "start" and element.tag == "i" and \
-                       element.attrib["name"] == "e_wo_entrp":
-                        extract_ewoe = True
+                       element.attrib["name"] == "e_0_energy":
+                        extract_e0 = True
                     if event == "end" and element.tag == "i" and \
-                       element.attrib["name"] == "e_wo_entrp":
-                        extract_ewoe = False
-                    if extract_ewoe:
+                       element.attrib["name"] == "e_0_energy":
+                        extract_e0 = False
+                    if extract_e0:
                         data3.append(element)
                 if extract_latticedata:
                     if event == "start" and element.tag == "varray" \
@@ -1399,22 +1399,20 @@ class XmlParser(object):
         for index, calc in enumerate(entries):
             # energy without entropy
             data = self._findall(
-                calc, './/scstep/energy/i[@name="e_wo_entrp"]')
+                calc, './/scstep/energy/i[@name="e_0_energy"]')
             if data is None:
                 return None
             data = self._convert_array1D_f(data)
             if index == 0:
                 energies[1] = {"energy_no_entropy":
-                               [data[data.shape[0] - 1], data]}
+                               [data[-1], data]}
             else:
                 energies[index + 1] = {"energy_no_entropy":
-                                       [data[data.shape[0] - 1], data]}
+                                       [data[-1], data]}
 
-        if len(energies) == 1:
+        num_calcs = len(energies)
+        if num_calcs == 1:
             energies[2] = energies[1]
-        else:
-            # replace key on the last element to final
-            energies[2] = energies.pop(len(entries))
 
         return energies
 
@@ -2199,7 +2197,7 @@ class XmlParser(object):
                 energies.append(enrgies[1]
                                 ["energy_no_entropy"])
         elif status == "final":
-            largest_key = max(self._lattice["totens"].keys())
+            largest_key = max(enrgies.keys())
             if nosc:
                 energies.append(enrgies[largest_key][
                                 "energy_no_entropy"][0])

@@ -12,6 +12,4 @@ logging.basicConfig()
 logger = logging.getLogger('Testing')
 
 vasp = parsevaspxml.XmlParser(logger, testdir + "/vasprunrelax.xml")
-
-print vasp.get_lattice(status="all")
-print vasp.get_lattice(status="final")
+print(vasp.get_energies(status = "all"))
