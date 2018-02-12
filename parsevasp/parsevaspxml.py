@@ -135,8 +135,8 @@ class XmlParser(object):
         
         if file_size < self._sizecutoff:
             # run event based for small files for testing?
-            self._parsew()
-            #self._parsee()
+            #self._parsew()
+            self._parsee()
         else:
             self._parsee()
 
@@ -409,12 +409,17 @@ class XmlParser(object):
                     extract_forces = True
                 if event == "end" and element.tag == "varray" and \
                    element.attrib["name"] == "forces":
+                    print data
+                    force[attribute] = self._convert_array2D_f(data, 3)
+                    data = []
                     extract_forces = False
                 if event == "start" and element.tag == "varray" and \
                    element.attrib["name"] == "stress":
                     extract_stress = True
                 if event == "end" and element.tag == "varray" and \
                    element.attrib["name"] == "stress":
+                    stress[attribute] = self._convert_array2D_f(data, 3)
+                    data = []
                     extract_stress = False
                 if event == "start" and element.tag == "scstep":
                     extract_scstep = True
@@ -439,9 +444,9 @@ class XmlParser(object):
                 if event == "end" and element.tag == "dielectricfunction":
                     _diel = {}
                     diel = np.split(self._convert_array2D_f(data, 7), 2)
-                    _diel["energies"] = diel[0][:, 0]
-                    _diel["imag"] = diel[0][:, 1 - 7]
-                    _diel["real"] = diel[1][:, 1 - 7]
+                    _diel["energy"] = diel[0][:, 0]
+                    _diel["imag"] = diel[0][:, 1:7]
+                    _diel["real"] = diel[1][:, 1:7]
                     self._data["dielectrics"] = _diel
                     data = []
                     extract_dielectrics = False
@@ -517,24 +522,13 @@ class XmlParser(object):
                     if extract_positions:
                         if event == "start" and element.tag == "v":
                             data.append(element)
+                            
                 if extract_forces:
                     if event == "start" and element.tag == "v":
-                        extract_force = True
-                    if event == "end" and element.tag == "v":
-                        force[attribute] = self._convert_array2D_f(data, 3)
-                        data = []
-                        extract_force = False
-                    if extract_force:
                         data.append(element)
 
                 if extract_stress:
                     if event == "start" and element.tag == "v":
-                        extract_stres = True
-                    if event == "end" and element.tag == "v":
-                        stress[attribute] = self._convert_array2D_f(data, 3)
-                        data = []
-                        extract_stres = False
-                    if extract_stres:
                         data.append(element)
 
                 if extract_eigenvalues:
