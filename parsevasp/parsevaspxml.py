@@ -2070,8 +2070,6 @@ class XmlParser(object):
         """
 
         species = None
-        if species is none:
-            return None
         if entry is not None:
             species = np.zeros(len(entry), dtype='intc')
         for index, spec in enumerate(entry):
