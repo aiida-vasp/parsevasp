@@ -61,6 +61,7 @@ class XmlParser(object):
         self._file_path = file_path
         self._sizecutoff = 500
 
+
         # set logger
         if logger is not None:
             self._logger = logger
@@ -108,7 +109,8 @@ class XmlParser(object):
 
         # parse parse parse
         self._parse()
-        print(self._data["dielectrics"])
+        print(self._data["forces"])
+        #print(self._data["dielectrics"])
         #print(self._data["dos"])
 
     def _parse(self):
@@ -1023,6 +1025,15 @@ class XmlParser(object):
         pos = {}
         force = {}
         stress = {}
+        num_atoms = 0
+        if self._lattice["species"] is not None:
+            num_atoms = self._lattice["species"].shape[0]
+        else:
+            self._logger.error("Before extracting the unitcell and"
+                               "positions please extract the species. "
+                               "Exiting.")
+            sys.exit(1)
+
         if not all:
             entry = self._findall(xml,
                                   './/structure[@name="finalpos"]/crystal/varray[@name="basis"]/v')
@@ -1048,16 +1059,25 @@ class XmlParser(object):
                 pos[1] = self._convert_array2D_f(entry, 3)
             else:
                 pos[1] = None
-        else:
-            num_atoms = 0
-            if self._lattice["species"] is not None:
-                num_atoms = self._lattice["species"].shape[0]
-            else:
-                self._logger.error("Before extracting the unitcell and"
-                                   "positions please extract the species. "
-                                   "Exiting.")
-                sys.exit(1)
 
+            entry = self._findall(xml,
+                                  './/calculation/varray[@name="forces"]/v')
+            if entry is not None:
+                stress[1] = self._convert_array2D_f(entry[0:3], 3)
+                stress[2] = self._convert_array2D_f(entry[-3:], 3)
+            else:
+                stress[1] = None
+                stress[2] = None
+                
+            entry = self._findall(xml,
+                                  './/calculation/varray[@name="stress"]/v')
+            if entry is not None:
+                force[1] = self._convert_array2D_f(entry[0:num_atoms], 3)
+                force[2] = self._convert_array2D_f(entry[-num_atoms:], 3)
+            else:
+                force[1] = None
+                force[2] = None
+        else:
             entrycell = self._findall(xml,
                                       './/calculation/structure/crystal/varray[@name="basis"]/v')
             entrypos = self._findall(xml,
@@ -1092,7 +1112,7 @@ class XmlParser(object):
             else:
                 stress[1] = None
                 stress[2] = None
-            for calc in range(1, num_calcs - 1):
+            for calc in range(1, num_calcs):
                 basecell = calc * 3
                 basepos = calc * num_atoms
                 cell[calc + 1] = self._convert_array2D_f(
