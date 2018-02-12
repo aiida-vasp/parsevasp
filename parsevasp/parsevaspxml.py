@@ -2118,7 +2118,7 @@ class XmlParser(object):
 
     def get_dielectrics(self):
 
-        dielectrics = self._data["dielectics"]
+        dielectrics = self._data["dielectrics"]
         if dielectrics is None:
             return None
         return dielectrics
