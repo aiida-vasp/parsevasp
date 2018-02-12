@@ -109,7 +109,7 @@ class XmlParser(object):
 
         # parse parse parse
         self._parse()
-        print(self._data["forces"])
+        #print(self._data["forces"])
         #print(self._data["dielectrics"])
         #print(self._data["dos"])
 
