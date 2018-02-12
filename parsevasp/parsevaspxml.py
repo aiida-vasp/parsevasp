@@ -135,8 +135,8 @@ class XmlParser(object):
         
         if file_size < self._sizecutoff:
             # run event based for small files for testing?
-            #self._parsew()
-            self._parsee()
+            self._parsew()
+            #self._parsee()
         else:
             self._parsee()
 
