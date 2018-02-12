@@ -2111,12 +2111,12 @@ class XmlParser(object):
         elif status == "all":
             return stress
 
-    def get_hessian(self, status):
+    def get_hessian(self):
         
         hessian = self._data["hessian"]
         return hessian
 
-    def get_dynmat(self, status):
+    def get_dynmat(self):
         
         dynmat = self._data["dynmat"]
         return dynmat
