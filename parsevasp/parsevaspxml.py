@@ -986,7 +986,7 @@ class XmlParser(object):
 
         born = self._convert_array2D_f(entry, 3)
 
-        born = np.split(born, num_atoms)
+        born = np.asarray(np.split(born, num_atoms))
 
         return born
 
@@ -2070,6 +2070,8 @@ class XmlParser(object):
         """
 
         species = None
+        if species is none:
+            return None
         if entry is not None:
             species = np.zeros(len(entry), dtype='intc')
         for index, spec in enumerate(entry):
@@ -2096,7 +2098,7 @@ class XmlParser(object):
             return forces[largest_key]
         elif status == "all":
             return forces
-
+        
     def get_stress(self, status):
 
         stress = self._data["stress"]
@@ -2111,25 +2113,29 @@ class XmlParser(object):
         elif status == "all":
             return stress
 
+    def get_hessian(self, status):
+        
+        hessian = self._data["hessian"]
+        return hessian
+
+    def get_dynmat(self, status):
+        
+        dynmat = self._data["dynmat"]
+        return dynmat
+    
     def get_dielectrics(self):
 
         dielectrics = self._data["dielectrics"]
-        if dielectrics is None:
-            return None
         return dielectrics
 
     def get_fermi_level(self):
 
         fermi_level = self._data["fermi_level"]
-        if fermi_level is None:
-            return None
         return fermi_level
 
     def get_born(self):
 
         born = self._data["born"]
-        if born is None:
-            return None
         return born
 
     def get_unitcell(self, status):
@@ -2165,8 +2171,6 @@ class XmlParser(object):
     def get_species(self):
         
         species = self._lattice["species"]
-        if species is None:
-            return None
         return species
 
     def get_lattice(self, status):
@@ -2180,14 +2184,11 @@ class XmlParser(object):
     def get_kpoints(self):
         
         kpoints = self._lattice["kpoints"]
-        if kpoints is None:
-            return None
         return kpoints
 
     def get_kpointsw(self):
+
         kpointsw = self._lattice["kpointsw"]
-        if kpointsw is None:
-            return None
         return kpointsw
 
     def get_energies(self, status, etype=None, nosc=True):
@@ -2237,29 +2238,21 @@ class XmlParser(object):
     def get_dos(self):
 
         dos = self._data["dos"]
-        if dos is None:
-            return None
         return dos
     
     def get_eigenvalues(self):
 
         eigenvalues = self._data["eigenvalues"]
-        if eigenvalues is None:
-            return None
         return eigenvalues
 
     def get_occupancies(self):
 
         occupancies = self._data["occupancies"]
-        if occupancies is None:
-            return None
         return occupancies
     
     def get_projectors(self):
 
         projectors = self._data["projectors"]
-        if projectors is None:
-            return None
         return projectors
 
     def _check_calc_status(self, status):
