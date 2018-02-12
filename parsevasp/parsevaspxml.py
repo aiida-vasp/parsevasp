@@ -1497,28 +1497,29 @@ class XmlParser(object):
             dos = {}
             dos = {"up": None, "down": None}
             dos_ispin = self._convert_array2D_f(entry_total_ispin1, 3)
-            _dos = {}
+            _dosup = {}
+            _dosdown = {}
             enrgy = dos_ispin[:, 0]
-            _dos["total"] = dos_ispin[:, 1]
-            _dos["integrated"] = dos_ispin[:, 2]
+            _dosup["total"] = dos_ispin[:, 1]
+            _dosup["integrated"] = dos_ispin[:, 2]
             # check if partial exists
             if entry_partial_ispin1:
                 dos_ispin = self._convert_array2D_f(entry_partial_ispin1, 10)
                 # do not need the energy term (similar to total)
-                _dos["partial"] = np.asarray(
+                _dosup["partial"] = np.asarray(
                     np.split(dos_ispin[:, 1:10], num_atoms))
             else:
-                _dos["partial"] = None
-            dos["up"] = _dos
+                _dosup["partial"] = None
+            dos["up"] = _dosup
             dos_ispin = self._convert_array2D_f(entry_total_ispin2, 3)
-            _dos["total"] = dos_ispin[:, 1]
-            _dos["integrated"] = dos_ispin[:, 2]
+            _dosdown["total"] = dos_ispin[:, 1]
+            _dosdown["integrated"] = dos_ispin[:, 2]
             if entry_partial_ispin2:
                 dos_ispin = self._convert_array2D_f(entry_partial_ispin2, 10)
                 # do not need the energy term (similar to total)
-                _dos["partial"] = np.asarray(
+                _dosdown["partial"] = np.asarray(
                     np.split(dos_ispin[:, 1:10], num_atoms))
-            dos["down"] = _dos
+            dos["down"] = _dosdown
             dos["total"] = {"fermi_level": fermi_level, "energy": enrgy}
         else:
             dos = {}
