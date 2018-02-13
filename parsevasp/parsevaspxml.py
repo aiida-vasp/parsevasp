@@ -3,6 +3,7 @@ import sys
 import os
 import numpy as np
 import logging
+import mmap
 
 import constants
 
@@ -109,9 +110,6 @@ class XmlParser(object):
 
         # parse parse parse
         self._parse()
-        #print(self._data["forces"])
-        #print(self._data["dielectrics"])
-        #print(self._data["dos"])
 
     def _parse(self):
         """Perform the actual parsing
@@ -132,15 +130,19 @@ class XmlParser(object):
         file_size = self._file_size(self._file_path)
         if file_size is None:
             return None
+
+        # Do a quick check to see if the XML file is not truncated
+        xml_recover = self._check_xml(self._file_path)
         
-        if file_size < self._sizecutoff:
-            # run event based for small files for testing?
-            self._parsew()
-            #self._parsee()
+        if (file_size < self._sizecutoff) or xml_recover:
+            # run regular method (loads file into memory) and
+            # enable recovery mode if necessary
+            self._parsew(xml_recover)
         else:
+            # event based, saves a bit of memory
             self._parsee()
 
-    def _parsew(self):
+    def _parsew(self, xml_recover):
         """Performs parsing on the whole XML files. For smaller files
 
         """
@@ -149,8 +151,18 @@ class XmlParser(object):
 
         # now open the complete file
         self._check_file(self._file_path)
-        vaspxml = etree.parse(self._file_path)
-
+        # make sure we enable the recovery mode
+        # pretty sure there is a performance bottleneck running this
+        # enabled at all times, so consider to add check for
+        # truncated XML files and then enable
+        if lxml and xml_recover:
+            if xml_recover:
+                self._logger.debug("Running LXML in recovery mode.")
+            parser = etree.XMLParser(recover = True)
+            vaspxml = etree.parse(self._file_path, parser = parser)
+        else:
+            vaspxml = etree.parse(self._file_path)
+            
         # do we want to extract data from all calculations (e.g. ionic steps)
         all = self._extract_all
 
@@ -245,7 +257,8 @@ class XmlParser(object):
 
         # index that control the calculation step (e.g. ionic step)
         calc = 1
-        for event, element in etree.iterparse(self._file_path, events=("start", "end")):
+        for event, element in etree.iterparse(self._file_path,
+                                              events=("start", "end")):
             # set extraction points (what to read and when to read it)
             # here we also set the relevant data elements when the tags
             # close when they contain more than one element
@@ -2358,3 +2371,18 @@ class XmlParser(object):
             
         file_size = file_info.st_size
         return file_size / 1048576.0
+
+    def _check_xml(self, file_path):
+        """Do a primitive check of XML file to see if it is
+        truncated.
+
+        """
+
+        with open(file_path) as source:
+            mapping = mmap.mmap(source.fileno(), 0, prot=mmap.PROT_READ)
+        last_line = mapping[mapping.rfind(b'\n', 0, -1)+1:]
+        if last_line == "</modeling>":
+            return False
+        else:
+            return True
+    
