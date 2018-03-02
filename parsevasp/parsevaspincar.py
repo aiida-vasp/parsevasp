@@ -406,7 +406,8 @@ class IncarItem(object):
             # check if all values are the same type (they should be)
             if not all(x==content_type[0] for x in content_type):
                 self.logger.error("All values of the tag " + clean_tag.upper() +
-                                  " are not of the same type. Exiting.")
+                                  " are not of the same type. Did you "
+                                  "possibly forget a comment tag(#)? Exiting.")
                 sys.exit(1)
         
         else:
