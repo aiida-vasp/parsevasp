@@ -4,15 +4,16 @@ import os
 import numpy as np
 import logging
 import mmap
-#sys.path.append(os.path.dirname(__file__))
-#print sys.path
+# sys.path.append(os.path.dirname(__file__))
+# print sys.path
 import utils
 import constants
 
+
 class Incar(object):
 
-    def __init__(self, incar_string = None, incar_dict = None,
-                 file_path = None, logger = None):
+    def __init__(self, incar_string=None, incar_dict=None,
+                 file_path=None, logger=None):
         """Initialize an INCAR object and set content as a dictionary.
 
         Parameters
@@ -43,15 +44,15 @@ class Incar(object):
            or (incar_string is not None and file_path is not None) \
            or (incar_dict is not None and file_path is not None):
             self.logger.error("Please only supply one argument when "
-                         "initializing Incar. Exiting.")
+                              "initializing Incar. Exiting.")
             sys.exit(1)
         # check that at least one is suplpied
-        if (incar_string is None and incar_dict is None \
-            and file_path is None):
+        if (incar_string is None and incar_dict is None
+                and file_path is None):
             self.logger.error("Please supply one argument when "
-                         "initializing Incar. Exiting.")
-            sys.exit(1)            
-        
+                              "initializing Incar. Exiting.")
+            sys.exit(1)
+
         if file_path is not None:
             # create dictionary from a file
             incar_dict = self._from_file()
@@ -65,14 +66,14 @@ class Incar(object):
 
         # store entries
         self.entries = incar_dict
-        
+
     def _from_file(self):
         """Create rudimentary dictionary of entries from a
         file.
 
         """
 
-        incar = utils.read_file(self.file_path)    
+        incar = utils.readlines_from_file(self.file_path)
         incar_dict = self._from_list(incar)
         return incar_dict
 
@@ -81,11 +82,11 @@ class Incar(object):
         string.
 
         """
-        
+
         incar = self.incar_string.splitlines()
         incar_dict = self._from_list(incar)
         return incar_dict
-        
+
     def _from_list(self, incar):
         """Go through the list and analyze for = and ; in order to
         deentangle grouped entries etc.
@@ -107,7 +108,7 @@ class Incar(object):
         in order to be able to keep the input methods as clean as posible.
 
         """
-        
+
         incar_dict = {}
         for line in incar:
             # check for comment at the start of a line, if so skip
@@ -127,9 +128,9 @@ class Incar(object):
                     final_split = final_split[0].split("=")
                     if len(final_split) > 2:
                         self.logger.error("Detected two equal signs for an entry in "
-                                     "the INCAR file. The following line contains "
-                                     "the problem:\n\n" +
-                                     ntry + "\n\nPlease correct. Exiting.")
+                                          "the INCAR file. The following line contains "
+                                          "the problem:\n\n" +
+                                          ntry + "\n\nPlease correct. Exiting.")
                         sys.exit(1)
                     tag = final_split[0]
                     value = final_split[1]
@@ -138,8 +139,8 @@ class Incar(object):
                     clean_tag = entry.get_tag()
                     if clean_tag in incar_dict:
                         self.logger.info("Tag " + entry.get_tag() + " already "
-                                    "found in the INCAR dictionary, "
-                                    "overwriting it.")
+                                         "found in the INCAR dictionary, "
+                                         "overwriting it.")
                     incar_dict[clean_tag] = entry
 
         return incar_dict
@@ -153,7 +154,7 @@ class Incar(object):
         ----------
         value : string
             The entry value of the INCAR entry.
-        
+
         Returns
         -------
         string : string
@@ -177,7 +178,7 @@ class Incar(object):
             string = str(value)
 
         return string
-        
+
     def validate(self):
         """Validate the content of the current Incar instance.
 
@@ -186,12 +187,12 @@ class Incar(object):
         Uses a table that is synced with the VASP developers and thus gives
         an additional consistency check with respect to allowed parameters
         and their combinations.
-        
+
         """
-        
+
         return
 
-    def modify(self, tag, value, comment = None):
+    def modify(self, tag, value, comment=None):
         """Modify the entry tag in INCAR. If it is not found,
         add it.
 
@@ -226,7 +227,7 @@ class Incar(object):
         except KeyError:
             pass
 
-    def get(self, tag, comment = False):
+    def get(self, tag, comment=False):
         """Return the value and comment of the entry with tag.
 
         Parameters
@@ -261,10 +262,10 @@ class Incar(object):
         else:
             return value
 
-    def write(self, file_path, comments = False):
+    def write(self, file_path, comments=False):
         """Write the content of the current Incar instance to
         file.
-        
+
         Parameters
         ----------
         file_path : string
@@ -275,7 +276,7 @@ class Incar(object):
 
         """
 
-        incar = utils.file_handler(file_path, status = 'w')
+        incar = utils.file_handler(file_path, status='w')
         # write in alfabetical order
         keys = sorted(self.entries)
         entries = self.entries
@@ -290,11 +291,12 @@ class Incar(object):
             value = self._convert_value_to_string(value)
             string = str(key.upper()) + " = " + value + comment + "\n"
             incar.write(string)
-        utils.file_handler(file_handler = incar)
-            
+        utils.file_handler(file_handler=incar)
+
 
 class IncarItem(object):
-    def __init__(self, tag, value, comment, logger = None):
+
+    def __init__(self, tag, value, comment, logger=None):
         """Initialize an entry in INCAR.
 
         Parameters
@@ -313,8 +315,7 @@ class IncarItem(object):
         if logger is None:
             logger = logging.getLogger(__name__)
         self.logger = logger
-        
-        
+
         # clean tag and value
         clean_tag, clean_value, clean_comment = self._clean_entry(tag,
                                                                   value,
@@ -331,7 +332,7 @@ class IncarItem(object):
 
     def get_comment(self):
         return self.comment
-        
+
     def _clean_entry(self, tag, value, comment):
         """Cleans the tag and value, for instance makes sures
         there are no spaces around the tag, that it is in lower case,
@@ -372,7 +373,7 @@ class IncarItem(object):
         # 1 2 3 4 - set of integers
         # 1.0 - float
         # 1.0 2.0 3.0 - set of floats
-        
+
         # however, let us also open for the fact that users might
         # give a value what they would in INCAR
 
@@ -386,7 +387,7 @@ class IncarItem(object):
             # values is a string, so we have read an INCAR or the user
             # try to assign an entry with just a string
             values = value.split()
-        
+
             # if we have some kind of set, check if all are ints, floats
             # or strings
             content_type = []
@@ -402,19 +403,19 @@ class IncarItem(object):
                     # we have here also have a bool, so check that
                     cnt = self._test_string_for_bool(element)
                 clean_value.append(cnt)
-            
+
             # check if all values are the same type (they should be)
-            if not all(x==content_type[0] for x in content_type):
+            if not all(x == content_type[0] for x in content_type):
                 self.logger.error("All values of the tag " + clean_tag.upper() +
                                   " are not of the same type. Did you "
                                   "possibly forget a comment tag(#)? Exiting.")
                 sys.exit(1)
-        
+
         else:
             # if the user wants to assign an element as a list, int,
             # float or bool, accept this
-            if not (isinstance(value, int) or isinstance(value, float) \
-               or isinstance(value, bool) or (type(value) is list)):
+            if not (isinstance(value, int) or isinstance(value, float)
+                    or isinstance(value, bool) or (type(value) is list)):
                 self.logger.error("The type: " + str(type(value)) + " of the "
                                   "supplied value for the INCAR tag is not "
                                   "recognized. Exiting.")
@@ -426,10 +427,9 @@ class IncarItem(object):
             clean_comment = comment.split()[0]
         else:
             clean_comment = None
-            
+
         return clean_tag, clean_value, clean_comment
 
-        
     def _test_string_for_bool(self, string):
         """Detects if string contains Fortran bool.
 
@@ -455,7 +455,7 @@ class IncarItem(object):
             return False
         else:
             return string
-                
+
     def _test_string_content(self, string):
         """Detects if string is integer, float or string.
 
