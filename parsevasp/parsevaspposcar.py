@@ -2,6 +2,7 @@
 import sys
 import logging
 import numpy as np
+from collections import Counter
 
 import utils
 
@@ -57,11 +58,12 @@ class Poscar(object):
             # create dictionary from a string
             poscar_dict = self._from_string()
 
-        # validate dictionary
-        self.validate()
-
         # store entries
-        self.entries = poscar_dict
+        self.poscar_dict = poscar_dict
+
+        # validate dictionary
+        self._validate()
+
 
     def _from_file(self):
         """Create rudimentary dictionary of entries from a
@@ -69,7 +71,7 @@ class Poscar(object):
 
         """
 
-        poscar = utils.read_file(self.file_path)
+        poscar = utils.readlines_from_file(self.file_path)
         poscar_dict = self._from_list(poscar)
         return poscar_dict
 
@@ -152,8 +154,6 @@ class Poscar(object):
             sys.exit(1)
 
         # create site objects
-        position = np.zeros(3)
-        specie = ""
         specie_slot = 0
         index = 1
         sites = []
@@ -165,30 +165,30 @@ class Poscar(object):
             specie = spec[specie_slot]
             # fetch positions
             line = poscar[i + loopmax].split()
+            position = np.zeros(3)
             position[0] = float(line[0])
             position[1] = float(line[1])
             position[2] = float(line[2])
             # fetch selective flags
-            selective = [False, False, False]
-            if (selective):
+            flags = [False, False, False]
+            if selective:
                 if "t" in line[3].lower():
-                    selective[0] = True
+                    flags[0] = True
                 if "t" in line[4].lower():
-                    selective[1] = True
+                    flags[1] = True
                 if "t" in line[5].lower():
-                    selective[2] = True
+                    flags[2] = True
             # create a site object and add to sites list
-            site = Site(specie, position, selective)
+            site = Site(specie, position, selective = flags)
             sites.append(site)
             index = index + 1
         # apply scaling factor
         lattice = [[x * scaling for x in y] for y in lattice]
         # build dictionary and convert to NumPy
         poscar_dict = {}
-        poscar_dict["comment"] = comment.split('#')[1]
+        poscar_dict["comment"] = comment.split()[0]
         poscar_dict["lattice"] = np.asarray(lattice)
         poscar_dict["sites"] = sites
-        poscar_dict["direct"] = True
 
         return poscar_dict
 
@@ -211,7 +211,10 @@ class Poscar(object):
 
         """
 
+        # check allowed entries
         self._check_allowed_entries(entry)
+        # check that poscar_dict exists
+        self._check_dict()
         if site_number is not None:
             # check that a Site() object is supplied
             self._check_site(value)
@@ -247,8 +250,8 @@ class Poscar(object):
 
         """
 
-        self.check_sites()
-        self.check_site_number(site_number)
+        self._check_sites()
+        self._check_site_number(site_number)
         del self.poscar_dict["sites"][site_number]
 
     def add_site(self, site_number):
@@ -266,7 +269,7 @@ class Poscar(object):
 
         # EFL: ADD LATER
 
-    def check_dict(self):
+    def _check_dict(self):
         """Check that poscar_dict is present.
 
         """
@@ -288,9 +291,8 @@ class Poscar(object):
         
         """
 
-        if ("comment" not in entry) \
-           or ("lattice" not in entry) \
-           or ("sites" not in entry):
+        if not (("comment" in entry) or ("lattice" in entry) or
+                ("sites" in entry)):
             self.logger.error("Only 'comment', 'lattice' or "
                               "'sites' is allowed as input for "
                               "entry. Exiting.")
@@ -317,7 +319,7 @@ class Poscar(object):
                 sys.exit(1)
             
         if (not isinstance(lattice, np.ndarray)) \
-           or (value.shape != (3, 3)):
+           or (lattice.shape != (3, 3)):
             self.logger.error("The value of 'lattice' is "
                               "not an 3x3 ndarray. Exiting.")
             sys.exit(1)
@@ -333,15 +335,13 @@ class Poscar(object):
             'comment' key in the 'poscar_dict' is checked.
 
         """
-
         if comment is None:
             try:
                 comment = self.poscar_dict["comment"]
             except KeyError:
-            self.logger.error("There is no key 'comment' in "
-                              "'poscar_dict'. Exiting.")
-            sys.exit(1)
-
+                self.logger.error("There is no key 'comment' in "
+                                  "'poscar_dict'. Exiting.")
+                sys.exit(1)
         if not isinstance(comment, str):
             self.logger.error("The 'comment' is not a string. Exiting.")
             sys.exit(1)
@@ -420,6 +420,119 @@ class Poscar(object):
                               "than the number of sites. Exiting.")
             sys.exit(1)
 
+    def _validate(self):
+        """Validate the content of poscar_dict
+
+        """
+
+        self._check_dict()
+        self._check_comment()
+        self._check_lattice()
+        self._check_sites()
+
+    def _sort_and_group_sites(self):
+        """Sort and group the positions and species to
+        VASP specifications.
+
+        Returns
+        -------
+        sites : list
+            Contains site info for each site. Each site element
+            contains a string describing the specie, a ndarray
+            of floats describing the position, a ndarray of booleans
+            to describe the selective flags and a boolean that 
+            contains a flag that is True if the positions are in direct 
+            coordinates.
+        species : list of strings
+            Contains the number of unique species
+        num_species : list of ints
+            Contains the occurancy of each specie in the same order as
+            'species'.
+        selective : bool
+            True if any selective flags are enabled, False otherwise.
+
+        """
+
+        sites = []
+        species = []
+        selective = False
+        for site in self.poscar_dict["sites"]:
+            specie = site.get_specie()
+            select = site.get_selective()
+            position = site.get_position()
+            direct = site.get_direct()
+            if direct is False:
+                # make sure it is direct
+                position = self._to_direct(position)
+                self.logger.error("Cartesian is not yet implemented. Exiting.")
+                sys.exit(1)
+            if True in select:
+                selective = True
+            sites.append([specie, position, select, direct])
+            species.append(specie)
+            
+        # find unique entries and their number
+        counter = Counter(species)
+        # Counter does not order, so order now with the
+        # least occuring element first (typical for compounds)
+        sorted_keys = sorted(counter, key=counter.get)        
+        species = []
+        num_species = []
+        for key in sorted_keys:
+            species.append(key)
+            num_species.append(counter[key])
+
+        # now make sure the sites is on the same order
+        ordered_sites = []
+        for specie in species:
+            ordered_sites.append([site for site in sites if specie == site[0]])
+        
+        # EFL: consider to also sort on coordinate after specie
+        
+        return ordered_sites, species, num_species, selective
+            
+    def _get_key(self, item):
+        """Key fetcher for the sorted function.
+
+        """
+
+        return item[0]
+
+    def _to_direct(self, position):
+        """Transforms the position from cartesian to direct
+        coordinates.
+
+        Parameters
+        ----------
+        position : ndarray
+            An ndarray containing the position in cartesian coordinates.
+
+        Returns
+        -------
+        position_cart : ndarray
+            An ndarray containing the position in direct coordinates.
+
+        """
+
+        return position
+
+    def _to_cart(self, position):
+        """Transforms the position from direct to cartesian
+        coordinates.
+
+        Parameters
+        ----------
+        position : ndarray
+            An ndarray containing the position in direct coordinates.
+
+        Returns
+        -------
+        position_dir : ndarray
+            An ndarray containing the position in cartesian coordinates.
+
+        """
+
+        return position
         
     def get(self, tag, comment=False):
         """Return the value and comment of the entry with tag.
@@ -455,42 +568,67 @@ class Poscar(object):
             return value, com
         else:
             return value
-
-    def write(self, file_path, comments=False):
-        """Write the content of the current Poscar instance to
-        file.
+        
+    def write(self, file_path):
+        """ Write POSCAR like files
 
         Parameters
         ----------
-        file_path : string
-            The location to write POSCAR.
-        comments : bool, optional
-            If set to true, the comments are also dumped to the file,
-            else not.
+        file_path : str
+            The location and filename of the POSCAR like file to be
+            written.
 
         """
 
+        self._validate()
         poscar = utils.file_handler(file_path, status='w')
-        # write in alfabetical order
-        keys = sorted(self.entries)
-        entries = self.entries
-        for key in keys:
-            entry = entries[key]
-            value = entry.get_value()
-            comment = entry.get_comment()
-            if comment is None or not comments:
-                comment = ""
-            else:
-                comment = " # " + comment
-            value = self._convert_value_to_string(value)
-            string = str(key.upper()) + " = " + value + comment + "\n"
-            poscar.write(string)
+        poscar_dict = self.poscar_dict
+        comment = poscar_dict["comment"]
+        lattice = poscar_dict["lattice"]
+        poscar.write(comment + "\n")
+        # we avoid usage of the scaling factor
+        poscar.write("1.0\n")
+        # write lattice
+        for i in range(3):
+            poscar.write(str(lattice[i][0]) + " " +
+                         str(lattice[i][1]) + " " +
+                         str(lattice[i][2]) + "\n")
+        # sort and group to VASP specifications
+        sites, species, num_species, selective = self._sort_and_group_sites()
+        for specie in species:
+            poscar.write(str(specie).capitalize() + " ")
+        poscar.write("\n")
+        # write number of species
+        for number in num_species:
+            poscar.write(str(number) + " ")
+        poscar.write("\n")
+        # write selective if any flags are True
+        if selective:
+            poscar.write("Selective dynamics\n")
+        # always write direct
+        poscar.write("Direct\n")
+        # write positions
+        for site in sites:
+            poscar.write(str(site[1][0]) + " " +
+                         str(site[1][1]) + " " + str(site[1][2]))
+            if selective:
+                sel = ["F", "F", "F"]
+                flags = site[2]
+                for index, flag in enumerate(flags):
+                    if flag:
+                        sel[index] = "T"
+                    
+                poscar.write(" " + sel[0] + " " +
+                             sel[1] + " " +
+                             sel[2])
+            poscar.write("\n")
+        # here we also need the velocities
         utils.file_handler(file_handler=poscar)
-
 
 class Site(object):
 
-    def __init__(self, specie, position, selective=None, logger=None):
+    def __init__(self, specie, position, selective=None, direct = True,
+                 logger=None):
         """A site, typically a position in POSCAR.
 
         Parameters
@@ -502,6 +640,9 @@ class Site(object):
         selective : ndarray, optional
             The selective tags as a ndarray of booleans. If not
             supplied, defaults to None.
+        direct : bool, optional
+            True if the position is in direct coordinates. This is the
+            default.
         logger : object, optional
             A standard Python logger object.
 
@@ -515,6 +656,7 @@ class Site(object):
         self.specie = specie.lower()
         self.position = position
         self.selective = selective
+        self.direct = direct
 
     def get_specie(self):
         return self.specie
@@ -525,147 +667,5 @@ class Site(object):
     def get_selective(self):
         return self.selective
 
-    def _clean_entry(self, tag, value, comment):
-        """Cleans the tag and value, for instance makes sures
-        there are no spaces around the tag, that it is in lower case,
-        and that the value is build into a list of several different
-        parameters are given.
-
-        Parameters
-        ----------
-        tag : string
-            The entry tag of the POSCAR entry.
-        value : string
-            The entry value of the POSCAR entry.
-        comment : string
-            The entry comment of the POSCAR entry.
-
-        Returns
-        ------
-        clean_tag : string
-            The entry tag of the POSCAR entry, cleaned and checked.
-        clean_value : string
-            The entry value of the POSCAR entry, cleaned and checked.
-        clean_comment : string
-            The entry comment of the POSCAR entry, cleaned and checked.
-
-        """
-
-        # remove possible spaces on tag
-        clean_tag = tag.split()
-
-        # make sure tag is lowerscore
-        clean_tag = clean_tag[0].lower()
-
-        # possible solutions for the value are (if POSCAR is read):
-        # 1 - integer
-        # .TRUE. - bool
-        # Something - a string
-        # Something anotherthing - set of strings
-        # 1 2 3 4 - set of integers
-        # 1.0 - float
-        # 1.0 2.0 3.0 - set of floats
-
-        # however, let us also open for the fact that users might
-        # give a value what they would in POSCAR
-
-        # make sure we keep compatibility between Python 2 and 3
-        try:
-            basestring
-        except NameError:
-            basestring = str
-
-        if isinstance(value, basestring):
-            # values is a string, so we have read an POSCAR or the user
-            # try to assign an entry with just a string
-            values = value.split()
-
-            # if we have some kind of set, check if all are ints, floats
-            # or strings
-            content_type = []
-            clean_value = []
-            for element in values:
-                cnt_type = self._test_string_content(element)
-                content_type.append(cnt_type)
-                if cnt_type == 'int':
-                    cnt = int(element)
-                elif cnt_type == 'float':
-                    cnt = float(element)
-                else:
-                    # we have here also have a bool, so check that
-                    cnt = self._test_string_for_bool(element)
-                clean_value.append(cnt)
-
-            # check if all values are the same type (they should be)
-            if not all(x == content_type[0] for x in content_type):
-                self.logger.error("All values of the tag " + clean_tag.upper() +
-                                  " are not of the same type. Did you "
-                                  "possibly forget a comment tag(#)? Exiting.")
-                sys.exit(1)
-
-        else:
-            # if the user wants to assign an element as a list, int,
-            # float or bool, accept this
-            if not (isinstance(value, int) or isinstance(value, float)
-                    or isinstance(value, bool) or (type(value) is list)):
-                self.logger.error("The type: " + str(type(value)) + " of the "
-                                  "supplied value for the POSCAR tag is not "
-                                  "recognized. Exiting.")
-                sys.exit(1)
-            clean_value = value
-
-        # finally clean comment by removing any redundant spaces
-        if comment is not None:
-            clean_comment = comment.split()[0]
-        else:
-            clean_comment = None
-
-        return clean_tag, clean_value, clean_comment
-
-    def _test_string_for_bool(self, string):
-        """Detects if string contains Fortran bool.
-
-        Parameters
-        ----------
-        string : string
-            A string containing what is to be tested.
-
-        Returns
-        -------
-        string : bool or string
-            The return is the detected boolean or the input string,
-            depending on what is detected.
-
-        """
-        if ".True." in string \
-           or ".TRUE." in string \
-           or ".true." in string:
-            return True
-        elif ".False." in string \
-             or ".FALSE." in string \
-             or ".false." in string:
-            return False
-        else:
-            return string
-
-    def _test_string_content(self, string):
-        """Detects if string is integer, float or string.
-
-        Parameters
-        ----------
-        string : string
-            An input string to be tested.
-
-        Returns
-        -------
-        string
-            A string with value 'int' if input is an integer,
-            'float' if the input is a float and 'string' if it
-            is just a regular string.
-
-        """
-        try:
-            float(string)
-            return 'int' if string.count('.') == 0 else 'float'
-        except ValueError:
-            return 'string'
+    def get_direct(self):
+        return self.direct
