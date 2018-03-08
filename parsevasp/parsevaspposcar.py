@@ -188,6 +188,7 @@ class Poscar(object):
         poscar_dict["comment"] = comment.split('#')[1]
         poscar_dict["lattice"] = np.asarray(lattice)
         poscar_dict["sites"] = sites
+        poscar_dict["direct"] = True
 
         return poscar_dict
 
@@ -210,22 +211,12 @@ class Poscar(object):
 
         """
 
-        if ("comment" not in entry) \
-           or ("lattice" not in entry) \
-           or ("sites" not in entry):
-            self.logger.error("Only 'comment', 'lattice' or "
-                              "'sites' is allowed as input for "
-                              "entry. Exiting.")
-            sys.exit(1)
-
+        self._check_allowed_entries(entry)
         if site_number is not None:
-            # check that sites is supplied if a site is supplied
-            if "sites" not in entry:
-                self.logger.error("If 'site_number' is "
-                                  "supplied, please also make "
-                                  "sure that 'entry' is set to "
-                                  "'sites'. Exiting.")
-                sys.exit(1)
+            # check that a Site() object is supplied
+            self._check_site(value)
+            # check site number
+            self._check_site_number(site_number)
             # check that position is an integer
             if not utils.is_number(site_number):
                 self.logger.error("The supplied 'site_number' is "
@@ -233,43 +224,15 @@ class Poscar(object):
                                   "starting from 1 for the site "
                                   "position to be modified. Exiting.")
                 sys.exit(1)
-            # check that value is of the right instance
-            if not isinstance(value, Site):
-                self.logger.error("The supplied 'value' is not an "
-                                  "instance of Site(). Exiting.")
-                sys.exit(1)
             self.poscar_dict["sites"][site_number] = value
         else:
-            if "sites" in entry:
-                # the value have to be a list
-                if not isinstance(value, list):
-                    self.logger.error("The supplied sites 'value' "
-                                      "have to be a list of Site() "
-                                      "objects. Exiting.")
-                    sys.exit(1)
-                else:
-                    for element in value:
-                        if not isinstance(element, Site):
-                            self.logger.error("The supplied sites 'value' "
-                                              "have to be a list of Site() "
-                                              "objects. Exiting.")
-                            sys.exit(1)
-
+            if entry == "sites":
+                self._check_sites(sites = value)
             if entry == "comment":
-                # check if the supplied value is a string
-                if not isinstance(value, str):
-                    self.logger.error("The supplied comment 'value' is "
-                                      "not a string. Exiting.")
-                    sys.exit(1)
-
+                self._check_comment(comment = value)
             if entry == "lattice":
-                # check that the supplied type is ndaray
-                if (not isinstance(value, np.ndarray)) \
-                   or (value.shape != (3, 3)):
-                    self.logger.error("The supplied lattice 'value' is "
-                                      "not an 3x3 ndarray. Exiting.")
-                    sys.exit(1)
-
+                self._check_lattice(lattice = value)
+            
             self.poscar_dict[entry] = value
 
     def delete_site(self, site_number):
@@ -280,15 +243,12 @@ class Poscar(object):
         ----------
         site_number : int
             The site number to be deleted, starting
-            from 1.
+            from 0.
 
         """
 
-        if not isinstance(site_number, int):
-            self.logger.error("The supplied 'site_number' is "
-                              "not an integer. Exiting.")
-            sys.exit(1)
-        # add test for out of bounds
+        self.check_sites()
+        self.check_site_number(site_number)
         del self.poscar_dict["sites"][site_number]
 
     def add_site(self, site_number):
@@ -300,17 +260,167 @@ class Poscar(object):
         ----------
         site_number : int
             The site number to be deleted, starting
-            from 1.
+            from 0.
 
         """
 
+        # EFL: ADD LATER
+
+    def check_dict(self):
+        """Check that poscar_dict is present.
+
+        """
+
+        try:
+            poscar_dict = self.poscar_dict
+        except AttributeError:
+            self.logger.error("There is no 'poscar_dict'. Exiting.")
+            sys.exit(1)
+        
+
+    def _check_allowed_entries(self, entry):
+        """Check the allowed values of entry.
+
+        Parameters
+        ----------
+        entry : string
+            Contains the entry to be checked.
+        
+        """
+
+        if ("comment" not in entry) \
+           or ("lattice" not in entry) \
+           or ("sites" not in entry):
+            self.logger.error("Only 'comment', 'lattice' or "
+                              "'sites' is allowed as input for "
+                              "entry. Exiting.")
+            sys.exit(1)
+
+    def _check_lattice(self, lattice = None):
+        """Check that the lattice entries are present and
+        are of a 3x3 ndarray type.
+
+        Parameters
+        ----------
+        lattice, optional
+            The lattice to be checked. If not supplied the
+            'lattice' key in the 'poscar_dict' is checked.
+
+        """
+
+        if lattice is None:
+            try:
+                lattice = self.poscar_dict["lattice"]
+            except KeyError:
+                self.logger.error("There is no key 'lattice' in "
+                                  "'poscar_dict'. Exiting.")
+                sys.exit(1)
+            
+        if (not isinstance(lattice, np.ndarray)) \
+           or (value.shape != (3, 3)):
+            self.logger.error("The value of 'lattice' is "
+                              "not an 3x3 ndarray. Exiting.")
+            sys.exit(1)
+
+    def _check_comment(self, comment = None):
+        """Check that the comment entry is present and
+        is a string.
+        
+        Parameters
+        ----------
+        comment, optional
+            The comment to be checked. If not supplied the
+            'comment' key in the 'poscar_dict' is checked.
+
+        """
+
+        if comment is None:
+            try:
+                comment = self.poscar_dict["comment"]
+            except KeyError:
+            self.logger.error("There is no key 'comment' in "
+                              "'poscar_dict'. Exiting.")
+            sys.exit(1)
+
+        if not isinstance(comment, str):
+            self.logger.error("The 'comment' is not a string. Exiting.")
+            sys.exit(1)
+
+    def _check_sites(self, sites = None):
+        """Check that the sites entries are present.
+
+        Parameters
+        ----------
+        sites, optional
+            The sites to be checked. If not supplied the
+            'sites' key in the 'poscar_dict' is checked.
+
+        """
+        
+        if sites is None:
+            try:
+                sites = self.poscar_dict["sites"]
+            except KeyError:
+                self.logger.error("There is no key 'sites' in "
+                                  "'poscar_dict'. Exiting.")
+                sys.exit(1)
+
+        if not isinstance(sites, list):
+            self.logger.error("The 'sites' entry "
+                              "have to be a list. Exiting.")
+            sys.exit(1)
+        
+    def _check_site(self, site = None):
+        """Check that the site entry is a Site() object.
+
+        Parameters
+        ----------
+        site, optional
+            The site to be checked. If not supplied the entries under
+            the 'sites' key in the 'poscar_dict' is checked.
+
+        """
+        if sites is None:
+            try:
+                sites = self.poscar_dict["sites"]
+            except KeyError:
+                self.logger.error("There is no key 'sites' in "
+                                  "'poscar_dict'. Exiting.")
+                sys.exit(1)
+
+            for site in sites:
+                if not isinstance(site, Site):
+                    self.logger.error("At least one of the values in 'sites' "
+                                      "is not a Site() object. Exiting.")
+                    sys.exit(1)
+        else:
+            if not isinstance(site, Site):
+                self.logger.error("The 'site' "
+                                  "is not a Site() object. Exiting.")
+                sys.exit(1)
+                
+    def _check_site_number(self, site_number):
+        """Check that the site_number is an int and that
+        it is not out of bounds.
+
+        Parameters
+        ----------
+        site_number : int
+            The site_number to be checked
+
+        """
+        
         if not isinstance(site_number, int):
             self.logger.error("The supplied 'site_number' is "
                               "not an integer. Exiting.")
             sys.exit(1)
-        # add test for out of bounds
-        del self.poscar_dict["sites"][site_number]
+        sites = self.poscar_dict["sites"]
+        if site_number > (len(sites)-1):
+            self.logger.error("The supplied site_number is larger "
+                              "than the number of sites. Exiting.")
+            sys.exit(1)
 
+        
     def get(self, tag, comment=False):
         """Return the value and comment of the entry with tag.
 
