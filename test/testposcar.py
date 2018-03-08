@@ -7,12 +7,12 @@ import numpy as np
 testdir = os.path.dirname(__file__)
 srcdir = '../parsevasp'
 sys.path.insert(0, os.path.abspath(os.path.join(testdir, srcdir)))
-import parsevaspposcar
+import poscar
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('Testing')
 
-poscar = parsevaspposcar.Poscar(file_path = testdir + "/POSCAR")
+poscar = poscar.Poscar(file_path = testdir + "/POSCAR")
 
 poscar.modify("lattice", np.array([[2.0, 0.0, 0.0],
                                  [0.0, 2.0, 0.0],
