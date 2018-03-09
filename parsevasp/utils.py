@@ -2,7 +2,7 @@
 # python specifics
 import sys
 import logging
-
+import os
 
 def readlines_from_file(filename, contains=None):
     """ Read a file and return the whole file or specific lines
@@ -132,3 +132,20 @@ def is_number(s):
         is_number = False
 
     return is_number
+
+def remove_newline(fobj):
+    """Removes the newline at the end of a file. Usefull
+    to run after a for loop that writes a newline character
+    at each step. Other solutions cannot handle very large files.
+
+    Parameters
+    ----------
+    fobj : object
+        A file object.
+
+    """
+
+    # remove last newline, check number of chars, different
+    # for each OS
+    remove_chars = len(os.linesep)
+    fobj.truncate(fobj.tell() - remove_chars)
