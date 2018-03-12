@@ -3,6 +3,7 @@ import sys
 import logging
 import numpy as np
 from collections import Counter
+import StringIO
 
 import utils
 
@@ -591,6 +592,26 @@ class Poscar(object):
 
         return dictionary
 
+    def get_string(self):
+        """Get a string containing the entries in a POSCAR
+        compatible fashion. Each line is broken by a newline
+        character
+
+        Returns
+        -------
+
+        poscar_string : str
+            A string containing the POSCAR entries of the
+            current instance.
+
+        """
+        
+        string_object = StringIO.StringIO()
+        self._write(poscar = string_object)
+        poscar_string = string_object.getvalue()
+        string_object.close()
+
+        return poscar_string
         
     def write(self, file_path):
         """ Write POSCAR like files
@@ -603,8 +624,21 @@ class Poscar(object):
 
         """
 
-        self._validate()
         poscar = utils.file_handler(file_path, status='w')
+        self._write(poscar = poscar)
+        utils.file_handler(file_handler=poscar)        
+        
+    def _write(self, poscar):
+        """ Write POSCAR like files to a file or string
+
+        Parameters
+        ----------
+        poscar : object
+            Either a file object or a StringIO object.
+
+        """
+
+        self._validate()
         entries = self.entries
         comment = entries["comment"]
         unitcell = entries["unitcell"]
@@ -654,8 +688,6 @@ class Poscar(object):
                              sel[1] + " " +
                              sel[2])
             poscar.write("\n")
-        # here we also need the velocities
-        utils.file_handler(file_handler=poscar)
 
 class Site(object):
 

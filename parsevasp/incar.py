@@ -4,8 +4,10 @@ import os
 import numpy as np
 import logging
 import mmap
+import StringIO
 # sys.path.append(os.path.dirname(__file__))
 # print sys.path
+
 import utils
 import constants
 
@@ -229,14 +231,20 @@ class Incar(object):
         # 1.0 - float
         # [1.0, 2.0, 3.0] - list of floats
 
+        
         if type(value) is list:
             # list of values (we know all are either string, int or float)
             string = ' '.join(map(str, value))
         else:
+            if isinstance(value, bool):
+                if value:
+                    return ".TRUE."
+                else:
+                    return ".FALSE."
             string = str(value)
 
         return string
-
+    
     def validate(self):
         """Validate the content of the current Incar instance.
 
@@ -336,8 +344,27 @@ class Incar(object):
             dictionary[key] = entry.get_value()
 
         return dictionary
-        
 
+    def get_string(self):
+        """Get a string containing the entries in an
+        POSCAR compatible fashion. Each line is terminated by
+        a newline character.
+
+        Returns
+        -------
+        incar_string : string
+            A string on POSCAR compatible form.
+
+        """
+
+        string_object = StringIO.StringIO()
+        self._write(incar = string_object)
+        incar_string = string_object.getvalue()
+        string_object.close()
+
+        return incar_string
+        
+        
     def write(self, file_path, comments=False):
         """Write the content of the current Incar instance to
         file.
@@ -351,8 +378,26 @@ class Incar(object):
             else not.
 
         """
+        
+        incar = utils.file_handler(file_path, status='w')        
+        self._write(incar = incar)
+        utils.file_handler(file_handler=incar)        
+        
+    def _write(self, incar, comments=False):
+        """Write the content of the current Incar instance to
+        file or string.
 
-        incar = utils.file_handler(file_path, status='w')
+        Parameters
+        ----------
+        incar : object
+            Either a file object or a StringIO object.
+        comments : bool, optional
+            If set to true, the comments are also dumped to the file,
+            else not.
+
+        """
+
+
         # write in alfabetical order
         keys = sorted(self.entries)
         entries = self.entries
@@ -368,7 +413,6 @@ class Incar(object):
             string = str(key.upper()) + " = " + value + comment + "\n"
             incar.write(string)
         utils.remove_newline(incar)
-        utils.file_handler(file_handler=incar)
 
 class IncarItem(object):
 
