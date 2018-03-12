@@ -343,9 +343,11 @@ class Poscar(object):
                 self.logger.error("There is no key 'comment' in "
                                   "'entries'. Exiting.")
                 sys.exit(1)
-        if not isinstance(comment, str):
-            self.logger.error("The 'comment' is not a string. Exiting.")
-            sys.exit(1)
+        # allow None for comment
+        if self.entries["comment"] is not None:
+            if not isinstance(comment, str):
+                self.logger.error("The 'comment' is not a string. Exiting.")
+                sys.exit(1)
 
     def _check_sites(self, sites = None):
         """Check that the sites entries are present.
@@ -381,7 +383,7 @@ class Poscar(object):
             the 'sites' key in the 'entries' is checked.
 
         """
-        if sites is None:
+        if site is None:
             try:
                 sites = self.entries["sites"]
             except KeyError:
@@ -647,7 +649,7 @@ class Poscar(object):
         # update comment
         compound = ""
         for index, specie in enumerate(species):
-            compound = compound + str(specie)+str(num_species[index])
+            compound = compound + str(specie).capitalize()+str(num_species[index])
         if comment is None:
             comment = "# Compound: " + compound + "."
         else:
@@ -691,8 +693,8 @@ class Poscar(object):
 
 class Site(object):
 
-    def __init__(self, specie, position, selective=None, direct = True,
-                 logger=None):
+    def __init__(self, specie, position, selective=[False, False, False],
+                 direct = True, logger=None):
         """A site, typically a position in POSCAR.
 
         Parameters
