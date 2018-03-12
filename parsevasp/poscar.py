@@ -485,8 +485,7 @@ class Poscar(object):
         # now make sure the sites is on the same order
         ordered_sites = []
         for specie in species:
-            ordered_sites.append([site for site in sites if specie == site[0]])
-        
+            ordered_sites.extend([site for site in sites if specie == site[0]])
         # EFL: consider to also sort on coordinate after specie
         
         return ordered_sites, species, num_species, selective
@@ -609,6 +608,17 @@ class Poscar(object):
         entries = self.entries
         comment = entries["comment"]
         unitcell = entries["unitcell"]
+        # sort and group to VASP specifications
+        sites, species, num_species, selective = self._sort_and_group_sites()
+        # update comment
+        compound = ""
+        for index, specie in enumerate(species):
+            compound = compound + str(specie)+str(num_species[index])
+        if comment is None:
+            comment = "# Compound: " + compound + "."
+        else:
+            comment = "# Parsevasp ejected compound: " + compound + \
+                      ". Old comment: " + comment + "."
         poscar.write(comment + "\n")
         # we avoid usage of the scaling factor
         poscar.write("1.0\n")
@@ -617,8 +627,6 @@ class Poscar(object):
             poscar.write(str(unitcell[i][0]) + " " +
                          str(unitcell[i][1]) + " " +
                          str(unitcell[i][2]) + "\n")
-        # sort and group to VASP specifications
-        sites, species, num_species, selective = self._sort_and_group_sites()
         for specie in species:
             poscar.write(str(specie).capitalize() + " ")
         poscar.write("\n")

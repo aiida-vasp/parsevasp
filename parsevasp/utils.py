@@ -149,3 +149,12 @@ def remove_newline(fobj):
     # for each OS
     remove_chars = len(os.linesep)
     fobj.truncate(fobj.tell() - remove_chars)
+
+def get_gcd(lst):
+    """Get the greater common divider for a list of numbers.
+    Float numbers are ignored, but divided by the located gcd
+    from the integers in the end
+
+    """
+
+    return
