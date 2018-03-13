@@ -518,7 +518,7 @@ class IncarItem(object):
             content_type = []
             clean_value = []
             for element in values:
-                cnt_type = self._test_string_content(element)
+                cnt_type = utils.test_string_content(element)
                 content_type.append(cnt_type)
                 if cnt_type == 'int':
                     cnt = int(element)
@@ -590,27 +590,3 @@ class IncarItem(object):
             return False
         else:
             return string
-
-    def _test_string_content(self, string):
-        """Detects if string is integer, float or string.
-
-        Parameters
-        ----------
-        string : string
-            An input string to be tested.
-
-        Returns
-        -------
-        string
-            A string with value 'int' if input is an integer,
-            'float' if the input is a float and 'string' if it
-            is just a regular string.
-
-        """
-        try:
-            float(string)
-            return 'int' if ((string.count('.') == 0) and \
-                             ('e' not in string) and \
-                             ('E' not in string)) else 'float'
-        except ValueError:
-            return 'string'
