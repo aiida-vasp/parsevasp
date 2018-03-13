@@ -12,11 +12,11 @@ import poscar
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('Testing')
 
-poscar = poscar.Poscar(file_path = testdir + "/POSCAR")
+poscar = poscar.Poscar(file_path = testdir + "/POSCAREXT")
 
 poscar.modify("unitcell", np.array([[2.0, 0.0, 0.0],
                                  [0.0, 2.0, 0.0],
                                  [0.0, 0.0, 2.0]]))
-poscar.delete_site(7)
+poscar.delete_site(2)
 
-poscar.write(file_path = testdir + "/POSCARMOD")
+poscar.write(file_path = testdir + "/POSCAREXTMOD")

@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 setup(
   name = 'parsevasp',
   packages = find_packages(exclude=['test']),
-  version = '0.2.0',
+  version = '0.2.1',
   description = 'A general parser for VASP',
   author = 'Espen Flage-Larsen',
   author_email = 'espen.flage-larsen@sintef.no',

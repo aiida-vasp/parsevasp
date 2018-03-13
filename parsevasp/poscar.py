@@ -124,6 +124,7 @@ class Poscar(object):
         unitcell = [[0.0 for y in range(3)] for x in range(3)]
         nions = 0
         spec = None
+        loopmax = 8
         if (vasp5):
             unitcell[0] = [float(x) for x in poscar[2].split()]
             unitcell[1] = [float(x) for x in poscar[3].split()]
@@ -132,22 +133,20 @@ class Poscar(object):
             atoms = [int(x) for x in poscar[6].split()]
             for i in range(len(atoms)):
                 nions = nions + atoms[i]
-            if (poscar[7][0] == "s") or (poscar[7][0] == "S"):
-                self.logger.info("Selective tag found")
+            if poscar[7][0].lower() == "s":
                 selective = True
                 loopmax = 9
-                if not (poscar[8][0] == "D" or poscar[8][0] == "d"):
+                if not poscar[8][0].lower() == "d":
                     self.logger.error(
                         "Please supply a POSCAR in direct coordinates. "
                         "Exiting.")
                     sys.exit(1)
-            else:
-                loopmax = 8
-
-            if not (poscar[7][0] == "D" or poscar[7][0] == "d") and selective:
-                self.logger.error(
-                    "Please supply a POSCAR in direct coordinates. Exiting.")
-                sys.exit(1)
+            if not selective:
+                if not poscar[7][0].lower() == "d":
+                    self.logger.error(
+                        "Please supply a POSCAR in direct coordinates. "
+                        "Exiting.")
+                    sys.exit(1)
         else:
             self.logger.error(
                 "VASP 4 POSCAR is not supported. User, please modernize. "
@@ -157,7 +156,10 @@ class Poscar(object):
         # create site objects
         specie_slot = 0
         index = 1
-        sites = []
+        sites_temp = []
+        velocities = False
+        predictor = False
+        # loop positions
         for i in range(nions):
             # fetch specie
             if index > atoms[specie_slot]:
@@ -171,18 +173,82 @@ class Poscar(object):
             position[1] = float(line[1])
             position[2] = float(line[2])
             # fetch selective flags
-            flags = [False, False, False]
+            flags = [True, True, True]
             if selective:
-                if "t" in line[3].lower():
-                    flags[0] = True
-                if "t" in line[4].lower():
-                    flags[1] = True
-                if "t" in line[5].lower():
-                    flags[2] = True
+                if "f" in line[3].lower():
+                    flags[0] = False
+                if "f" in line[4].lower():
+                    flags[1] = False
+                if "f" in line[5].lower():
+                    flags[2] = False
             # create a site object and add to sites list
-            site = Site(specie, position, selective = flags)
-            sites.append(site)
             index = index + 1
+            velo = None
+            pred = None
+            sites_temp.append([specie, position, flags, velo, pred])
+        # now check if there is more in the POSCAR
+        loopmax_pos = nions+loopmax
+        if len(poscar) > loopmax_pos:
+            first_char = poscar[loopmax_pos][0].lower()
+            if first_char == 'd' \
+               or first_char == 'c':
+                velocities = True
+            elif poscar[loopmax_pos] == '\n':
+                predictor = True
+        # now check that the next line is in fact a coordinate
+        loopmax_pos = loopmax_pos + 1
+        # allow for blank lines at the end of the positions
+        if (poscar) > loopmax_pos:
+            if not utils.is_number(poscar[loopmax_pos].split()[0]):
+                self.logger.error("A velocity or predictor-corrector "
+                                  "coordinate was not detected. Exiting.")
+                sys.exit(1)
+        else:
+            # but make sure the predictor is set back to False
+            # if we only have a blank line and nothing else following
+            # the coordinates
+            predictor = False
+        if velocities:
+            for i in range(nions):
+                # fetch velocities
+                line = poscar[i + loopmax_pos].split()
+                vel = np.zeros(3)
+                vel[0] = float(line[0])
+                vel[1] = float(line[1])
+                vel[2] = float(line[2])
+                sites_temp[i][3] = vel
+        # now check if there is predictor-corrector coordinates following
+        # the velocities
+        loopmax_pos = nions + loopmax_pos
+        if len(poscar) > loopmax_pos:
+            if poscar[loopmax_pos] == '\n':
+                loopmax_pos = loopmax_pos + 1
+                if utils.is_number(poscar[loopmax_pos].split()[0]):
+                    for i in range(nions):
+                        line = poscar[i + loopmax_pos].split()
+                        pre = np.zeros(3)
+                        pre[0] = float(line[0])
+                        pre[1] = float(line[1])
+                        pre[2] = float(line[2])
+                        sites_temp[i][4] = pre
+        # do one final loop to create the objects and read
+        # predictors if they exist
+        sites = []
+        loopmax_pos = nions + loopmax + 1
+        for i in range(nions):
+            pre = np.zeros(3)
+            if predictor:
+                line = poscar[i + loopmax_pos].split()
+                pre[0] = float(line[0])
+                pre[1] = float(line[1])
+                pre[2] = float(line[2])
+                sites_temp[i][4] = pre
+            site = Site(sites_temp[i][0], sites_temp[i][1],
+                        selective = sites_temp[i][2],
+                        velocities = sites_temp[i][3],
+                        predictors = sites_temp[i][4])
+            sites.append(site)
+            
         # apply scaling factor
         unitcell = [[x * scaling for x in y] for y in unitcell]
         # build dictionary and convert to NumPy
@@ -190,7 +256,6 @@ class Poscar(object):
         poscar_dict["comment"] = comment.strip()
         poscar_dict["unitcell"] = np.asarray(unitcell)
         poscar_dict["sites"] = sites
-
         return poscar_dict
 
     def modify(self, entry, value, site_number=None):
@@ -459,19 +524,29 @@ class Poscar(object):
         sites = []
         species = []
         selective = False
+        velocities = False
+        predictors = False
         for site in self.entries["sites"]:
             specie = site.get_specie()
             select = site.get_selective()
             position = site.get_position()
             direct = site.get_direct()
+            vel = site.get_velocities()
+            pre = site.get_predictors()
             if direct is False:
                 # make sure it is direct
                 position = self._to_direct(position)
-                self.logger.error("Cartesian is not yet implemented. Exiting.")
+                self.logger.error("Cartesian is not yet implemented. "
+                                  "Exiting.")
                 sys.exit(1)
-            if True in select:
+            if False in select:
                 selective = True
-            sites.append([specie, position, select, direct])
+            if vel is not None:
+                velocities = True
+            if pre is not None:
+                predictors = True
+            sites.append([specie, position, select, direct,
+                          vel, pre])
             species.append(specie)
             
         # find unique entries and their number
@@ -491,7 +566,8 @@ class Poscar(object):
             ordered_sites.extend([site for site in sites if specie == site[0]])
         # EFL: consider to also sort on coordinate after specie
         
-        return ordered_sites, species, num_species, selective
+        return ordered_sites, species, num_species, selective, \
+            velocities, predictors
             
     def _get_key(self, item):
         """Key fetcher for the sorted function.
@@ -536,40 +612,28 @@ class Poscar(object):
 
         return position
         
-    def get(self, tag, comment=False):
+    def get(self, tag):
         """Return the value and comment of the entry with tag.
 
         Parameters
         ----------
         tag : string
             The entry tag of the POSCAR entry.        
-        comment : bool, optional
-            If set to True, the comment is also returned, otherwise
-            not.
 
         Returns
         -------
         value : string, int, float or list
             The value of the tag entry
-        com : string, optional
-            If comment is set to True, the comment associated with
-            the tag entry will be returned here.
 
         """
 
         value = None
-        com = None
         try:
             value = self.entries[tag].get_value()
-            if comment:
-                com = self.entries[tag].get_value()
         except KeyError:
             pass
 
-        if comment:
-            return value, com
-        else:
-            return value
+        return value
 
     def get_dict(self):
         """Get a true dictionary containing the entries in an
@@ -588,6 +652,8 @@ class Poscar(object):
                 dictionary[key] = [[element.get_specie().capitalize(),
                                     element.get_position(),
                                     element.get_selective(),
+                                    element.get_velocities(),
+                                    element.get_predictors(),
                                     element.get_direct()]  for element in entry]
             else:
                 dictionary[key] = entry
@@ -645,15 +711,20 @@ class Poscar(object):
         comment = entries["comment"]
         unitcell = entries["unitcell"]
         # sort and group to VASP specifications
-        sites, species, num_species, selective = self._sort_and_group_sites()
+        sites, species, num_species, selective, velocities, predictors = \
+            self._sort_and_group_sites()
         # update comment
         compound = ""
         for index, specie in enumerate(species):
-            compound = compound + str(specie).capitalize()+str(num_species[index])
+            if num_species[index] == 1:
+                num_string = ""
+            else:
+                num_string = str(num_species[index])
+            compound = compound + str(specie).capitalize()+num_string
         if comment is None:
             comment = "# Compound: " + compound + "."
         else:
-            comment = "# Parsevasp ejected compound: " + compound + \
+            comment = "# Compound: " + compound + \
                       ". Old comment: " + comment + "."
         poscar.write(comment + "\n")
         # we avoid usage of the scaling factor
@@ -680,20 +751,35 @@ class Poscar(object):
             poscar.write(str(site[1][0]) + " " +
                          str(site[1][1]) + " " + str(site[1][2]))
             if selective:
-                sel = ["F", "F", "F"]
+                sel = ["T", "T", "T"]
                 flags = site[2]
                 for index, flag in enumerate(flags):
-                    if flag:
-                        sel[index] = "T"
+                    if not flag:
+                        sel[index] = "F"
                     
                 poscar.write(" " + sel[0] + " " +
                              sel[1] + " " +
                              sel[2])
             poscar.write("\n")
+        # write velocities if they exist (again, always direct)
+        if velocities:
+            poscar.write("Direct\n")
+            for site in sites:
+                poscar.write(str(site[4][0]) + " " +
+                             str(site[4][1]) + " " + str(site[4][2])+"\n")
+        if predictors:
+            poscar.write("\n")
+            for site in sites:
+                poscar.write(str(site[5][0]) + " " +
+                             str(site[5][1]) + " " + str(site[5][2])+"\n")
+        # remove newline at the end
+        utils.remove_newline(poscar)
+
 
 class Site(object):
 
-    def __init__(self, specie, position, selective=[False, False, False],
+    def __init__(self, specie, position, selective=[True, True, True],
+                 velocities=None, predictors=None,
                  direct = True, logger=None):
         """A site, typically a position in POSCAR.
 
@@ -705,7 +791,13 @@ class Site(object):
             The position of the current site as a ndarray of floats.
         selective : ndarray, optional
             The selective tags as a ndarray of booleans. If not
-            supplied, defaults to None.
+            supplied, defaults to True.
+        velocities : ndarray, optional
+            The velocities for each position. Defaults to None if not
+            supplied.
+        predictors : ndarray, optional
+            The predictor-corrector coordinates. Defaults to None if not
+            supplied.
         direct : bool, optional
             True if the position is in direct coordinates. This is the
             default.
@@ -722,6 +814,8 @@ class Site(object):
         self.specie = specie.lower()
         self.position = position
         self.selective = selective
+        self.velocities = velocities
+        self.predictors = predictors
         self.direct = direct
 
     def get_specie(self):
@@ -733,5 +827,11 @@ class Site(object):
     def get_selective(self):
         return self.selective
 
+    def get_velocities(self):
+        return self.velocities
+
+    def get_predictors(self):
+        return self.predictors
+    
     def get_direct(self):
         return self.direct
