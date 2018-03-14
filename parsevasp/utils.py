@@ -156,7 +156,7 @@ def is_number(s):
 
     return is_number
 
-def remove_newline(fobj):
+def remove_newline(fobj, num_newlines = 1):
     """Removes the newline at the end of a file. Usefull
     to run after a for loop that writes a newline character
     at each step. Other solutions cannot handle very large files.
@@ -165,12 +165,14 @@ def remove_newline(fobj):
     ----------
     fobj : object
         A file object.
+    num_newlines : int, optional
+        The number of newlines to remove. Defaults to 1.
 
     """
 
     # remove last newline, check number of chars, different
     # for each OS
-    remove_chars = len(os.linesep)
+    remove_chars = len(os.linesep) + num_newlines - 1
     fobj.truncate(fobj.tell() - remove_chars)
 
 def get_gcd(lst):

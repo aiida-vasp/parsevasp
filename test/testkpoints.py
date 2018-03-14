@@ -14,5 +14,6 @@ logger = logging.getLogger('Testing')
 
 kpoints = kpoints.Kpoints(file_path = testdir + "/KPOINTS")
 
+kpoints.modify("divisions", [5, 5, 5])
 
-#poscar.write(file_path = testdir + "/KPOINTSEXPMOD")
+kpoints.write(file_path = testdir + "/KPOINTSMOD")

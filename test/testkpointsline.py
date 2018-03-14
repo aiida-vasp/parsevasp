@@ -12,8 +12,8 @@ import kpoints
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('Testing')
 
-kpoints = kpoints.Kpoints(file_path = testdir + "/KPOINTSEXP")
+kpoints = kpoints.Kpoints(file_path = testdir + "/KPOINTSLINE")
 
-kpoints.modify("tetra", [[7, 2, 3, 4, 5]])
+kpoints.modify("num_kpoints", 50)
 
-kpoints.write(file_path = testdir + "/KPOINTSEXPMOD")
+kpoints.write(file_path = testdir + "/KPOINTSLINEMOD")
