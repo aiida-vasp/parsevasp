@@ -109,7 +109,7 @@ def is_sequence(arg):
 
     return sequence
 
-def test_string_content(self, string):
+def test_string_content(string):
     """Detects if string is integer, float or string.
     
     Parameters

@@ -198,7 +198,7 @@ class Poscar(object):
         # now check that the next line is in fact a coordinate
         loopmax_pos = loopmax_pos + 1
         # allow for blank lines at the end of the positions
-        if (poscar) > loopmax_pos:
+        if len(poscar) > loopmax_pos:
             if not utils.is_number(poscar[loopmax_pos].split()[0]):
                 self.logger.error("A velocity or predictor-corrector "
                                   "coordinate was not detected. Exiting.")
