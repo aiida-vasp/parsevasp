@@ -131,7 +131,7 @@ class Kpoints(object):
             line_mode = True
         if not automatic and not line_mode:
             direct = False
-            if third_line[0].lower() == 'd':
+            if third_line[0].lower() not in ['k', 'c']:
                 direct = True
             if not direct:
                 self._logger.error("Please supply the KPOINTS in direct "
