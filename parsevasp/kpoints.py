@@ -794,9 +794,19 @@ class Kpoints(object):
             kpoints.write("Direct\n")
             for point in entries["points"]:
                 coordinate = point.get_point()
+                weight = point.get_weight()
+                if weight is None:
+                    # if weight is set to None, force it
+                    # to one
+                    logger.info("None was detected for the weight, "
+                                "but for excplicit mode a weight has "
+                                "to be given. Setting it to 1.0. "
+                                "Continuing.")
+                    weight = 1.0
                 kpoints.write(str(coordinate[0]) + " " +
                               str(coordinate[1]) + " " +
                               str(coordinate[2]) + " " +
+                              str(weight) +
                               "\n")
             if entries["tetra"] is not None:
                 kpoints.write("Tetrahedra\n")
