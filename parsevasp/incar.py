@@ -37,21 +37,24 @@ class Incar(object):
         self.incar_dict = incar_dict
         self.incar_string = incar_string
 
-        if logger is None:
-            logger = logging.getLogger(__name__)
-        self.logger = logger
+        # set logger
+        if logger is not None:
+            self._logger = logger
+        else:
+            logging.basicConfig(level=logging.DEBUG)
+            self._logger = logging.getLogger('IncarParser')
 
         # check that only one argument is supplied
         if (incar_string is not None and incar_dict is not None) \
            or (incar_string is not None and file_path is not None) \
            or (incar_dict is not None and file_path is not None):
-            self.logger.error("Please only supply one argument when "
+            self._logger.error("Please only supply one argument when "
                               "initializing Incar. Exiting.")
             sys.exit(1)
         # check that at least one is suplpied
         if (incar_string is None and incar_dict is None
                 and file_path is None):
-            self.logger.error("Please supply one argument when "
+            self._logger.error("Please supply one argument when "
                               "initializing Incar. Exiting.")
             sys.exit(1)
 
@@ -132,13 +135,13 @@ class Incar(object):
                     # then split on = and analyze each entry
                     final_split = ntry.split("=")
                     if len(final_split) > 2:
-                        self.logger.error("Detected two equal signs for an entry in "
+                        self._logger.error("Detected two equal signs for an entry in "
                                           "the INCAR file. The following line contains "
                                           "the problem:\n\n" +
                                           ntry + "\n\nPlease correct. Exiting.")
                         sys.exit(1)
                     if len(final_split) == 1:
-                        self.logger.error("Detected a comment line that does not start "
+                        self._logger.error("Detected a comment line that does not start "
                                           "with a #. Please correct and be consistent. "
                                           "Exiting.")
                         sys.exit(1)
@@ -148,7 +151,7 @@ class Incar(object):
                     entry = IncarItem(tag, value, comment)
                     clean_tag = entry.get_tag()
                     if clean_tag in incar_dict:
-                        self.logger.info("Tag " + entry.get_tag() + " already "
+                        self._logger.info("Tag " + entry.get_tag() + " already "
                                          "found in the INCAR dictionary, "
                                          "overwriting it.")
                     incar_dict[clean_tag] = entry
@@ -183,7 +186,7 @@ class Incar(object):
             if isinstance(value, str):
                 comment = value.split('#')
                 if len(comment) > 2:
-                    self.logger.info("Multiple comment tags detected for tag " +
+                    self._logger.info("Multiple comment tags detected for tag " +
                                      str(tag) + ". Exiting.")
                     sys.exit(1)
                 if len(comment) == 1:
@@ -198,7 +201,7 @@ class Incar(object):
                 entry = IncarItem(tag, value, comment)
             clean_tag = entry.get_tag()
             if clean_tag in incar_dict:
-                self.logger.info("Tag " + entry.get_tag() + " already "
+                self._logger.info("Tag " + entry.get_tag() + " already "
                                  "found in the INCAR dictionary, "
                                  "overwriting it.")
             incar_dict[clean_tag] = entry
@@ -432,9 +435,6 @@ class IncarItem(object):
 
         """
 
-        if logger is None:
-            logger = logging.getLogger(__name__)
-        self.logger = logger
         # clean tag and value
         clean_tag, clean_value, clean_comment = self._clean_entry(tag,
                                                                   value,
@@ -536,7 +536,7 @@ class IncarItem(object):
 
             # check if all values are the same type (they should be)
             if not all(x == content_type[0] for x in content_type):
-                self.logger.error("All values of the tag " + clean_tag.upper() +
+                self._logger.error("All values of the tag " + clean_tag.upper() +
                                   " are not of the same type. Most likely "
                                   "you forgot to add # as a comment tag. "
                                   "Exiting.")
@@ -547,7 +547,7 @@ class IncarItem(object):
             # float or bool, accept this
             if not (isinstance(value, int) or isinstance(value, float)
                     or isinstance(value, bool) or (type(value) is list)):
-                self.logger.error("The type: " + str(type(value)) + " of the "
+                self._logger.error("The type: " + str(type(value)) + " of the "
                                   "supplied value for the INCAR tag is not "
                                   "recognized. Exiting.")
                 sys.exit(1)

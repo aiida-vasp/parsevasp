@@ -33,21 +33,24 @@ class Poscar(object):
         self.poscar_dict = poscar_dict
         self.poscar_string = poscar_string
 
-        if logger is None:
-            logger = logging.getLogger(__name__)
-        self.logger = logger
+        # set logger
+        if logger is not None:
+            self._logger = logger
+        else:
+            logging.basicConfig(level=logging.DEBUG)
+            self._logger = logging.getLogger('PoscarParser')
 
         # check that only one argument is supplied
         if (poscar_string is not None and poscar_dict is not None) \
            or (poscar_string is not None and file_path is not None) \
            or (poscar_dict is not None and file_path is not None):
-            self.logger.error("Please only supply one argument when "
+            self._logger.error("Please only supply one argument when "
                               "initializing Poscar. Exiting.")
             sys.exit(1)
         # check that at least one is suplpied
         if (poscar_string is None and poscar_dict is None
                 and file_path is None):
-            self.logger.error("Please supply one argument when "
+            self._logger.error("Please supply one argument when "
                               "initializing Poscar. Exiting.")
             sys.exit(1)
 
@@ -118,7 +121,7 @@ class Poscar(object):
         # check scaling factor
         scaling = float(poscar[1].split()[0])
         if (scaling < 0.0):
-            self.logger.error("Currently negative scaling values in POSCAR is "
+            self._logger.error("Currently negative scaling values in POSCAR is "
                               "not supported. Exiting.")
             sys.exit(1)
         unitcell = [[0.0 for y in range(3)] for x in range(3)]
@@ -137,18 +140,18 @@ class Poscar(object):
                 selective = True
                 loopmax = 9
                 if not poscar[8][0].lower() == "d":
-                    self.logger.error(
+                    self._logger.error(
                         "Please supply a POSCAR in direct coordinates. "
                         "Exiting.")
                     sys.exit(1)
             if not selective:
                 if not poscar[7][0].lower() == "d":
-                    self.logger.error(
+                    self._logger.error(
                         "Please supply a POSCAR in direct coordinates. "
                         "Exiting.")
                     sys.exit(1)
         else:
-            self.logger.error(
+            self._logger.error(
                 "VASP 4 POSCAR is not supported. User, please modernize. "
                 "Exiting.")
             sys.exit(1)
@@ -200,7 +203,7 @@ class Poscar(object):
         # allow for blank lines at the end of the positions
         if len(poscar) > loopmax_pos:
             if not utils.is_number(poscar[loopmax_pos].split()[0]):
-                self.logger.error("A velocity or predictor-corrector "
+                self._logger.error("A velocity or predictor-corrector "
                                   "coordinate was not detected. Exiting.")
                 sys.exit(1)
         else:
@@ -288,7 +291,7 @@ class Poscar(object):
             self._check_site_number(site_number)
             # check that position is an integer
             if not utils.is_number(site_number):
-                self.logger.error("The supplied 'site_number' is "
+                self._logger.error("The supplied 'site_number' is "
                                   "not a number (i.e. the index) "
                                   "starting from 1 for the site "
                                   "position to be modified. Exiting.")
@@ -343,7 +346,7 @@ class Poscar(object):
         try:
             entries = self.entries
         except AttributeError:
-            self.logger.error("There is no 'entries'. Exiting.")
+            self._logger.error("There is no 'entries'. Exiting.")
             sys.exit(1)
         
 
@@ -359,7 +362,7 @@ class Poscar(object):
 
         if not (("comment" in entry) or ("unitcell" in entry) or
                 ("sites" in entry)):
-            self.logger.error("Only 'comment', 'unitcell' or "
+            self._logger.error("Only 'comment', 'unitcell' or "
                               "'sites' is allowed as input for "
                               "entry. Exiting.")
             sys.exit(1)
@@ -380,13 +383,13 @@ class Poscar(object):
             try:
                 unitcell = self.entries["unitcell"]
             except KeyError:
-                self.logger.error("There is no key 'unitcell' in "
+                self._logger.error("There is no key 'unitcell' in "
                                   "'entries'. Exiting.")
                 sys.exit(1)
             
         if (not isinstance(unitcell, np.ndarray)) \
            or (unitcell.shape != (3, 3)):
-            self.logger.error("The value of 'unitcell' is "
+            self._logger.error("The value of 'unitcell' is "
                               "not an 3x3 ndarray. Exiting.")
             sys.exit(1)
 
@@ -405,13 +408,13 @@ class Poscar(object):
             try:
                 comment = self.entries["comment"]
             except KeyError:
-                self.logger.error("There is no key 'comment' in "
+                self._logger.error("There is no key 'comment' in "
                                   "'entries'. Exiting.")
                 sys.exit(1)
         # allow None for comment
         if self.entries["comment"] is not None:
             if not isinstance(comment, str):
-                self.logger.error("The 'comment' is not a string. Exiting.")
+                self._logger.error("The 'comment' is not a string. Exiting.")
                 sys.exit(1)
 
     def _check_sites(self, sites = None):
@@ -429,12 +432,12 @@ class Poscar(object):
             try:
                 sites = self.entries["sites"]
             except KeyError:
-                self.logger.error("There is no key 'sites' in "
+                self._logger.error("There is no key 'sites' in "
                                   "'entries'. Exiting.")
                 sys.exit(1)
 
         if not isinstance(sites, list):
-            self.logger.error("The 'sites' entry "
+            self._logger.error("The 'sites' entry "
                               "have to be a list. Exiting.")
             sys.exit(1)
         
@@ -452,18 +455,18 @@ class Poscar(object):
             try:
                 sites = self.entries["sites"]
             except KeyError:
-                self.logger.error("There is no key 'sites' in "
+                self._logger.error("There is no key 'sites' in "
                                   "'entries'. Exiting.")
                 sys.exit(1)
 
             for site in sites:
                 if not isinstance(site, Site):
-                    self.logger.error("At least one of the values in 'sites' "
+                    self._logger.error("At least one of the values in 'sites' "
                                       "is not a Site() object. Exiting.")
                     sys.exit(1)
         else:
             if not isinstance(site, Site):
-                self.logger.error("The 'site' "
+                self._logger.error("The 'site' "
                                   "is not a Site() object. Exiting.")
                 sys.exit(1)
                 
@@ -479,12 +482,12 @@ class Poscar(object):
         """
         
         if not isinstance(site_number, int):
-            self.logger.error("The supplied 'site_number' is "
+            self._logger.error("The supplied 'site_number' is "
                               "not an integer. Exiting.")
             sys.exit(1)
         sites = self.entries["sites"]
         if site_number > (len(sites)-1):
-            self.logger.error("The supplied site_number is larger "
+            self._logger.error("The supplied site_number is larger "
                               "than the number of sites. Exiting.")
             sys.exit(1)
 
@@ -536,7 +539,7 @@ class Poscar(object):
             if direct is False:
                 # make sure it is direct
                 position = self._to_direct(position)
-                self.logger.error("Cartesian is not yet implemented. "
+                self._logger.error("Cartesian is not yet implemented. "
                                   "Exiting.")
                 sys.exit(1)
             if False in select:
@@ -805,10 +808,6 @@ class Site(object):
             A standard Python logger object.
 
         """
-
-        if logger is None:
-            logger = logging.getLogger(__name__)
-        self.logger = logger
 
         # make sure specie is lowercase
         self.specie = specie.lower()

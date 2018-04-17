@@ -33,21 +33,24 @@ class Kpoints(object):
         self.kpoints_dict = kpoints_dict
         self.kpoints_string = kpoints_string
 
-        if logger is None:
-            logger = logging.getLogger(__name__)
-        self.logger = logger
+        # set logger
+        if logger is not None:
+            self._logger = logger
+        else:
+            logging.basicConfig(level=logging.DEBUG)
+            self._logger = logging.getLogger('KpointsParser')
 
         # check that only one argument is supplied
         if (kpoints_string is not None and kpoints_dict is not None) \
            or (kpoints_string is not None and file_path is not None) \
            or (kpoints_dict is not None and file_path is not None):
-            self.logger.error("Please only supply one argument when "
+            self._logger.error("Please only supply one argument when "
                               "initializing Kpoints. Exiting.")
             sys.exit(1)
         # check that at least one is suplpied
         if (kpoints_string is None and kpoints_dict is None
                 and file_path is None):
-            self.logger.error("Please supply one argument when "
+            self._logger.error("Please supply one argument when "
                               "initializing Kpoints. Exiting.")
             sys.exit(1)
 
@@ -131,7 +134,7 @@ class Kpoints(object):
             if third_line[0].lower() == 'd':
                 direct = True
             if not direct:
-                self.logger.error("Please supply the KPOINTS in direct "
+                self._logger.error("Please supply the KPOINTS in direct "
                                   "coordinates. Exiting.")
                 sys.exit(1)
             loopmax = 3
@@ -160,7 +163,7 @@ class Kpoints(object):
                         for tet in range(num_tetra):
                             con_line = kpoints[tet + loopmax].split()
                             if not len(con_line) == 5:
-                                self.logger.error("Make sure the connection "
+                                self._logger.error("Make sure the connection "
                                                   "line for the tetrahedra info "
                                                   "in the KPOINTS file contains "
                                                   "5 entries. Exiting.")
@@ -169,7 +172,7 @@ class Kpoints(object):
         if automatic:
             third_line_char = third_line[0].lower()
             if third_line_char == 'a':
-                self.logger.error("We do not support fully automatic inputs. "
+                self._logger.error("We do not support fully automatic inputs. "
                                   "Please instead modify your KPOINTS file "
                                   "in order to explicitely specify Gamma or "
                                   "Monkhorst mode, and the number of samples "
@@ -185,7 +188,7 @@ class Kpoints(object):
                 if len(kpoints) == 5:
                     shifts = [float(element) for element in kpoints[4].split()]
             elif third_line_char == 'd' or third_line_char == 'c':
-                self.logger.error("Expert mode is currently not supported. "
+                self._logger.error("Expert mode is currently not supported. "
                                   "Exiting.")
                 sys.exit(1)
         if line_mode:
@@ -194,7 +197,7 @@ class Kpoints(object):
             if kpoints[3].split()[0][0].lower() == 'r':
                 direct = True
             if not direct:
-                self.logger.error("Please supply the KPOINTS in direct "
+                self._logger.error("Please supply the KPOINTS in direct "
                                   "coordinates. Exiting.")
                 sys.exit(1)
             for index in range((len(kpoints)-4)):
@@ -253,7 +256,7 @@ class Kpoints(object):
             self._check_point_number(point_number)
             # check that position is an integer
             if not isinstance(point_number, int):
-                self.logger.error("The supplied 'point_number' is "
+                self._logger.error("The supplied 'point_number' is "
                                   "not a number (i.e. the index) "
                                   "starting from 1 for the point "
                                   "to be modified. Exiting.")
@@ -267,7 +270,7 @@ class Kpoints(object):
                 for point in value:
                     if not point.get_direct():
                         point = self._to_direct(point)
-                        self.logger.error("Conversion from reciprocal to "
+                        self._logger.error("Conversion from reciprocal to "
                                           "direct for the KPOINTS is not yet "
                                           "implemented. Exiting.")
                         sys.exit(1)
@@ -329,14 +332,14 @@ class Kpoints(object):
         try:
             entries = self.entries
         except AttributeError:
-            self.logger.error("There is no 'entries'. Exiting.")
+            self._logger.error("There is no 'entries'. Exiting.")
             sys.exit(1)
 
         # check that at least divisions or points are set
         # to something else than None
         if (self.entries["divisions"] is None) \
            and (self.entries["points"] is None):
-            self.logger.error("You have to set either 'divisions' "
+            self._logger.error("You have to set either 'divisions' "
                               "(automatic mode) or the explicit 'points'.")
             sys.exit(1)
 
@@ -355,7 +358,7 @@ class Kpoints(object):
                 ("divisions" in entry) or ("mode" in entry) or
                 ("num_kpoints" in entry) or ("shifts" in entry) or
                 ("centering") in entry):
-            self.logger.error("Only 'comment', 'points', "
+            self._logger.error("Only 'comment', 'points', "
                               "'tetra', 'tetra_volume', 'divisions', "
                               "'shifts', 'mode', 'num_kpoints' or "
                               "'centering' is allowed as input for "
@@ -377,13 +380,13 @@ class Kpoints(object):
             try:
                 comment = self.entries["comment"]
             except KeyError:
-                self.logger.error("There is no key 'comment' in "
+                self._logger.error("There is no key 'comment' in "
                                   "'entries'. Exiting.")
                 sys.exit(1)
         # allow None for comment
         if self.entries["comment"] is not None:
             if not isinstance(comment, str):
-                self.logger.error("The 'comment' is not a string. Exiting.")
+                self._logger.error("The 'comment' is not a string. Exiting.")
                 sys.exit(1)
 
     def _check_points(self, points = None):
@@ -401,13 +404,13 @@ class Kpoints(object):
             try:
                 points = self.entries["points"]
             except KeyError:
-                self.logger.error("There is no key 'points' in "
+                self._logger.error("There is no key 'points' in "
                                   "'entries'. Exiting.")
                 sys.exit(1)
         if points is not None:
             # allow points to be none (if no explicit entries are given)
             if not isinstance(points, list):
-                self.logger.error("The 'points' entry "
+                self._logger.error("The 'points' entry "
                                   "have to be a list. Exiting.")
                 sys.exit(1)
         
@@ -425,18 +428,18 @@ class Kpoints(object):
             try:
                 points = self.entries["points"]
             except KeyError:
-                self.logger.error("There is no key 'points' in "
+                self._logger.error("There is no key 'points' in "
                                   "'entries'. Exiting.")
                 sys.exit(1)
 
             for point in points:
                 if not isinstance(point, Kpoint):
-                    self.logger.error("At least one of the values in 'points' "
+                    self._logger.error("At least one of the values in 'points' "
                                       "is not a Kpoint() object. Exiting.")
                     sys.exit(1)
         else:
             if not isinstance(point, Kpoint):
-                self.logger.error("The 'point' "
+                self._logger.error("The 'point' "
                                   "is not a Kpoint() object. Exiting.")
                 sys.exit(1)
                 
@@ -452,12 +455,12 @@ class Kpoints(object):
         """
         
         if not isinstance(point_number, int):
-            self.logger.error("The supplied 'point_number' is "
+            self._logger.error("The supplied 'point_number' is "
                               "not an integer. Exiting.")
             sys.exit(1)
         points = self.entries["points"]
         if point_number > (len(points)-1):
-            self.logger.error("The supplied point_number is larger "
+            self._logger.error("The supplied point_number is larger "
                               "than the number of points. Exiting.")
             sys.exit(1)
 
@@ -477,18 +480,18 @@ class Kpoints(object):
             try:
                 shifts = self.entries["shifts"]
             except KeyError:
-                self.logger.error("There is no key 'divitions' in "
+                self._logger.error("There is no key 'divitions' in "
                                   "'entries'. Exiting.")
                 sys.exit(1)
         if shifts is not None:        
             if not isinstance(shifts, list):
-                self.logger.error("The supplied 'shifts' is not a list. "
+                self._logger.error("The supplied 'shifts' is not a list. "
                                   "Exiting.")
                 sys.exit(1)
             else:
                 for element in shifts:
                     if not isinstance(element, float):
-                        self.logger.error("Element: " + str(element) +
+                        self._logger.error("Element: " + str(element) +
                                           "is not a float. Exiting.")
                         sys.exit(1)
 
@@ -508,12 +511,12 @@ class Kpoints(object):
             try:
                 volume = self.entries["tetra_volume"]
             except KeyError:
-                self.logger.error("There is no key 'divitions' in "
+                self._logger.error("There is no key 'divitions' in "
                                   "'entries'. Exiting.")
                 sys.exit(1)
         if volume is not None:        
             if not isinstance(volume, float):
-                self.logger.error("The supplied 'tetra_volume' is not a float. "
+                self._logger.error("The supplied 'tetra_volume' is not a float. "
                                   "Exiting.")
                         
     def _check_divisions(self, divisions = None):
@@ -532,18 +535,18 @@ class Kpoints(object):
             try:
                 divisions = self.entries["divisions"]
             except KeyError:
-                self.logger.error("There is no key 'divitions' in "
+                self._logger.error("There is no key 'divitions' in "
                                   "'entries'. Exiting.")
                 sys.exit(1)
         if divisions is not None:        
             if not isinstance(divisions, list):
-                self.logger.error("The supplied 'divisions' is not a list. "
+                self._logger.error("The supplied 'divisions' is not a list. "
                                   "Exiting.")
                 sys.exit(1)
             else:
                 for element in divisions:
                     if not isinstance(element, int):
-                        self.logger.error("Element: " + str(element) +
+                        self._logger.error("Element: " + str(element) +
                                           "is not an integer. Exiting.")
                         sys.exit(1)
 
@@ -563,27 +566,27 @@ class Kpoints(object):
             try:
                 tetra = self.entries["tetra"]
             except KeyError:
-                self.logger.error("There is no key 'divisions' in "
+                self._logger.error("There is no key 'divisions' in "
                                   "'entries'. Exiting.")
                 sys.exit(1)
         if tetra is not None:        
             if not isinstance(tetra, list):
-                self.logger.error("The supplied 'tetra' is not a list. "
+                self._logger.error("The supplied 'tetra' is not a list. "
                                   "Exiting.")
                 sys.exit(1)
             else:
                 for element in tetra:
                     if not isinstance(element, list):
-                        self.logger.error("An entry in the 'tetra' list is not "
+                        self._logger.error("An entry in the 'tetra' list is not "
                                           "a list. Exiting.")
                         sys.exit(1)
                     if len(element) != 5:
-                        self.logger.error("The 'tetra' elements is not "
+                        self._logger.error("The 'tetra' elements is not "
                                           "composed of five integers. Exiting.")
                         sys.exit(1)
                     for entry in element:
                         if not isinstance(entry, int):
-                            self.logger.error("Entry: " + str(entry) +
+                            self._logger.error("Entry: " + str(entry) +
                                               " is not an integer. Exiting.")
                             sys.exit(1)
                             
@@ -602,13 +605,13 @@ class Kpoints(object):
             try:
                 centering = self.entries["centering"]
             except KeyError:
-                self.logger.error("There is no key 'centering' in "
+                self._logger.error("There is no key 'centering' in "
                                   "'entries'. Exiting.")
                 sys.exit(1)
         if centering is not None:
             # allow None
             if not (centering == "Gamma" or centering == "Monkhorst-Pack"):
-                self.logger.error("The supplied 'centering' have to be either "
+                self._logger.error("The supplied 'centering' have to be either "
                                   "Gamma or Monkhorst-Pack. Exiting.")
                 sys.exit(1)
 
@@ -627,11 +630,11 @@ class Kpoints(object):
             try:
                 num_kpoints = self.entries["num_kpoints"]
             except KeyError:
-                self.logger.error("There is no key 'num_kpoints' in "
+                self._logger.error("There is no key 'num_kpoints' in "
                                   "'entries'. Exiting.")
                 sys.exit(1)
         if not isinstance(num_kpoints, int):
-            self.logger.error("The 'num_kpoints' need to be an integer. "
+            self._logger.error("The 'num_kpoints' need to be an integer. "
                               "Exiting.")
             sys.exit(1)
             
@@ -650,13 +653,13 @@ class Kpoints(object):
             try:
                 mode = self.entries["mode"]
             except KeyError:
-                self.logger.error("There is no key 'mode' in "
+                self._logger.error("There is no key 'mode' in "
                                   "'entries'. Exiting.")
                 sys.exit(1)
         if mode is not None:
             if not ((mode == "explicit") or (mode == "automatic") \
                or (mode == "line")):
-                self.logger.error("The supplied 'mode' have to be either "
+                self._logger.error("The supplied 'mode' have to be either "
                                   "explicit, automatic or line-mode. Exiting.")
                 sys.exit(1)
                             
@@ -868,10 +871,6 @@ class Kpoint(object):
             A standard Python logger object.
 
         """
-
-        if logger is None:
-            logger = logging.getLogger(__name__)
-        self.logger = logger
 
         self.point = point
         self.weight = weight
