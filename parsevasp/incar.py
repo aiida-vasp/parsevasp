@@ -415,7 +415,6 @@ class Incar(object):
             value = self._convert_value_to_string(value)
             string = str(key.upper()) + " = " + value + comment + "\n"
             incar.write(string)
-        utils.remove_newline(incar)
 
 class IncarItem(object):
 

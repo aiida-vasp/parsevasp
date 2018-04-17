@@ -775,8 +775,6 @@ class Poscar(object):
             for site in sites:
                 poscar.write(str(site[5][0]) + " " +
                              str(site[5][1]) + " " + str(site[5][2])+"\n")
-        # remove newline at the end
-        utils.remove_newline(poscar)
 
 
 class Site(object):

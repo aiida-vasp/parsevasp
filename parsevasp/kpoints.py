@@ -849,9 +849,6 @@ class Kpoints(object):
                     kpoints.write("\n")
                     complete_set = 0
                 complete_set = complete_set + 1
-        # remove newline at the end
-        utils.remove_newline(kpoints)
-
 
 class Kpoint(object):
 
