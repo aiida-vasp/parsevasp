@@ -6,6 +6,7 @@ import logging
 import mmap
 
 import constants
+import utils
 
 # Try to import lxml, if not present fall back to
 # intrinsic ElementTree
@@ -2362,15 +2363,12 @@ class Xml(object):
 
         """
 
-        file_info = None
-        try:
-            file_info = os.stat(file_path)
-        except OSError:
-            self._logger.error("Could not locate "+file_path+
-                               ". Returning None.")
-            return file_info
-            
-        file_size = file_info.st_size
+        # check if file exists
+        if not utils.file_exists(file_path):
+            self._logger.error("Can not calculate size.")
+            return None
+
+        file_size = os.stat(file_path).st_size
         return file_size / 1048576.0
 
     def _check_xml(self, file_path):
@@ -2379,6 +2377,11 @@ class Xml(object):
 
         """
 
+        # check if file exists
+        if not utils.file_exists(file_path):
+            self._logger.error("Can not check file.")
+            return None
+        
         with open(file_path) as source:
             mapping = mmap.mmap(source.fileno(), 0, prot=mmap.PROT_READ)
         last_line = mapping[mapping.rfind(b'\n', 0, -1)+1:]
@@ -2386,4 +2389,3 @@ class Xml(object):
             return False
         else:
             return True
-    

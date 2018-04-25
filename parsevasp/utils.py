@@ -87,6 +87,33 @@ def file_handler(filename="", file_handler=None, status=None):
             logger.error("Could not open " + filename + ". Exiting.")
             sys.exit(1)
 
+def file_exists(file_path):
+    """Check if the file exists.
+
+    Parameters
+    ----------
+    file_path : string
+        The file path to be checked.
+
+    Returns
+    -------
+    status : bool
+        If file does not exists or `file_path` empty, else False.
+    
+    """
+
+    status = True
+    try:
+        file_info = os.stat(file_path)
+    except OSError:
+        if not file_path:
+            self._logger.error("File path is empty.")
+            sys.exit(1)
+        else:
+            self._logger.error("Could not locate "+file_path+".")
+        status = False
+    return status
+
 
 def is_sequence(arg):
     """ Checks to see if something is a sequence (list)
