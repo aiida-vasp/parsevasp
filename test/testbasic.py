@@ -12,3 +12,5 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('Testing')
 
 vaspxml = xml.Xml(logger, testdir + "/vasprunbasic.xml")
+
+print vaspxml.get_fermi_level()

@@ -2141,7 +2141,7 @@ class Xml(object):
 
     def get_fermi_level(self):
 
-        fermi_level = self._data["fermi_level"]
+        fermi_level = self._data["dos"]["total"]["fermi_level"]
         return fermi_level
 
     def get_born(self):
