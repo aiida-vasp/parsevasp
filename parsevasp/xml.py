@@ -37,9 +37,10 @@ except ImportError:
 
 class Xml(object):
 
-    def __init__(self, logger, file_path,
+    def __init__(self, file_path,
                  k_before_band = False,
-                 extract_all = True):
+                 extract_all = True,
+                 logger = None):
         """Initialize the XmlParser by first trying the lxml and
         fall back to the standard ElementTree if that is not present.
 
