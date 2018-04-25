@@ -816,7 +816,7 @@ class Site(object):
         self.direct = direct
 
     def get_specie(self):
-        return self.specie
+        return self.specie.capitalize()
 
     def get_position(self):
         return self.position
