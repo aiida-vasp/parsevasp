@@ -84,7 +84,7 @@ class Poscar(object):
 
         """
 
-        poscar = self.poscar_string.splitlines()
+        poscar = self.poscar_string.splitlines(True)
         poscar_dict = self._from_list(poscar)
         return poscar_dict
 
@@ -195,7 +195,7 @@ class Poscar(object):
             if first_char == 'd' \
                or first_char == 'c':
                 velocities = True
-            elif poscar[loopmax_pos] == '\n':
+            elif poscar[loopmax_pos] == '':
                 predictor = True
         # now check that the next line is in fact a coordinate
         loopmax_pos = loopmax_pos + 1
@@ -254,6 +254,7 @@ class Poscar(object):
         # apply scaling factor
         unitcell = [[x * scaling for x in y] for y in unitcell]
         # build dictionary and convert to NumPy
+        comment = comment.replace('#', '')
         poscar_dict = {}
         poscar_dict["comment"] = comment.strip()
         poscar_dict["unitcell"] = np.asarray(unitcell)
@@ -726,7 +727,7 @@ class Poscar(object):
         if comment is None:
             comment = "# " + compound
         if compound not in comment:
-            comment = "# " + compound + " Old comment: " + comment + "."
+            comment = "# " + compound + " Old comment: " + comment
         poscar.write(comment + "\n")
         # we avoid usage of the scaling factor
         poscar.write("1.0\n")
