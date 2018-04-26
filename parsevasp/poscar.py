@@ -45,13 +45,13 @@ class Poscar(object):
            or (poscar_string is not None and file_path is not None) \
            or (poscar_dict is not None and file_path is not None):
             self._logger.error("Please only supply one argument when "
-                              "initializing Poscar. Exiting.")
+                               "initializing Poscar. Exiting.")
             sys.exit(1)
         # check that at least one is suplpied
         if (poscar_string is None and poscar_dict is None
                 and file_path is None):
             self._logger.error("Please supply one argument when "
-                              "initializing Poscar. Exiting.")
+                               "initializing Poscar. Exiting.")
             sys.exit(1)
 
         if file_path is not None:
@@ -67,7 +67,6 @@ class Poscar(object):
 
         # validate dictionary
         self._validate()
-
 
     def _from_file(self):
         """Create rudimentary dictionary of entries from a
@@ -122,7 +121,7 @@ class Poscar(object):
         scaling = float(poscar[1].split()[0])
         if (scaling < 0.0):
             self._logger.error("Currently negative scaling values in POSCAR is "
-                              "not supported. Exiting.")
+                               "not supported. Exiting.")
             sys.exit(1)
         unitcell = [[0.0 for y in range(3)] for x in range(3)]
         nions = 0
@@ -190,7 +189,7 @@ class Poscar(object):
             pred = None
             sites_temp.append([specie, position, flags, velo, pred])
         # now check if there is more in the POSCAR
-        loopmax_pos = nions+loopmax
+        loopmax_pos = nions + loopmax
         if len(poscar) > loopmax_pos:
             first_char = poscar[loopmax_pos][0].lower()
             if first_char == 'd' \
@@ -204,7 +203,7 @@ class Poscar(object):
         if len(poscar) > loopmax_pos:
             if not utils.is_number(poscar[loopmax_pos].split()[0]):
                 self._logger.error("A velocity or predictor-corrector "
-                                  "coordinate was not detected. Exiting.")
+                                   "coordinate was not detected. Exiting.")
                 sys.exit(1)
         else:
             # but make sure the predictor is set back to False
@@ -247,11 +246,11 @@ class Poscar(object):
                 pre[2] = float(line[2])
                 sites_temp[i][4] = pre
             site = Site(sites_temp[i][0], sites_temp[i][1],
-                        selective = sites_temp[i][2],
-                        velocities = sites_temp[i][3],
-                        predictors = sites_temp[i][4])
+                        selective=sites_temp[i][2],
+                        velocities=sites_temp[i][3],
+                        predictors=sites_temp[i][4])
             sites.append(site)
-            
+
         # apply scaling factor
         unitcell = [[x * scaling for x in y] for y in unitcell]
         # build dictionary and convert to NumPy
@@ -292,19 +291,19 @@ class Poscar(object):
             # check that position is an integer
             if not utils.is_number(site_number):
                 self._logger.error("The supplied 'site_number' is "
-                                  "not a number (i.e. the index) "
-                                  "starting from 1 for the site "
-                                  "position to be modified. Exiting.")
+                                   "not a number (i.e. the index) "
+                                   "starting from 1 for the site "
+                                   "position to be modified. Exiting.")
                 sys.exit(1)
             self.entries["sites"][site_number] = value
         else:
             if entry == "sites":
-                self._check_sites(sites = value)
+                self._check_sites(sites=value)
             if entry == "comment":
-                self._check_comment(comment = value)
+                self._check_comment(comment=value)
             if entry == "unitcell":
-                self._check_unitcell(unitcell = value)
-            
+                self._check_unitcell(unitcell=value)
+
             self.entries[entry] = value
 
     def delete_site(self, site_number):
@@ -348,7 +347,6 @@ class Poscar(object):
         except AttributeError:
             self._logger.error("There is no 'entries'. Exiting.")
             sys.exit(1)
-        
 
     def _check_allowed_entries(self, entry):
         """Check the allowed values of entry.
@@ -357,17 +355,17 @@ class Poscar(object):
         ----------
         entry : string
             Contains the entry to be checked.
-        
+
         """
 
         if not (("comment" in entry) or ("unitcell" in entry) or
                 ("sites" in entry)):
             self._logger.error("Only 'comment', 'unitcell' or "
-                              "'sites' is allowed as input for "
-                              "entry. Exiting.")
+                               "'sites' is allowed as input for "
+                               "entry. Exiting.")
             sys.exit(1)
 
-    def _check_unitcell(self, unitcell = None):
+    def _check_unitcell(self, unitcell=None):
         """Check that the unitcell entries are present and
         are of a 3x3 ndarray type.
 
@@ -384,19 +382,19 @@ class Poscar(object):
                 unitcell = self.entries["unitcell"]
             except KeyError:
                 self._logger.error("There is no key 'unitcell' in "
-                                  "'entries'. Exiting.")
+                                   "'entries'. Exiting.")
                 sys.exit(1)
-            
+
         if (not isinstance(unitcell, np.ndarray)) \
            or (unitcell.shape != (3, 3)):
             self._logger.error("The value of 'unitcell' is "
-                              "not an 3x3 ndarray. Exiting.")
+                               "not an 3x3 ndarray. Exiting.")
             sys.exit(1)
 
-    def _check_comment(self, comment = None):
+    def _check_comment(self, comment=None):
         """Check that the comment entry is present and
         is a string.
-        
+
         Parameters
         ----------
         comment, optional
@@ -409,7 +407,7 @@ class Poscar(object):
                 comment = self.entries["comment"]
             except KeyError:
                 self._logger.error("There is no key 'comment' in "
-                                  "'entries'. Exiting.")
+                                   "'entries'. Exiting.")
                 sys.exit(1)
         # allow None for comment
         if self.entries["comment"] is not None:
@@ -417,7 +415,7 @@ class Poscar(object):
                 self._logger.error("The 'comment' is not a string. Exiting.")
                 sys.exit(1)
 
-    def _check_sites(self, sites = None):
+    def _check_sites(self, sites=None):
         """Check that the sites entries are present.
 
         Parameters
@@ -427,21 +425,21 @@ class Poscar(object):
             'sites' key in the 'entries' is checked.
 
         """
-        
+
         if sites is None:
             try:
                 sites = self.entries["sites"]
             except KeyError:
                 self._logger.error("There is no key 'sites' in "
-                                  "'entries'. Exiting.")
+                                   "'entries'. Exiting.")
                 sys.exit(1)
 
         if not isinstance(sites, list):
             self._logger.error("The 'sites' entry "
-                              "have to be a list. Exiting.")
+                               "have to be a list. Exiting.")
             sys.exit(1)
-        
-    def _check_site(self, site = None):
+
+    def _check_site(self, site=None):
         """Check that the site entry is a Site() object.
 
         Parameters
@@ -456,20 +454,20 @@ class Poscar(object):
                 sites = self.entries["sites"]
             except KeyError:
                 self._logger.error("There is no key 'sites' in "
-                                  "'entries'. Exiting.")
+                                   "'entries'. Exiting.")
                 sys.exit(1)
 
             for site in sites:
                 if not isinstance(site, Site):
                     self._logger.error("At least one of the values in 'sites' "
-                                      "is not a Site() object. Exiting.")
+                                       "is not a Site() object. Exiting.")
                     sys.exit(1)
         else:
             if not isinstance(site, Site):
                 self._logger.error("The 'site' "
-                                  "is not a Site() object. Exiting.")
+                                   "is not a Site() object. Exiting.")
                 sys.exit(1)
-                
+
     def _check_site_number(self, site_number):
         """Check that the site_number is an int and that
         it is not out of bounds.
@@ -480,15 +478,15 @@ class Poscar(object):
             The site_number to be checked
 
         """
-        
+
         if not isinstance(site_number, int):
             self._logger.error("The supplied 'site_number' is "
-                              "not an integer. Exiting.")
+                               "not an integer. Exiting.")
             sys.exit(1)
         sites = self.entries["sites"]
-        if site_number > (len(sites)-1):
+        if site_number > (len(sites) - 1):
             self._logger.error("The supplied site_number is larger "
-                              "than the number of sites. Exiting.")
+                               "than the number of sites. Exiting.")
             sys.exit(1)
 
     def _validate(self):
@@ -540,7 +538,7 @@ class Poscar(object):
                 # make sure it is direct
                 position = self._to_direct(position)
                 self._logger.error("Cartesian is not yet implemented. "
-                                  "Exiting.")
+                                   "Exiting.")
                 sys.exit(1)
             if False in select:
                 selective = True
@@ -551,12 +549,12 @@ class Poscar(object):
             sites.append([specie, position, select, direct,
                           vel, pre])
             species.append(specie)
-            
+
         # find unique entries and their number
         counter = Counter(species)
         # Counter does not order, so order now with the
         # least occuring element first (typical for compounds)
-        sorted_keys = sorted(counter, key=counter.get)        
+        sorted_keys = sorted(counter, key=counter.get)
         species = []
         num_species = []
         for key in sorted_keys:
@@ -568,10 +566,10 @@ class Poscar(object):
         for specie in species:
             ordered_sites.extend([site for site in sites if specie == site[0]])
         # EFL: consider to also sort on coordinate after specie
-        
+
         return ordered_sites, species, num_species, selective, \
             velocities, predictors
-            
+
     def _get_key(self, item):
         """Key fetcher for the sorted function.
 
@@ -614,7 +612,7 @@ class Poscar(object):
         """
 
         return position
-        
+
     def get(self, tag):
         """Return the value and comment of the entry with tag.
 
@@ -648,7 +646,7 @@ class Poscar(object):
             A dictionary on POSCAR compatible form.
 
         """
-        
+
         dictionary = {}
         for key, entry in self.entries.iteritems():
             if key == 'sites':
@@ -657,7 +655,7 @@ class Poscar(object):
                                     element.get_selective(),
                                     element.get_velocities(),
                                     element.get_predictors(),
-                                    element.get_direct()]  for element in entry]
+                                    element.get_direct()] for element in entry]
             else:
                 dictionary[key] = entry
 
@@ -676,14 +674,14 @@ class Poscar(object):
             current instance.
 
         """
-        
+
         string_object = StringIO.StringIO()
-        self._write(poscar = string_object)
+        self._write(poscar=string_object)
         poscar_string = string_object.getvalue()
         string_object.close()
 
         return poscar_string
-        
+
     def write(self, file_path):
         """ Write POSCAR like files
 
@@ -696,9 +694,9 @@ class Poscar(object):
         """
 
         poscar = utils.file_handler(file_path, status='w')
-        self._write(poscar = poscar)
-        utils.file_handler(file_handler=poscar)        
-        
+        self._write(poscar=poscar)
+        utils.file_handler(file_handler=poscar)
+
     def _write(self, poscar):
         """ Write POSCAR like files to a file or string
 
@@ -723,12 +721,12 @@ class Poscar(object):
                 num_string = ""
             else:
                 num_string = str(num_species[index])
-            compound = compound + str(specie).capitalize()+num_string
+            compound = compound + str(specie).capitalize() + num_string
+        compound = "Compound: " + compound + "."
         if comment is None:
-            comment = "# Compound: " + compound + "."
-        else:
-            comment = "# Compound: " + compound + \
-                      ". Old comment: " + comment + "."
+            comment = "# " + compound
+        if compound not in comment:
+            comment = "# " + compound + " Old comment: " + comment + "."
         poscar.write(comment + "\n")
         # we avoid usage of the scaling factor
         poscar.write("1.0\n")
@@ -759,7 +757,7 @@ class Poscar(object):
                 for index, flag in enumerate(flags):
                     if not flag:
                         sel[index] = "F"
-                    
+
                 poscar.write(" " + sel[0] + " " +
                              sel[1] + " " +
                              sel[2])
@@ -769,19 +767,19 @@ class Poscar(object):
             poscar.write("Direct\n")
             for site in sites:
                 poscar.write(str(site[4][0]) + " " +
-                             str(site[4][1]) + " " + str(site[4][2])+"\n")
+                             str(site[4][1]) + " " + str(site[4][2]) + "\n")
         if predictors:
             poscar.write("\n")
             for site in sites:
                 poscar.write(str(site[5][0]) + " " +
-                             str(site[5][1]) + " " + str(site[5][2])+"\n")
+                             str(site[5][1]) + " " + str(site[5][2]) + "\n")
 
 
 class Site(object):
 
     def __init__(self, specie, position, selective=[True, True, True],
                  velocities=None, predictors=None,
-                 direct = True, logger=None):
+                 direct=True, logger=None):
         """A site, typically a position in POSCAR.
 
         Parameters
@@ -829,6 +827,6 @@ class Site(object):
 
     def get_predictors(self):
         return self.predictors
-    
+
     def get_direct(self):
         return self.direct
