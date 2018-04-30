@@ -29,7 +29,9 @@ class Incar(object):
             The file path in which the INCAR is read.
         logger : object, optional
             A standard Python logger object.
-
+        prec : int, optional
+            An integer describing how many decimals the users wants
+            when printing files.
 
         """
 
@@ -43,6 +45,13 @@ class Incar(object):
         else:
             logging.basicConfig(level=logging.DEBUG)
             self._logger = logging.getLogger('IncarParser')
+
+        # set precision
+        if prec is None:
+            self._prec = 12
+        else:
+            self._prec = prec
+        self._width = self._prec + 4    
 
         # check that only one argument is supplied
         if (incar_string is not None and incar_dict is not None) \

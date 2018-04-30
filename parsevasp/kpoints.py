@@ -3,6 +3,7 @@ import sys
 import logging
 import numpy as np
 from collections import Counter
+from decimal import getcontext as gctx
 import StringIO
 
 import utils
@@ -11,7 +12,7 @@ import utils
 class Kpoints(object):
 
     def __init__(self, kpoints_string=None, kpoints_dict=None,
-                 file_path=None, logger=None):
+                 file_path=None, logger=None, prec=None):
         """Initialize a KPOINTS object and set content as a dictionary.
 
         Parameters
@@ -25,7 +26,9 @@ class Kpoints(object):
             The file path in which the KPOINTS is read.
         logger : object, optional
             A standard Python logger object.
-
+        prec : int, optional
+            An integer describing how many decimals the users wants
+            when printing files.
 
         """
 
@@ -40,6 +43,13 @@ class Kpoints(object):
             logging.basicConfig(level=logging.DEBUG)
             self._logger = logging.getLogger('KpointsParser')
 
+        # set precision
+        if prec is None:
+            self._prec = 9
+        else:
+            self._prec = prec
+        self._width = self._prec + 4
+            
         # check that only one argument is supplied
         if (kpoints_string is not None and kpoints_dict is not None) \
            or (kpoints_string is not None and file_path is not None) \
@@ -769,7 +779,7 @@ class Kpoints(object):
 
         kpoints = utils.file_handler(file_path, status='w')
         self._write(kpoints = kpoints)
-        utils.file_handler(file_handler=kpoints)        
+        utils.file_handler(file_handler=kpoints)
         
     def _write(self, kpoints):
         """ Write KPOINTS like files to a file or string
@@ -792,7 +802,7 @@ class Kpoints(object):
         # check mode
         mode = entries["mode"]
         if mode == "explicit":
-            kpoints.write(str(entries["num_kpoints"]) + "\n")
+            kpoints.write("{:6d}\n".format(entries["num_kpoints"]))
             # points should already be direct
             kpoints.write("Direct\n")
             for point in entries["points"]:
@@ -806,52 +816,66 @@ class Kpoints(object):
                                 "to be given. Setting it to 1.0. "
                                 "Continuing.")
                     weight = 1.0
-                kpoints.write(str(coordinate[0]) + " " +
-                              str(coordinate[1]) + " " +
-                              str(coordinate[2]) + " " +
-                              str(weight) +
-                              "\n")
+                kpoints.write("{:{width}.{prec}f} {:{width}.{prec}f} {:{width}.{prec}f}\n".format(
+                    coordinate[0],
+                    coordinate[1],
+                    coordinate[2],
+                    weight, prec = self._prec, width = self._width))
             if entries["tetra"] is not None:
                 kpoints.write("Tetrahedra\n")
                 tetra = entries["tetra"]
-                kpoints.write(str(len(tetra)) + " " +
-                            str(entries["tetra_volume"]) + "\n")
+                kpoints.write("{:6d} {:{width}.{prec}f}\n".format(
+                    len(tetra),
+                    entries["tetra_volume"], prec = self._prec, width = self._width))
                 for element in tetra:
-                    kpoints.write(str(element[0]) + " " +
-                                  str(element[1]) + " " +
-                                  str(element[2]) + " " +
-                                  str(element[3]) + "\n")
+                    kpoints.write("{:6d} {:6d} {:6d} {:6d}\n".format(
+                        element[0],
+                        element[1],
+                        element[2],
+                        element[3], prec = self._prec, width = self._width))
         if mode == "automatic":
             kpoints.write("0\n")
             kpoints.write(entries["centering"] + "\n")
             divisions = entries["divisions"]
-            kpoints.write(str(divisions[0]) + " " +
-                          str(divisions[1]) + " " +
-                          str(divisions[2]) + "\n")
+            kpoints.write("{:{width}d} {:{width}d} {:{width}d}\n".format(
+                divisions[0],
+                divisions[1],
+                divisions[2], width = self._width))
             shifts = entries["shifts"]
             if shifts is not None:
-                kpoints.write(str(shifts[0]) + " " +
-                              str(shifts[1]) + " " +
-                              str(shifts[2]) + "\n")
+                kpoints.write("{:{width}.{prec}f} {:{width}.{prec}f} "
+                              "{:{width}.{prec}f}\n".format(
+                                  shifts[0],
+                                  shifts[1],
+                                  shifts[2], prec = self._prec, width = self._width))
+            else:
+                kpoints.write("{:{width}.{prec}f} {:{width}.{prec}f} "
+                              "{:{width}.{prec}f}\n".format(
+                                  0.0,
+                                  0.0,
+                                  0.0, prec = self._prec, width = self._width))
 
         if mode == "line":
-            kpoints.write(str(entries["num_kpoints"])+"\n")
+            kpoints.write("{:6d}\n".format(entries["num_kpoints"]))
             kpoints.write("Line-mode\n")
             # assume points to be direct
-            kpoints.write("Reciprocal\n")
+            kpoints.write("Direct\n")
             complete_set = 1
             for index, point in enumerate(entries["points"]):
                 coordinate = point.get_point()
-                kpoints.write(str(coordinate[0]) + " " +
-                              str(coordinate[1]) + " " +
-                              str(coordinate[2]) + "\n")
+                kpoints.write("{:{width}.{prec}f} {:{width}.{prec}f} "
+                              "{:{width}.{prec}f}\n".format(
+                                  coordinate[0],
+                                  coordinate[1],
+                                  coordinate[2], prec = self._prec, width = self._width))
                 if complete_set == 2:
                     kpoints.write("\n")
                     complete_set = 0
                 complete_set = complete_set + 1
+            utils.remove_newline(kpoints)
 
 class Kpoint(object):
-
+    
     def __init__(self, point, weight, direct = True, logger=None):
         """A site, typically a position in POSCAR.
 

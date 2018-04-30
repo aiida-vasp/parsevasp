@@ -11,7 +11,7 @@ import utils
 class Poscar(object):
 
     def __init__(self, poscar_string=None, poscar_dict=None,
-                 file_path=None, logger=None):
+                 file_path=None, logger=None, prec = None):
         """Initialize a POSCAR object and set content as a dictionary.
 
         Parameters
@@ -25,7 +25,9 @@ class Poscar(object):
             The file path in which the POSCAR is read.
         logger : object, optional
             A standard Python logger object.
-
+        prec : int, optional
+            An integer describing how many decimals the users wants
+            when printing files.
 
         """
 
@@ -40,6 +42,13 @@ class Poscar(object):
             logging.basicConfig(level=logging.DEBUG)
             self._logger = logging.getLogger('PoscarParser')
 
+        # set precision
+        if prec is None:
+            self._prec = 12
+        else:
+            self._prec = prec
+        self._width = self._prec + 4
+            
         # check that only one argument is supplied
         if (poscar_string is not None and poscar_dict is not None) \
            or (poscar_string is not None and file_path is not None) \
@@ -726,23 +735,32 @@ class Poscar(object):
         compound = "Compound: " + compound + "."
         if comment is None:
             comment = "# " + compound
-        if compound not in comment:
+        elif compound not in comment:
             comment = "# " + compound + " Old comment: " + comment
+        else:
+            comment = "# " + comment
         poscar.write(comment + "\n")
         # we avoid usage of the scaling factor
-        poscar.write("1.0\n")
+        poscar.write("{:{width}.{prec}f}\n".format(1.0,
+                                                   prec = self._prec,
+                                                   width = self._width))
         # write unitcell
         for i in range(3):
-            poscar.write(str(unitcell[i][0]) + " " +
-                         str(unitcell[i][1]) + " " +
-                         str(unitcell[i][2]) + "\n")
+            poscar.write("{:{width}.{prec}f} {:{width}.{prec}f} "
+                         "{:{width}.{prec}f}\n".format(
+                unitcell[i][0],
+                unitcell[i][1],
+                unitcell[i][2], prec = self._prec, width = self._width))
+        # write specie types
+        tempostring = ""
         for specie in species:
-            poscar.write(str(specie).capitalize() + " ")
-        poscar.write("\n")
+            tempostring = tempostring + "{:5s} ".format(specie.capitalize())
+        poscar.write("{}\n".format(tempostring.rstrip()))
         # write number of species
+        tempostring = ""
         for number in num_species:
-            poscar.write(str(number) + " ")
-        poscar.write("\n")
+            tempostring = tempostring + "{:5d} ".format(number)
+        poscar.write("{}\n".format(tempostring.rstrip()))
         # write selective if any flags are True
         if selective:
             poscar.write("Selective dynamics\n")
@@ -750,8 +768,11 @@ class Poscar(object):
         poscar.write("Direct\n")
         # write positions
         for site in sites:
-            poscar.write(str(site[1][0]) + " " +
-                         str(site[1][1]) + " " + str(site[1][2]))
+            poscar.write("{:{width}.{prec}f} {:{width}.{prec}f} "
+                         "{:{width}.{prec}f}".format(
+                site[1][0],
+                site[1][1],
+                site[1][2], prec = self._prec, width = self._width))
             if selective:
                 sel = ["T", "T", "T"]
                 flags = site[2]
@@ -759,21 +780,25 @@ class Poscar(object):
                     if not flag:
                         sel[index] = "F"
 
-                poscar.write(" " + sel[0] + " " +
-                             sel[1] + " " +
-                             sel[2])
+                poscar.write(" {} {} {}".format(sel[0], sel[1], sel[2]))
             poscar.write("\n")
         # write velocities if they exist (again, always direct)
         if velocities:
             poscar.write("Direct\n")
             for site in sites:
-                poscar.write(str(site[4][0]) + " " +
-                             str(site[4][1]) + " " + str(site[4][2]) + "\n")
+                poscar.write("{:{width}.{prec}f} {:{width}.{prec}f} "
+                             "{:{width}.{prec}f}\n".format(
+                    site[4][0],
+                    site[4][1],
+                    site[4][2], prec = self._prec, width = self._width))
         if predictors:
             poscar.write("\n")
             for site in sites:
-                poscar.write(str(site[5][0]) + " " +
-                             str(site[5][1]) + " " + str(site[5][2]) + "\n")
+                poscar.write("{:{width}.{prec}f} {:{width}.{prec}f} "
+                             "{:{width}.{prec}f}\n".format(
+                    site[5][0],
+                    site[5][1],
+                    site[5][2], prec = self._prec, width = self._width))
 
 
 class Site(object):
