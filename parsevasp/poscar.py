@@ -4,6 +4,7 @@ import logging
 import numpy as np
 from collections import Counter
 import StringIO
+from itertools import groupby
 
 import utils
 
@@ -34,11 +35,25 @@ class Poscar(object):
 
         """
 
-        self.file_path = file_path
-        self.poscar_dict = poscar_dict
-        self.poscar_string = poscar_string
+        self._file_path = file_path
+        self._poscar_dict = poscar_dict
+        self._poscar_string = poscar_string
         self._conserve_order = conserve_order
 
+        # check that only one argument is supplied
+        if (self._poscar_string is not None and self._poscar_dict is not None) \
+           or (self._poscar_string is not None and file_path is not None) \
+           or (self._poscar_dict is not None and file_path is not None):
+            self._logger.error("Please only supply one argument when "
+                               "initializing Poscar. Exiting.")
+            sys.exit(1)
+        # check that at least one is suplpied
+        if (self._poscar_string is None and self._poscar_dict is None
+                and file_path is None):
+            self._logger.error("Please supply one argument when "
+                               "initializing Poscar. Exiting.")
+            sys.exit(1)
+            
         # set logger
         if logger is not None:
             self._logger = logger
@@ -53,30 +68,16 @@ class Poscar(object):
             self._prec = prec
         self._width = self._prec + 4
 
-        # check that only one argument is supplied
-        if (poscar_string is not None and poscar_dict is not None) \
-           or (poscar_string is not None and file_path is not None) \
-           or (poscar_dict is not None and file_path is not None):
-            self._logger.error("Please only supply one argument when "
-                               "initializing Poscar. Exiting.")
-            sys.exit(1)
-        # check that at least one is suplpied
-        if (poscar_string is None and poscar_dict is None
-                and file_path is None):
-            self._logger.error("Please supply one argument when "
-                               "initializing Poscar. Exiting.")
-            sys.exit(1)
-
         if file_path is not None:
             # create dictionary from a file
-            poscar_dict = self._from_file()
+            self._poscar_dict = self._from_file()
 
-        if poscar_string is not None:
+        if self._poscar_string is not None:
             # create dictionary from a string
-            poscar_dict = self._from_string()
+            self._poscar_dict = self._from_string()
 
         # store entries
-        self.entries = poscar_dict
+        self.entries = self._poscar_dict
 
         # validate dictionary
         self._validate()
@@ -87,7 +88,7 @@ class Poscar(object):
 
         """
 
-        poscar = utils.readlines_from_file(self.file_path)
+        poscar = utils.readlines_from_file(self._file_path)
         poscar_dict = self._from_list(poscar)
         return poscar_dict
 
@@ -97,7 +98,7 @@ class Poscar(object):
 
         """
 
-        poscar = self.poscar_string.splitlines(True)
+        poscar = self._poscar_string.splitlines(True)
         poscar_dict = self._from_list(poscar)
         return poscar_dict
 
@@ -126,8 +127,10 @@ class Poscar(object):
         comment = poscar[0]
         vasp5 = True
         # check for VASP 5 POSCAR
-        if (utils.is_number(poscar[5])):
+        if (utils.is_numbers(poscar[5])):
             vasp5 = False
+        # set direct, test is done later
+        direct = True
         # set selective, test is done later
         selective = False
         # check scaling factor
@@ -141,9 +144,14 @@ class Poscar(object):
         spec = None
         loopmax = 8
         if (vasp5):
+            # EFL: could go straight to numpy with fromstring, consider
+            # to change in the future
             unitcell[0] = [float(x) for x in poscar[2].split()]
             unitcell[1] = [float(x) for x in poscar[3].split()]
             unitcell[2] = [float(x) for x in poscar[4].split()]
+            unitcell = np.asarray(unitcell)
+            # apply scaling factor
+            unitcell = scaling * unitcell
             spec = poscar[5].split()
             atoms = [int(x) for x in poscar[6].split()]
             for i in range(len(atoms)):
@@ -152,16 +160,10 @@ class Poscar(object):
                 selective = True
                 loopmax = 9
                 if not poscar[8][0].lower() == "d":
-                    self._logger.error(
-                        "Please supply a POSCAR in direct coordinates. "
-                        "Exiting.")
-                    sys.exit(1)
+                    direct = False
             if not selective:
                 if not poscar[7][0].lower() == "d":
-                    self._logger.error(
-                        "Please supply a POSCAR in direct coordinates. "
-                        "Exiting.")
-                    sys.exit(1)
+                    direct = False
         else:
             self._logger.error(
                 "VASP 4 POSCAR is not supported. User, please modernize. "
@@ -187,6 +189,9 @@ class Poscar(object):
             position[0] = float(line[0])
             position[1] = float(line[1])
             position[2] = float(line[2])
+            if not direct:
+                # convert to direct
+                position = self._to_direct(position, unitcell)
             # fetch selective flags
             flags = [True, True, True]
             if selective:
@@ -208,6 +213,9 @@ class Poscar(object):
             if first_char == 'd' \
                or first_char == 'c':
                 velocities = True
+                if first_char == 'c':
+                    # make sure we convert velocities to direct
+                    direct = False
             elif poscar[loopmax_pos] == '':
                 predictor = True
         # now check that the next line is in fact a coordinate
@@ -231,6 +239,9 @@ class Poscar(object):
                 vel[0] = float(line[0])
                 vel[1] = float(line[1])
                 vel[2] = float(line[2])
+                if not direct:
+                    # convert to direct
+                    vel = self._to_direct(vel, unitcell)
                 sites_temp[i][3] = vel
         # now check if there is predictor-corrector coordinates following
         # the velocities
@@ -264,8 +275,6 @@ class Poscar(object):
                         predictors=sites_temp[i][4])
             sites.append(site)
 
-        # apply scaling factor
-        unitcell = [[x * scaling for x in y] for y in unitcell]
         # build dictionary and convert to NumPy
         comment = comment.replace('#', '')
         poscar_dict = {}
@@ -549,10 +558,10 @@ class Poscar(object):
             vel = site.get_velocities()
             pre = site.get_predictors()
             if direct is False:
-                # make sure it is direct
-                position = self._to_direct(position)
-                self._logger.error("Cartesian is not yet implemented. "
-                                   "Exiting.")
+                # make sure it is direct as the writer only
+                # supports this
+                self._logger.error("Coordinate should be direct. "
+                                   "Did you hack this? Exiting.")
                 sys.exit(1)
             if False in select:
                 selective = True
@@ -564,10 +573,9 @@ class Poscar(object):
                           vel, pre])
             species.append(specie)
 
-        # find unique entries and their number
-        counter = Counter(species)
-        # now reorder
-        if self.conserve_order:
+        if not self._conserve_order:
+            # find unique entries and their number
+            counter = Counter(species)
             # Counter does not order, so order now with the
             # least occuring element first (typical for compounds)
             sorted_keys = sorted(counter, key=counter.get)
@@ -585,48 +593,18 @@ class Poscar(object):
 
             return ordered_sites, species, num_species, selective, \
                 velocities, predictors
-
-    def _get_sites_data(self):
-        data = {
-            'sites': [],
-            'species': [],
-            'num_species': [],
-            'selective': False,
-            'velocities': False,
-            'predictors': False,
-        }
-        for site in self.entries['sites']:
-            specie = site.get_specie()
-
-            ## ensure direct positions
-            position = site.get_position()
-            if site.get_direct():
-                position = self._to_direct(position)
-
-            ## set selective flag to True if any site.get_selective() contains False
-            selective = site.get_selective()
-            data['selective'] |= bool(False in selective)
-
-            ## set velocities flag to True if any site contains velocities
-            velocities = site.get_velocities()
-            data['velocities'] |= bool(velocities)
-
-            ## set predictors flag to True if any site contains predictors
-            predictors = site.get_predictors()
-            data['predictors'] |= bool(predictors)
-
-            ## we set direct to True always, because we converted if necessary
-            data['sites'].append([specie, position, selective, True, velocities, predictors ])
-
-            ## append species or count up the current one
-            if data['species'] and data['species'][-1] == specie:
-                data['num_species'][-1] += 1
-            else:
-                data['species'].append(specie)
-                data['num_species'].append(1)
-
-        return data['sites'], data['species'], data['num_species'], data['selective'], data['velocities'], data['predictors']
-
+        else:
+            # do not order, but we still need to group similar species
+            # that follow each other
+            num_species = []
+            species_concat = []
+            for specie in species:
+                if species_concat and species_concat[-1] == specie:
+                    num_species[-1] = num_species[-1] + 1
+                else:
+                    species_concat.append(specie)
+                    num_species.append(1)
+            return sites, species_concat, num_species, selective, velocities, predictors
 
     def _get_key(self, item):
         """Key fetcher for the sorted function.
@@ -635,40 +613,56 @@ class Poscar(object):
 
         return item[0]
 
-    def _to_direct(self, position):
+    def _to_direct(self, position_cart, unitcell):
         """Transforms the position from cartesian to direct
         coordinates.
 
         Parameters
         ----------
-        position : ndarray
+        position_cart : ndarray
+            | Dimension: (3)
+
             An ndarray containing the position in cartesian coordinates.
+        unitcell : ndarray
+            | Dimension: (3,3)
+
+            Contains the unitcell.
 
         Returns
         -------
-        position_cart : ndarray
+        position : ndarray
             An ndarray containing the position in direct coordinates.
 
         """
 
+        position = utils.cart_to_dir(position_cart, unitcell)
+        
         return position
 
-    def _to_cart(self, position):
+    def _to_cart(self, position_dir, unitcell):
         """Transforms the position from direct to cartesian
         coordinates.
 
         Parameters
         ----------
         position : ndarray
+            | Dimension: (3)
+
             An ndarray containing the position in direct coordinates.
+        unitcell : ndarray
+            | Dimension: (3,3)
+
+            Contains the unitcell.
 
         Returns
         -------
-        position_dir : ndarray
+        position : ndarray
             An ndarray containing the position in cartesian coordinates.
 
         """
 
+        position = utils.dir_to_cart(position_dir, unitcell)
+        
         return position
 
     def get(self, tag):
@@ -700,7 +694,7 @@ class Poscar(object):
 
         Returns
         -------
-        poscar_dict : dict
+        dictionary : dict
             A dictionary on POSCAR compatible form.
 
         """
@@ -770,11 +764,8 @@ class Poscar(object):
         comment = entries["comment"]
         unitcell = entries["unitcell"]
         # sort and group to VASP specifications
-        if self._conserve_order:
-            sites, species, num_species, selective, velocities, predictors = self._get_sites_data()
-        else:
-            sites, species, num_species, selective, velocities, predictors = \
-                self._sort_and_group_sites()
+        sites, species, num_species, selective, velocities, predictors = \
+            self._sort_and_group_sites()
         # update comment
         compound = ""
         for index, specie in enumerate(species):

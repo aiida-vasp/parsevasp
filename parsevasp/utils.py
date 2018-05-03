@@ -3,6 +3,7 @@
 import sys
 import logging
 import os
+import numpy as np
 
 def readlines_from_file(filename, contains=None):
     """ Read a file and return the whole file or specific lines
@@ -161,6 +162,33 @@ def test_string_content(string):
     except ValueError:
         return 'string'
 
+def is_numbers(s, splitter = " "):
+    """ Check if a string only contains numbers
+
+    Parameters
+    ----------
+    s: str
+        The input string
+    splitter : string, optional
+        The splitting character to be used, defaults to blank spaces.
+
+    Returns
+    -------
+    is_nums: bool
+        Is True if all entries in the input string is a numbers, 
+        otherwise False.
+
+    """
+
+    entries = s.split(splitter)
+    is_nums = True
+    for entry in entries:
+        if not is_number(entry):
+            is_nums = False
+            return is_nums
+        
+    return is_nums
+    
 def is_number(s):
     """ Check if a string is a number
 
@@ -171,18 +199,18 @@ def is_number(s):
 
     Returns
     -------
-    is_number: bool
+    is_num: bool
         Is True if the input string is a number, otherwise False
 
     """
 
     try:
         float(s)
-        is_number = True
+        is_num = True
     except ValueError:
-        is_number = False
+        is_num = False
 
-    return is_number
+    return is_num
 
 def remove_newline(fobj, num_newlines = 1):
     """Removes the newline at the end of a file. Usefull
@@ -205,7 +233,7 @@ def remove_newline(fobj, num_newlines = 1):
 
     return
 
-def dir_to_cart(self, v, lattice):
+def dir_to_cart(v, lattice):
     """ Convert direct coordinates to cartesian.
     
     Parameters
@@ -233,7 +261,7 @@ def dir_to_cart(self, v, lattice):
     
     return cart
 
-def cart_to_dir(self, v, lattice):
+def cart_to_dir(v, lattice):
     """ Convert cartesian coordinates to direct.
     
     Parameters
@@ -255,11 +283,11 @@ def cart_to_dir(self, v, lattice):
 
     """
 
-    direct = np.dot(v, np.linalg.inv(self.lattice))
+    direct = np.dot(v, np.linalg.inv(lattice))
     
     return direct
 
-def lat_to_reclat(self, lattice):
+def lat_to_reclat(lattice):
     """ Convert the lattice to the reciprocal lattice.
     
     Parameters
