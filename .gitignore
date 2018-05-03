@@ -3,3 +3,6 @@ build/
 dist/
 *.egg-info/
 *MOD
+.cache/
+.pytest_cache/
+.tox/

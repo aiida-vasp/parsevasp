@@ -14,5 +14,7 @@ setup(
 	         'Intended Audience :: Science/Research',
 	         'Topic :: Scientific/Engineering :: Physics',
 	         'License :: OSI Approved :: MIT License',
-	         'Programming Language :: Python :: 2.7']
+	         'Programming Language :: Python :: 2.7'],
+  install_requires=['numpy', 'lxml'],
+  extras_require={'dev': ['pytest', 'pytest-cov', 'click']}
 )
