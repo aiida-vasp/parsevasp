@@ -28,6 +28,9 @@ class Poscar(object):
         prec : int, optional
             An integer describing how many decimals the users wants
             when printing files.
+        conserve_order : bool
+            If True, do keep the ordering of the supplied positions
+            and atomic species.
 
         """
 
@@ -563,23 +566,25 @@ class Poscar(object):
 
         # find unique entries and their number
         counter = Counter(species)
-        # Counter does not order, so order now with the
-        # least occuring element first (typical for compounds)
-        sorted_keys = sorted(counter, key=counter.get)
-        species = []
-        num_species = []
-        for key in sorted_keys:
-            species.append(key)
-            num_species.append(counter[key])
+        # now reorder
+        if self.conserve_order:
+            # Counter does not order, so order now with the
+            # least occuring element first (typical for compounds)
+            sorted_keys = sorted(counter, key=counter.get)
+            species = []
+            num_species = []
+            for key in sorted_keys:
+                species.append(key)
+                num_species.append(counter[key])
 
-        # now make sure the sites is on the same order
-        ordered_sites = []
-        for specie in species:
-            ordered_sites.extend([site for site in sites if specie == site[0]])
-        # EFL: consider to also sort on coordinate after specie
+            # now make sure the sites is on the same order
+            ordered_sites = []
+            for specie in species:
+                ordered_sites.extend([site for site in sites if specie == site[0]])
+            # EFL: consider to also sort on coordinate after specie
 
-        return ordered_sites, species, num_species, selective, \
-            velocities, predictors
+            return ordered_sites, species, num_species, selective, \
+                velocities, predictors
 
     def _get_sites_data(self):
         data = {
