@@ -11,7 +11,7 @@ import utils
 class Poscar(object):
 
     def __init__(self, poscar_string=None, poscar_dict=None,
-                 file_path=None, logger=None, prec = None):
+                 file_path=None, logger=None, prec=None, conserve_order=False):
         """Initialize a POSCAR object and set content as a dictionary.
 
         Parameters
@@ -37,7 +37,7 @@ class Poscar(object):
         self.file_path = file_path
         self.poscar_dict = poscar_dict
         self.poscar_string = poscar_string
-        self.conserve_order = conserve_order
+        self._conserve_order = conserve_order
 
         # set logger
         if logger is not None:
@@ -52,7 +52,7 @@ class Poscar(object):
         else:
             self._prec = prec
         self._width = self._prec + 4
-            
+
         # check that only one argument is supplied
         if (poscar_string is not None and poscar_dict is not None) \
            or (poscar_string is not None and file_path is not None) \
@@ -523,8 +523,8 @@ class Poscar(object):
             Contains site info for each site. Each site element
             contains a string describing the specie, a ndarray
             of floats describing the position, a ndarray of booleans
-            to describe the selective flags and a boolean that 
-            contains a flag that is True if the positions are in direct 
+            to describe the selective flags and a boolean that
+            contains a flag that is True if the positions are in direct
             coordinates.
         species : list of strings
             Contains the number of unique species
@@ -586,6 +586,48 @@ class Poscar(object):
             return ordered_sites, species, num_species, selective, \
                 velocities, predictors
 
+    def _get_sites_data(self):
+        data = {
+            'sites': [],
+            'species': [],
+            'num_species': [],
+            'selective': False,
+            'velocities': False,
+            'predictors': False,
+        }
+        for site in self.entries['sites']:
+            specie = site.get_specie()
+
+            ## ensure direct positions
+            position = site.get_position()
+            if site.get_direct():
+                position = self._to_direct(position)
+
+            ## set selective flag to True if any site.get_selective() contains False
+            selective = site.get_selective()
+            data['selective'] |= bool(False in selective)
+
+            ## set velocities flag to True if any site contains velocities
+            velocities = site.get_velocities()
+            data['velocities'] |= bool(velocities)
+
+            ## set predictors flag to True if any site contains predictors
+            predictors = site.get_predictors()
+            data['predictors'] |= bool(predictors)
+
+            ## we set direct to True always, because we converted if necessary
+            data['sites'].append([specie, position, selective, True, velocities, predictors ])
+
+            ## append species or count up the current one
+            if data['species'] and data['species'][-1] == specie:
+                data['num_species'][-1] += 1
+            else:
+                data['species'].append(specie)
+                data['num_species'].append(1)
+
+        return data['sites'], data['species'], data['num_species'], data['selective'], data['velocities'], data['predictors']
+
+
     def _get_key(self, item):
         """Key fetcher for the sorted function.
 
@@ -635,7 +677,7 @@ class Poscar(object):
         Parameters
         ----------
         tag : string
-            The entry tag of the POSCAR entry.        
+            The entry tag of the POSCAR entry.
 
         Returns
         -------
@@ -728,8 +770,11 @@ class Poscar(object):
         comment = entries["comment"]
         unitcell = entries["unitcell"]
         # sort and group to VASP specifications
-        sites, species, num_species, selective, velocities, predictors = \
-            self._sort_and_group_sites()
+        if self._conserve_order:
+            sites, species, num_species, selective, velocities, predictors = self._get_sites_data()
+        else:
+            sites, species, num_species, selective, velocities, predictors = \
+                self._sort_and_group_sites()
         # update comment
         compound = ""
         for index, specie in enumerate(species):
