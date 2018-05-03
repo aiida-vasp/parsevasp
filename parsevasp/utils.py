@@ -112,6 +112,7 @@ def file_exists(file_path):
         else:
             self._logger.error("Could not locate "+file_path+".")
         status = False
+        
     return status
 
 
@@ -202,11 +203,87 @@ def remove_newline(fobj, num_newlines = 1):
     remove_chars = len(os.linesep) + num_newlines - 1
     fobj.truncate(fobj.tell() - remove_chars)
 
-def get_gcd(lst):
-    """Get the greater common divider for a list of numbers.
-    Float numbers are ignored, but divided by the located gcd
-    from the integers in the end
+    return
+
+def dir_to_cart(self, v, lattice):
+    """ Convert direct coordinates to cartesian.
+    
+    Parameters
+    ----------
+    v : ndarray
+        | Dimension: (3)
+
+        The direct vector to be converted.
+    lattice : ndarray
+        | Dimension: (3,3)
+
+        The crystal lattice, where the first lattice vector is
+        [0,:], the second, [1,:] etc.
+    
+    Returns
+    -------
+    cart : ndarray
+        | Dimension: (3)
+
+        The cartesian vector.
 
     """
 
-    return
+    cart = np.dot(v, lattice)
+    
+    return cart
+
+def cart_to_dir(self, v, lattice):
+    """ Convert cartesian coordinates to direct.
+    
+    Parameters
+    ----------
+    v : ndarray
+        | Dimension: (3)
+
+        The cartersian vector.
+    lattice : ndarray
+        | Dimension: (3,3)
+        The crystal lattice, where the first lattice vector is
+        (0,:), the second, (1,:) etc.
+
+    Returns
+    -------
+    direct : ndarray
+        | Dimension: (3)
+        The direct vector.
+
+    """
+
+    direct = np.dot(v, np.linalg.inv(self.lattice))
+    
+    return direct
+
+def lat_to_reclat(self, lattice):
+    """ Convert the lattice to the reciprocal lattice.
+    
+    Parameters
+    ----------
+    lattice : ndarray
+        | Dimension: (3,3)
+        The crystal lattice, where the first lattice vector is
+        (0,:), the second, (1,:) etc.
+
+    Returns
+    -------
+    lattice_rec : ndarray
+        | Dimension: (3,3)
+        Reciprocal lattice including the 2:math:`\pi` factor,
+        see `lattice` for layout.
+
+    Notes
+    -----
+    In general, `lattice_rec`=2pi*(lattice.T)^-1
+
+    
+    """
+
+    lattice_trans = np.transpose(lattice)
+    lattice_rec = 2 * math.pi * np.linalg.inv(lattice_trans)
+    
+    return lattice_rec
