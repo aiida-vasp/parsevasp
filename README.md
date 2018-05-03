@@ -1,4 +1,4 @@
-A parser for VASP using lxml
+A parser for VASP using lxml or fallback elementTree.
 
 TODO:
 
