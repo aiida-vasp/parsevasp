@@ -816,7 +816,8 @@ class Kpoints(object):
                                 "to be given. Setting it to 1.0. "
                                 "Continuing.")
                     weight = 1.0
-                kpoints.write("{:{width}.{prec}f} {:{width}.{prec}f} {:{width}.{prec}f}\n".format(
+                kpoints.write("{:{width}.{prec}f} {:{width}.{prec}f} "
+                              "{:{width}.{prec}f} {:{width}.{prec}f}\n".format(
                     coordinate[0],
                     coordinate[1],
                     coordinate[2],
