@@ -590,7 +590,7 @@ class Poscar(object):
             'velocities': False,
             'predictors': False,
         }
-        for site_idx, site in self.entries['sites']:
+        for site in self.entries['sites']:
             specie = site.get_specie()
 
             ## ensure direct positions
@@ -600,7 +600,7 @@ class Poscar(object):
 
             ## set selective flag to True if any site.get_selective() contains False
             selective = site.get_selective()
-            data['selective'] |= bool(False in select)
+            data['selective'] |= bool(False in selective)
 
             ## set velocities flag to True if any site contains velocities
             velocities = site.get_velocities()
@@ -620,7 +620,7 @@ class Poscar(object):
                 data['species'].append(specie)
                 data['num_species'].append(1)
 
-        return data['sites'], data['species'], data['selective'], data['velocities'], data['predictors']
+        return data['sites'], data['species'], data['num_species'], data['selective'], data['velocities'], data['predictors']
 
 
     def _get_key(self, item):
@@ -765,7 +765,7 @@ class Poscar(object):
         comment = entries["comment"]
         unitcell = entries["unitcell"]
         # sort and group to VASP specifications
-        if self.conserve_order:
+        if self._conserve_order:
             sites, species, num_species, selective, velocities, predictors = self._get_sites_data()
         else:
             sites, species, num_species, selective, velocities, predictors = \
