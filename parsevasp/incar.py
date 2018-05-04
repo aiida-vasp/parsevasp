@@ -15,17 +15,17 @@ import constants
 class Incar(object):
 
     def __init__(self, incar_string=None, incar_dict=None,
-                 file_path=None, logger=None):
+                 file_path=None, logger=None, prec = None):
         """Initialize an INCAR object and set content as a dictionary.
 
         Parameters
         ----------
-        incar_string : string
+        incar_string : string, optional
             A string containing INCAR entries. Must contain line
             breaks if multiline, otherwise the INCAR will be mangled.
-        incar_dict : dict
+        incar_dict : dict, optional
             A dictionary containing the INCAR entries.
-        file_path : string
+        file_path : string, optional
             The file path in which the INCAR is read.
         logger : object, optional
             A standard Python logger object.
@@ -34,7 +34,7 @@ class Incar(object):
             when printing files.
 
         """
-
+        print(incar_string, incar_dict, file_path)
         self.file_path = file_path
         self.incar_dict = incar_dict
         self.incar_string = incar_string
@@ -60,7 +60,8 @@ class Incar(object):
             self._logger.error("Please only supply one argument when "
                               "initializing Incar. Exiting.")
             sys.exit(1)
-        # check that at least one is suplpied
+            
+        # check that at least one is supplied
         if (incar_string is None and incar_dict is None
                 and file_path is None):
             self._logger.error("Please supply one argument when "
