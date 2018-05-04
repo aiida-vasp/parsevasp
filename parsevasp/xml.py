@@ -135,7 +135,7 @@ class Xml(object):
 
         # Do a quick check to see if the XML file is not truncated
         xml_recover = self._check_xml(self._file_path)
-        
+
         if (file_size < self._sizecutoff) or xml_recover:
             # run regular method (loads file into memory) and
             # enable recovery mode if necessary
@@ -164,7 +164,7 @@ class Xml(object):
             vaspxml = etree.parse(self._file_path, parser = parser)
         else:
             vaspxml = etree.parse(self._file_path)
-            
+
         # do we want to extract data from all calculations (e.g. ionic steps)
         all = self._extract_all
 
@@ -537,7 +537,7 @@ class Xml(object):
                     if extract_positions:
                         if event == "start" and element.tag == "v":
                             data.append(element)
-                            
+
                 if extract_forces:
                     if event == "start" and element.tag == "v":
                         data.append(element)
@@ -1077,7 +1077,7 @@ class Xml(object):
             else:
                 stress[1] = None
                 stress[2] = None
-                
+
             entry = self._findall(xml,
                                   './/calculation/varray[@name="stress"]/v')
             if entry is not None:
@@ -2111,7 +2111,7 @@ class Xml(object):
             return forces[largest_key]
         elif status == "all":
             return forces
-        
+
     def get_stress(self, status):
 
         stress = self._data["stress"]
@@ -2127,15 +2127,15 @@ class Xml(object):
             return stress
 
     def get_hessian(self):
-        
+
         hessian = self._data["hessian"]
         return hessian
 
     def get_dynmat(self):
-        
+
         dynmat = self._data["dynmat"]
         return dynmat
-    
+
     def get_dielectrics(self):
 
         dielectrics = self._data["dielectrics"]
@@ -2152,7 +2152,7 @@ class Xml(object):
         return born
 
     def get_unitcell(self, status):
-        
+
         unitcell = self._lattice["unitcell"]
         if unitcell is None:
             return None
@@ -2167,7 +2167,7 @@ class Xml(object):
             return unitcell
 
     def get_positions(self, status):
-        
+
         positions = self._lattice["positions"]
         if positions is None:
             return None
@@ -2182,12 +2182,12 @@ class Xml(object):
             return positions
 
     def get_species(self):
-        
+
         species = self._lattice["species"]
         return species
 
     def get_lattice(self, status):
-        
+
         unitcell = self.get_unitcell(status)
         positions = self.get_positions(status)
         species = self.get_species()
@@ -2195,7 +2195,7 @@ class Xml(object):
                 "species": species}
 
     def get_kpoints(self):
-        
+
         kpoints = self._lattice["kpoints"]
         return kpoints
 
@@ -2205,7 +2205,7 @@ class Xml(object):
         return kpointsw
 
     def get_energies(self, status, etype=None, nosc=True):
-        
+
         if etype is None:
             etype = "energy_no_entropy"
         if etype == "energy_no_entropy":
@@ -2214,7 +2214,7 @@ class Xml(object):
             raise NotImplementedError
 
     def _get_energies_no_entropy(self, status, nosc):
-        
+
         enrgies = self._data["totens"]
         if enrgies is None:
             return None
@@ -2252,7 +2252,7 @@ class Xml(object):
 
         dos = self._data["dos"]
         return dos
-    
+
     def get_eigenvalues(self):
 
         eigenvalues = self._data["eigenvalues"]
@@ -2262,7 +2262,7 @@ class Xml(object):
 
         occupancies = self._data["occupancies"]
         return occupancies
-    
+
     def get_projectors(self):
 
         projectors = self._data["projectors"]
@@ -2381,7 +2381,7 @@ class Xml(object):
         if not utils.file_exists(file_path):
             self._logger.error("Can not check file.")
             return None
-        
+
         with open(file_path) as source:
             mapping = mmap.mmap(source.fileno(), 0, prot=mmap.PROT_READ)
         last_line = mapping[mapping.rfind(b'\n', 0, -1)+1:]
