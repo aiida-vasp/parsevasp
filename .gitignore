@@ -1,3 +1,5 @@
+.log
+.ps.pdf
 *.pyc
 build/
 dist/
@@ -6,3 +8,4 @@ dist/
 .cache/
 .pytest_cache/
 .tox/
+__pycache__
