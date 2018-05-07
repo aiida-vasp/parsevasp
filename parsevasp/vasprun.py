@@ -247,9 +247,7 @@ class Xml(object):
         extract_dos_ispin2 = False
         extract_projected = False
         extract_forces = False
-        extract_force = False
         extract_stress = False
-        extract_stres = False
         extract_e0 = False
         extract_scstep = False
         extract_dielectrics = False
@@ -431,7 +429,6 @@ class Xml(object):
                     extract_forces = True
                 if event == "end" and element.tag == "varray" and \
                    element.attrib["name"] == "forces":
-                    print data
                     force[attribute] = self._convert_array2D_f(data, 3)
                     data = []
                     extract_forces = False
@@ -732,14 +729,6 @@ class Xml(object):
                 if extract_dos_ispin2:
                     if event == "start" and element.tag == "r":
                         data2.append(element)
-
-            if extract_force:
-                if event == "start" and element.tag == "v":
-                    data.append(element)
-
-            if extract_stress:
-                if event == "start" and element.tag == "v":
-                    data.append(element)
 
         # now we need to update some elements
         if len(cell) == 1:
@@ -1077,7 +1066,8 @@ class Xml(object):
                 pos[1] = None
 
             entry = self._findall(xml,
-                                  './/calculation/varray[@name="forces"]/v')
+                                  './/calculation/varray[@name="stress"]/v')
+
             if entry is not None:
                 stress[1] = self._convert_array2D_f(entry[0:3], 3)
                 stress[2] = self._convert_array2D_f(entry[-3:], 3)
@@ -1086,7 +1076,7 @@ class Xml(object):
                 stress[2] = None
 
             entry = self._findall(xml,
-                                  './/calculation/varray[@name="stress"]/v')
+                                  './/calculation/varray[@name="forces"]/v')
             if entry is not None:
                 force[1] = self._convert_array2D_f(entry[0:num_atoms], 3)
                 force[2] = self._convert_array2D_f(entry[-num_atoms:], 3)
@@ -1122,7 +1112,7 @@ class Xml(object):
             else:
                 force[1] = None
                 force[2] = None
-            if entrystress is None:
+            if entrystress is not None:
                 stress[1] = self._convert_array2D_f(entrystress[0:3], 3)
                 stress[2] = self._convert_array2D_f(entrystress[-3:], 3)
             else:
@@ -1535,6 +1525,8 @@ class Xml(object):
                 # do not need the energy term (similar to total)
                 _dosdown["partial"] = np.asarray(
                     np.split(dos_ispin[:, 1:10], num_atoms))
+            else:
+                _dosdown['partial'] = None
             dos["down"] = _dosdown
             dos["total"] = {"fermi_level": fermi_level, "energy": enrgy}
         else:

@@ -35,3 +35,19 @@ def test_incar_exist(incar_parser):
     """
 
     assert incar_parser.get_dict()
+
+def test_incar_exist(incar_parser):
+    """Check parameters of the INCAR.
+
+    """
+
+    dictionary = incar_parser.get_dict()
+    assert dictionary['emin'] == 5.5
+    assert dictionary['emax'] == 7.5
+    assert dictionary['nedos'] == 100000
+    assert dictionary['prec'] == 'A'
+    assert dictionary['loptics'] == True
+    assert dictionary['encut'] == 350
+    assert dictionary['test'] == [1,2,2]
+    assert dictionary['ismear'] == -5
+    assert dictionary['algo'] == 'V'
