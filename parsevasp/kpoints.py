@@ -121,7 +121,7 @@ class Kpoints(object):
 
         """
 
-        comment = kpoints[0]
+        comment = kpoints[0].replace('#', '').strip()
         num_kpoints = int(kpoints[1].split()[0])
         divisions = None
         shifts = None
@@ -204,7 +204,8 @@ class Kpoints(object):
         if line_mode:
             direct = False
             points = []
-            if kpoints[3].split()[0][0].lower() == 'r':
+            reference = kpoints[3].split()[0][0].lower()
+            if reference == 'r' or 'd':
                 direct = True
             if not direct:
                 self._logger.error("Please supply the KPOINTS in direct "
@@ -795,10 +796,10 @@ class Kpoints(object):
         entries = self.entries
         comment = entries["comment"]
         if comment is None:
-            comment = "# \n"
+            comment = "# No comment"
         else:
             comment = "# " + comment
-        kpoints.write(comment)
+        kpoints.write(comment + "\n")
         # check mode
         mode = entries["mode"]
         if mode == "explicit":
@@ -829,11 +830,12 @@ class Kpoints(object):
                     len(tetra),
                     entries["tetra_volume"], prec = self._prec, width = self._width))
                 for element in tetra:
-                    kpoints.write("{:6d} {:6d} {:6d} {:6d}\n".format(
+                    kpoints.write("{:6d} {:6d} {:6d} {:6d} {:6d}\n".format(
                         element[0],
                         element[1],
                         element[2],
-                        element[3], prec = self._prec, width = self._width))
+                        element[3],
+                        element[4], prec = self._prec, width = self._width))
         if mode == "automatic":
             kpoints.write("0\n")
             kpoints.write(entries["centering"] + "\n")

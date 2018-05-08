@@ -124,7 +124,7 @@ class Poscar(object):
 
         """
 
-        comment = poscar[0]
+        comment = poscar[0].replace('#', '').strip()
         vasp5 = True
         # check for VASP 5 POSCAR
         if (utils.is_numbers(poscar[5])):
@@ -216,7 +216,7 @@ class Poscar(object):
                 if first_char == 'c':
                     # make sure we convert velocities to direct
                     direct = False
-            elif poscar[loopmax_pos] == '':
+            elif poscar[loopmax_pos].replace(' ','') == '\n':
                 predictor = True
         # now check that the next line is in fact a coordinate
         loopmax_pos = loopmax_pos + 1
@@ -243,27 +243,27 @@ class Poscar(object):
                     # convert to direct
                     vel = self._to_direct(vel, unitcell)
                 sites_temp[i][3] = vel
-        # now check if there is predictor-corrector coordinates following
-        # the velocities
-        loopmax_pos = nions + loopmax_pos
-        if len(poscar) > loopmax_pos:
-            if poscar[loopmax_pos] == '\n':
-                loopmax_pos = loopmax_pos + 1
-                if utils.is_number(poscar[loopmax_pos].split()[0]):
-                    for i in range(nions):
-                        line = poscar[i + loopmax_pos].split()
-                        pre = np.zeros(3)
-                        pre[0] = float(line[0])
-                        pre[1] = float(line[1])
-                        pre[2] = float(line[2])
-                        sites_temp[i][4] = pre
+            # now check if there is predictor-corrector coordinates following
+            # the velocities
+            loopmax_pos = nions + loopmax_pos
+            if len(poscar) > loopmax_pos:
+                if poscar[loopmax_pos].replace(' ','') == '\n':
+                    loopmax_pos = loopmax_pos + 1
+                    if utils.is_number(poscar[loopmax_pos].split()[0]):
+                        for i in range(nions):
+                            line = poscar[i + loopmax_pos].split()
+                            pre = np.zeros(3)
+                            pre[0] = float(line[0])
+                            pre[1] = float(line[1])
+                            pre[2] = float(line[2])
+                            sites_temp[i][4] = pre
         # do one final loop to create the objects and read
         # predictors if they exist
         sites = []
         loopmax_pos = nions + loopmax + 1
         for i in range(nions):
             pre = np.zeros(3)
-            if predictor:
+            if predictor and not velocities:
                 line = poscar[i + loopmax_pos].split()
                 pre[0] = float(line[0])
                 pre[1] = float(line[1])
@@ -276,9 +276,8 @@ class Poscar(object):
             sites.append(site)
 
         # build dictionary and convert to NumPy
-        comment = comment.replace('#', '')
         poscar_dict = {}
-        poscar_dict["comment"] = comment.strip()
+        poscar_dict["comment"] = comment
         poscar_dict["unitcell"] = np.asarray(unitcell)
         poscar_dict["sites"] = sites
         return poscar_dict
