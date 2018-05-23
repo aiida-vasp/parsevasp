@@ -687,7 +687,7 @@ class Poscar(object):
 
         return value
 
-    def get_dict(self):
+    def get_dict(self, direct = True):
         """Get a true dictionary containing the entries in an
         POSCAR compatible fashion.
 
@@ -695,18 +695,36 @@ class Poscar(object):
         -------
         dictionary : dict
             A dictionary on POSCAR compatible form.
+        direct : bool, optional
+            If True, all coordinates are returned in direct, otherwise
+            in cartesian.
 
         """
 
         dictionary = {}
         for key, entry in self.entries.iteritems():
             if key == 'sites':
-                dictionary[key] = [[element.get_specie().capitalize(),
-                                    element.get_position(),
-                                    element.get_selective(),
-                                    element.get_velocities(),
-                                    element.get_predictors(),
-                                    element.get_direct()] for element in entry]
+                sites_temp = []
+                for element in entry:
+                    position = element.get_position()
+                    velocities = element.get_velocities()
+                    direct = element.get_direct()
+                    if not direct:
+                        # convert to cartesian
+                        position = self._to_cart(position,
+                                                 self.entries['unitcell'])
+                        velocities = self._to_cart(velocities,
+                                                   self.entries['unitcell'])
+                        direct = False
+                    sites_temp.append({'specie': element.get_specie().capitalize(),
+                                       'position': position,
+                                       'selective': element.get_selective(),
+                                       'velocities': velocities,
+                                       'predictors': element.get_predictors(),
+                                       'direct': direct})
+                    
+                dictionary[key] = sites_temp
+
             else:
                 dictionary[key] = entry
 
@@ -881,19 +899,82 @@ class Site(object):
         self.direct = direct
 
     def get_specie(self):
-        return self.specie.capitalize()
+        """Return the specie.
+
+        Returns
+        -------
+        specie : string
+            A string containing the atomic capitalized atomic specie.
+
+        """
+
+        specie = self.specie.capitalize()
+        return specie
 
     def get_position(self):
-        return self.position
+        """Return the position.
+
+        Returns
+        -------
+        position : ndarray
+
+        """
+
+        position = self.position
+        return position
 
     def get_selective(self):
-        return self.selective
+        """Return the selective flags.
+
+        Returns
+        -------
+        selective : list
+            A list of three bool, either True or False, depending on
+            which directions to perform selective dynamics.
+        
+        """
+
+        selective = self.selective
+        return selective
 
     def get_velocities(self):
-        return self.velocities
+        """Return the velocities.
+
+        Returns
+        -------
+        velocities : ndarray
+            An ndarray of three floats containing the velocities along
+            each direction.
+
+        """
+        
+        velocities = self.velocities
+        return velocities
 
     def get_predictors(self):
-        return self.predictors
+        """Return the predictors.
+        
+        Returns
+        -------
+        predictors : ndarray
+            An ndarray of three floats containing the predictors along
+            each direction.
+        
+        """
+
+        predictors = self.predictors
+        return predictors
 
     def get_direct(self):
-        return self.direct
+        """Return the direct status of the coordinate.
+
+        Returns
+        -------
+        direct : bool
+            True if the coordinates are given in direct coordinates, 
+            otherwise for direct, False.
+
+        """
+        
+        direct = self.direct
+        return direct

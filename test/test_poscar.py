@@ -47,33 +47,38 @@ def test_poscar_entries(poscar_parser):
                      [ 0.      ,  0.      ,  9.0164589999999993]])
     np.testing.assert_allclose(unitcell, test)
     sites = poscar['sites']
+    print sites
     assert len(sites) == 32
-    test = ['Co', np.array([ 0.24999947,  0.24999947,  0.24999947]),
-            [True, True, True], None, None, True]
-    np.testing.assert_allclose(sites[0][1], test[1])
-    assert sites[0][0] == test[0]
-    assert sites[0][2] == [True, True, True]
-    assert sites[0][3] == None
-    np.testing.assert_allclose(sites[0][4], np.array([0.0, 0.0, 0.0]))
-    assert sites[0][5]
-    test = ['Co', np.array([ 0.74999953,  0.24999947,  0.24999947]),
-            [True, True, True], None, None, True]
-    np.testing.assert_allclose(sites[7][1], test[1])
-    assert sites[7][0] == test[0]
-    assert sites[7][2] == [True, True, True]
-    assert sites[7][3] == None
-    np.testing.assert_allclose(sites[7][4], np.array([8.0, 0.0, 0.0]))
-    assert sites[7][5]
-    test = ['Sb', np.array([ 0.        ,  0.33510051,  0.15804985]),
-            [True, True, True], None, None, True]
-    np.testing.assert_allclose(sites[8][1], test[1])
-    assert sites[8][0] == test[0]
-    assert sites[8][2] == [True, True, True]
-    assert sites[8][3] == None
-    np.testing.assert_allclose(sites[8][4], np.array([0.0, 9.0, 0.0]))
-    assert sites[8][5]
+    test = {'specie': 'Co', 'position': np.array([ 0.24999947,  0.24999947,  0.24999947]),
+            'selective': [True, True, True], 'velocities': None,
+            'predictors': None, 'direct': True}
+    np.testing.assert_allclose(sites[0]['position'], test['position'])
+    assert sites[0]['specie'] == test['specie']
+    assert sites[0]['selective'] == [True, True, True]
+    assert sites[0]['velocities'] == None
+    np.testing.assert_allclose(sites[0]['predictors'], np.array([0.0, 0.0, 0.0]))
+    assert sites[0]['direct']
+    test = {'specie': 'Co', 'position': np.array([ 0.74999953,  0.24999947,  0.24999947]),
+            'selective': [True, True, True], 'velocties': None,
+            'predictors': None, 'direct': True}
+    np.testing.assert_allclose(sites[7]['position'], test['position'])
+    assert sites[7]['specie'] == test['specie']
+    assert sites[7]['selective'] == [True, True, True]
+    assert sites[7]['velocities'] == None
+    np.testing.assert_allclose(sites[7]['predictors'], np.array([8.0, 0.0, 0.0]))
+    assert sites[7]['direct']
+    test = {'specie': 'Sb', 'position': np.array([ 0.        ,  0.33510051,  0.15804985]),
+            'selective': [True, True, True], 'velocities': None,
+            'predictors': None, 'direct': True}
+    np.testing.assert_allclose(sites[8]['position'], test['position'])
+    assert sites[8]['specie'] == test['specie']
+    assert sites[8]['selective'] == [True, True, True]
+    assert sites[8]['velocities'] == None
+    np.testing.assert_allclose(sites[8]['predictors'], np.array([0.0, 9.0, 0.0]))
+    assert sites[8]['direct']
 
-def test_poscar_entries(poscar_parser_vel):
+
+def test_poscar_entries_vel(poscar_parser_vel):
     """Check POSCAR entries including velocities.
 
     """
@@ -89,30 +94,33 @@ def test_poscar_entries(poscar_parser_vel):
     np.testing.assert_allclose(unitcell, test)
     sites = poscar['sites']
     assert len(sites) == 32
-    test = ['Co', np.array([ 0.24999947,  0.24999947,  0.24999947]),
-            [True, True, True], None, None, True]
-    np.testing.assert_allclose(sites[0][1], test[1])
-    assert sites[0][0] == test[0]
-    assert sites[0][2] == [True, True, True]
-    np.testing.assert_allclose(sites[0][3], np.array([1.0, 0.0, 0.0]))
-    np.testing.assert_allclose(sites[0][4], np.array([0.0, 0.0, 0.0]))
-    assert sites[0][5]
-    test = ['Co', np.array([ 0.74999953,  0.24999947,  0.24999947]),
-            [True, True, True], None, None, True]
-    np.testing.assert_allclose(sites[7][1], test[1])
-    assert sites[7][0] == test[0]
-    assert sites[7][2] == [True, True, True]
-    np.testing.assert_allclose(sites[7][3], np.array([10.0, 1.0, 0.0]))
-    np.testing.assert_allclose(sites[7][4], np.array([8.0, 0.0, 0.0]))
-    assert sites[7][5]
-    test = ['Sb', np.array([ 0.        ,  0.33510051,  0.15804985]),
-            [True, True, True], None, None, True]
-    np.testing.assert_allclose(sites[8][1], test[1])
-    assert sites[8][0] == test[0]
-    assert sites[8][2] == [True, True, True]
-    np.testing.assert_allclose(sites[8][3], np.array([0.0, 0.0, 14.0]))
-    np.testing.assert_allclose(sites[8][4], np.array([0.0, 9.0, 0.0]))
-    assert sites[8][5]
+    test = {'specie': 'Co', 'position': np.array([ 0.24999947,  0.24999947,  0.24999947]),
+            'selective': [True, True, True], 'velocities': None,
+            'predictors': None, 'direct': True}
+    np.testing.assert_allclose(sites[0]['position'], test['position'])
+    assert sites[0]['specie'] == test['specie']
+    assert sites[0]['selective'] == [True, True, True]
+    np.testing.assert_allclose(sites[0]['velocities'], np.array([1.0, 0.0, 0.0]))
+    np.testing.assert_allclose(sites[0]['predictors'], np.array([0.0, 0.0, 0.0]))
+    assert sites[0]['direct']
+    test = {'specie': 'Co', 'position': np.array([ 0.74999953,  0.24999947,  0.24999947]),
+            'selective': [True, True, True], 'velocities': None,
+            'predictors': None, 'direct': True}
+    np.testing.assert_allclose(sites[7]['position'], test['position'])
+    assert sites[7]['specie'] == test['specie']
+    assert sites[7]['selective'] == [True, True, True]
+    np.testing.assert_allclose(sites[7]['velocities'], np.array([10.0, 1.0, 0.0]))
+    np.testing.assert_allclose(sites[7]['predictors'], np.array([8.0, 0.0, 0.0]))
+    assert sites[7]['direct']
+    test = {'specie': 'Sb', 'position': np.array([ 0.        ,  0.33510051,  0.15804985]),
+            'selective': [True, True, True], 'velocties': None,
+            'predictors': None, 'direct': True}
+    np.testing.assert_allclose(sites[8]['position'], test['position'])
+    assert sites[8]['specie'] == test['specie']
+    assert sites[8]['selective'] == [True, True, True]
+    np.testing.assert_allclose(sites[8]['velocities'], np.array([0.0, 0.0, 14.0]))
+    np.testing.assert_allclose(sites[8]['predictors'], np.array([0.0, 9.0, 0.0]))
+    assert sites[8]['direct']
     
 
 def test_poscar_entries_string():
@@ -139,11 +147,12 @@ def test_poscar_entries_string():
     np.testing.assert_allclose(unitcell, test)
     sites = poscar['sites']
     assert len(sites) == 1
-    test = ['Co', np.array([ 0.0,  0.0,  0.0]),
-            [True, True, True], None, None, True]
-    np.testing.assert_allclose(sites[0][1], test[1])
-    assert sites[0][0] == test[0]
-    assert sites[0][2] == [True, True, True]
-    assert sites[0][3] == None
-    assert sites[0][4] == None
-    assert sites[0][5]
+    test = {'specie': 'Co', 'position': np.array([ 0.0,  0.0,  0.0]),
+            'selective': [True, True, True], 'velocities': None,
+            'predictors': None, 'direct': True}
+    np.testing.assert_allclose(sites[0]['position'], test['position'])
+    assert sites[0]['specie'] == test['specie']
+    assert sites[0]['selective'] == [True, True, True]
+    assert sites[0]['velocities'] == None
+    assert sites[0]['predictors'] == None
+    assert sites[0]['direct']
