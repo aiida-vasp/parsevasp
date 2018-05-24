@@ -53,7 +53,7 @@ class Poscar(object):
             self._logger.error("Please supply one argument when "
                                "initializing Poscar. Exiting.")
             sys.exit(1)
-            
+
         # set logger
         if logger is not None:
             self._logger = logger
@@ -75,6 +75,10 @@ class Poscar(object):
         if self._poscar_string is not None:
             # create dictionary from a string
             self._poscar_dict = self._from_string()
+
+        if self._poscar_dict is not None:
+            # update site entries to Site objects
+            self._from_dict()
 
         # store entries
         self.entries = self._poscar_dict
@@ -101,6 +105,26 @@ class Poscar(object):
         poscar = self._poscar_string.splitlines(True)
         poscar_dict = self._from_list(poscar)
         return poscar_dict
+
+    def _from_dict(self):
+        """Generate Site objects for each entry in site.
+
+        """
+
+        sites = self._poscar_dict['sites']
+        temp_sites = []
+        for site in sites:
+            direct = site['direct']
+            position = site['position']
+            if not direct:
+                # convert to direct
+                position = self._to_direct(site['position'], self._poscar_dict[
+                    'unitcell'])
+                direct = True
+            temp_sites.append(Site(site['specie'], position,
+                                   site['selective'], site['velocities'],
+                                   site['predictors'], direct))
+        sites = temp_sites
 
     def _from_list(self, poscar):
         """Go through the list and analyze for = and ; in order to
@@ -216,7 +240,7 @@ class Poscar(object):
                 if first_char == 'c':
                     # make sure we convert velocities to direct
                     direct = False
-            elif poscar[loopmax_pos].replace(' ','') == '\n':
+            elif poscar[loopmax_pos].replace(' ', '') == '\n':
                 predictor = True
         # now check that the next line is in fact a coordinate
         loopmax_pos = loopmax_pos + 1
@@ -247,7 +271,7 @@ class Poscar(object):
             # the velocities
             loopmax_pos = nions + loopmax_pos
             if len(poscar) > loopmax_pos:
-                if poscar[loopmax_pos].replace(' ','') == '\n':
+                if poscar[loopmax_pos].replace(' ', '') == '\n':
                     loopmax_pos = loopmax_pos + 1
                     if utils.is_number(poscar[loopmax_pos].split()[0]):
                         for i in range(nions):
@@ -587,7 +611,8 @@ class Poscar(object):
             # now make sure the sites is on the same order
             ordered_sites = []
             for specie in species:
-                ordered_sites.extend([site for site in sites if specie == site[0]])
+                ordered_sites.extend(
+                    [site for site in sites if specie == site[0]])
             # EFL: consider to also sort on coordinate after specie
 
             return ordered_sites, species, num_species, selective, \
@@ -635,7 +660,7 @@ class Poscar(object):
         """
 
         position = utils.cart_to_dir(position_cart, unitcell)
-        
+
         return position
 
     def _to_cart(self, position_dir, unitcell):
@@ -661,7 +686,7 @@ class Poscar(object):
         """
 
         position = utils.dir_to_cart(position_dir, unitcell)
-        
+
         return position
 
     def get(self, tag):
@@ -687,7 +712,7 @@ class Poscar(object):
 
         return value
 
-    def get_dict(self, direct = True):
+    def get_dict(self, direct=True):
         """Get a true dictionary containing the entries in an
         POSCAR compatible fashion.
 
@@ -724,7 +749,6 @@ class Poscar(object):
                                        'velocities': velocities,
                                        'predictors': element.get_predictors(),
                                        'direct': temp_direct})
-                    
                 dictionary[key] = sites_temp
 
             else:
@@ -803,15 +827,15 @@ class Poscar(object):
         poscar.write(comment + "\n")
         # we avoid usage of the scaling factor
         poscar.write("{:{width}.{prec}f}\n".format(1.0,
-                                                   prec = self._prec,
-                                                   width = self._width))
+                                                   prec=self._prec,
+                                                   width=self._width))
         # write unitcell
         for i in range(3):
             poscar.write("{:{width}.{prec}f} {:{width}.{prec}f} "
                          "{:{width}.{prec}f}\n".format(
-                unitcell[i][0],
-                unitcell[i][1],
-                unitcell[i][2], prec = self._prec, width = self._width))
+                             unitcell[i][0],
+                             unitcell[i][1],
+                             unitcell[i][2], prec=self._prec, width=self._width))
         # write specie types
         tempostring = ""
         for specie in species:
@@ -831,9 +855,9 @@ class Poscar(object):
         for site in sites:
             poscar.write("{:{width}.{prec}f} {:{width}.{prec}f} "
                          "{:{width}.{prec}f}".format(
-                site[1][0],
-                site[1][1],
-                site[1][2], prec = self._prec, width = self._width))
+                             site[1][0],
+                             site[1][1],
+                             site[1][2], prec=self._prec, width=self._width))
             if selective:
                 sel = ["T", "T", "T"]
                 flags = site[2]
@@ -849,17 +873,17 @@ class Poscar(object):
             for site in sites:
                 poscar.write("{:{width}.{prec}f} {:{width}.{prec}f} "
                              "{:{width}.{prec}f}\n".format(
-                    site[4][0],
-                    site[4][1],
-                    site[4][2], prec = self._prec, width = self._width))
+                                 site[4][0],
+                                 site[4][1],
+                                 site[4][2], prec=self._prec, width=self._width))
         if predictors:
             poscar.write("\n")
             for site in sites:
                 poscar.write("{:{width}.{prec}f} {:{width}.{prec}f} "
                              "{:{width}.{prec}f}\n".format(
-                    site[5][0],
-                    site[5][1],
-                    site[5][2], prec = self._prec, width = self._width))
+                                 site[5][0],
+                                 site[5][1],
+                                 site[5][2], prec=self._prec, width=self._width))
 
 
 class Site(object):
@@ -933,7 +957,7 @@ class Site(object):
         selective : list
             A list of three bool, either True or False, depending on
             which directions to perform selective dynamics.
-        
+
         """
 
         selective = self.selective
@@ -949,19 +973,19 @@ class Site(object):
             each direction.
 
         """
-        
+
         velocities = self.velocities
         return velocities
 
     def get_predictors(self):
         """Return the predictors.
-        
+
         Returns
         -------
         predictors : ndarray
             An ndarray of three floats containing the predictors along
             each direction.
-        
+
         """
 
         predictors = self.predictors
@@ -977,6 +1001,6 @@ class Site(object):
             otherwise for direct, False.
 
         """
-        
+
         direct = self.direct
         return direct
