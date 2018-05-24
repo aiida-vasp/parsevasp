@@ -112,19 +112,19 @@ class Poscar(object):
         """
 
         sites = self._poscar_dict['sites']
-        temp_sites = []
         for site in sites:
-            direct = site['direct']
-            position = site['position']
-            if not direct:
-                # convert to direct
-                position = self._to_direct(site['position'], self._poscar_dict[
-                    'unitcell'])
-                direct = True
-            temp_sites.append(Site(site['specie'], position,
-                                   site['selective'], site['velocities'],
-                                   site['predictors'], direct))
-        sites = temp_sites
+            if not isinstance(site, Site):
+                # entry is not of a Site type, convert it
+                direct = site['direct']
+                position = site['position']
+                if not direct:
+                    # convert to direct
+                    position = self._to_direct(
+                        site['position'], self._poscar_dict['unitcell'])
+                    direct = True
+                site = Site(site['specie'], position,
+                            site['selective'], site['velocities'],
+                            site['predictors'], direct)
 
     def _from_list(self, poscar):
         """Go through the list and analyze for = and ; in order to
