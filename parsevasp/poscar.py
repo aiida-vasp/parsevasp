@@ -701,6 +701,7 @@ class Poscar(object):
 
         """
 
+
         dictionary = {}
         for key, entry in self.entries.iteritems():
             if key == 'sites':
@@ -708,20 +709,21 @@ class Poscar(object):
                 for element in entry:
                     position = element.get_position()
                     velocities = element.get_velocities()
-                    direct = element.get_direct()
+                    temp_direct = element.get_direct()
                     if not direct:
                         # convert to cartesian
                         position = self._to_cart(position,
                                                  self.entries['unitcell'])
-                        velocities = self._to_cart(velocities,
-                                                   self.entries['unitcell'])
-                        direct = False
+                        if velocities is not None:
+                            velocities = self._to_cart(velocities,
+                                                       self.entries['unitcell'])
+                        temp_direct = False
                     sites_temp.append({'specie': element.get_specie().capitalize(),
                                        'position': position,
                                        'selective': element.get_selective(),
                                        'velocities': velocities,
                                        'predictors': element.get_predictors(),
-                                       'direct': direct})
+                                       'direct': temp_direct})
                     
                 dictionary[key] = sites_temp
 

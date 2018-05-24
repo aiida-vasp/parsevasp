@@ -2091,8 +2091,8 @@ class Xml(object):
                 species[index] = constants.elements[
                     entry[index].text.split()[0].lower()]
             except KeyError:
-                self._logger.error("There is an atomic element present in the "
-                                   "XML file that is unknown. Exiting.")
+                self._logger.warning("There is an atomic element present in the "
+                                     "XML file that is unknown. Exiting.")
                 sys.exit(1)
 
         return species
