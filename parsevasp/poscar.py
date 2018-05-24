@@ -535,20 +535,6 @@ class Poscar(object):
                                "than the number of sites. Exiting.")
             sys.exit(1)
 
-    def _check_direct(self):
-        """Check that all the site positions are in direct
-        coordinates. If not, convert to direct.
-
-        Parameters
-        ----------
-        site_number : int
-            The site_number to be checked
-
-        """
-
-        sites = self.entries['sites']
-        for site in sites:
-
     def _validate(self):
         """Validate the content of entries
 
@@ -558,7 +544,6 @@ class Poscar(object):
         self._check_comment()
         self._check_unitcell()
         self._check_sites()
-        self._check_direct()
 
     def _sort_and_group_sites(self):
         """Sort and group the positions and species to
