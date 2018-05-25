@@ -2274,7 +2274,11 @@ class Xml(object):
                       'data': self._data}
         
         return dictionary
-    
+
+    def get_parameters(self):
+
+        parameters = self._parameters
+        return parameters
     
     def _check_calc_status(self, status):
         allowed_entries = ["initial", "final", "all"]
