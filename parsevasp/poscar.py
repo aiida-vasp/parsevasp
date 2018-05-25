@@ -107,7 +107,8 @@ class Poscar(object):
         return poscar_dict
 
     def _from_dict(self):
-        """Generate Site objects for each entry in site.
+        """If necessary, generate Site objects for each entry in site and/or
+        convert to direct coordinates.
 
         """
 
@@ -117,15 +118,33 @@ class Poscar(object):
                 # entry is not of a Site type, convert it
                 direct = site['direct']
                 position = site['position']
+                velocities = site['velocities']
                 if not direct:
                     # convert to direct
                     position = self._to_direct(
-                        site['position'], self._poscar_dict['unitcell'])
+                        position, self._poscar_dict['unitcell'])
+                    if velocities is not None:
+                        velocities = self._to_direct(
+                            velocities, self._poscar_dict['unitcell'])
                     direct = True
                 site = Site(site['specie'], position,
-                            site['selective'], site['velocities'],
+                            site['selective'], velocities,
                             site['predictors'], direct)
+            else:
+                if not site.get_direct():
+                    # cartesian, so convert.
+                    position = site.get_position()
+                    velocities = site.get_velocities()
+                    position = self._to_direct(
+                        position, self._poscar_dict['unitcell'])
+                    site.set_position(position)
+                    if velocities is not None:
+                        velocities = self._to_direct(
+                            velocities, self._poscar_dict['unitcell'])
+                        site.set_velocities(velocities)
+                    site.set_direct(True)
 
+                    
     def _from_list(self, poscar):
         """Go through the list and analyze for = and ; in order to
         deentangle grouped entries etc.
@@ -937,6 +956,19 @@ class Site(object):
         specie = self.specie.capitalize()
         return specie
 
+    def set_position(self, position):
+        """Sets the position.
+
+        Parameters
+        ----------
+        position : ndarray
+            The coordinate that are to be set as position.
+
+        """
+
+        self.position = position
+        return
+    
     def get_position(self):
         """Return the position.
 
@@ -963,6 +995,20 @@ class Site(object):
         selective = self.selective
         return selective
 
+    def set_velocities(self, velocities):
+        """Sets the velocities.
+
+        Parameters
+        ----------
+        velocities : ndarray
+            The three velocities that are to be set as velocities.
+
+        """
+
+        self.velocities = velocities
+        return
+
+    
     def get_velocities(self):
         """Return the velocities.
 
@@ -991,6 +1037,20 @@ class Site(object):
         predictors = self.predictors
         return predictors
 
+    def set_direct(self, direct):
+        """Sets direct.
+
+        Parameters
+        ----------
+        direct : bool
+            The boolean that determines if the position and velocities are
+            in cartesian or direct coordinates.
+
+        """
+
+        self.direct = direct
+        return
+    
     def get_direct(self):
         """Return the direct status of the coordinate.
 
