@@ -2273,6 +2273,11 @@ class Xml(object):
 
         return dictionary
 
+    def get_parameters(self):
+
+        parameters = self._parameters
+        return parameters
+
     def _check_calc_status(self, status):
         allowed_entries = ["initial", "final", "all"]
         if status not in allowed_entries:

@@ -44,7 +44,7 @@ class Incar(object):
             self._logger = logger
         else:
             logging.basicConfig(level=logging.DEBUG)
-            self._logger = logging.getLogger('IncarParser')
+            self._logger = logging.getLogger('Incar')
 
         # set precision
         if prec is None:
@@ -158,7 +158,7 @@ class Incar(object):
                     tag = final_split[0]
                     value = final_split[1]
                     # create new instance of entry
-                    entry = IncarItem(tag, value, comment)
+                    entry = IncarItem(tag, value, comment, logger = self._logger)
                     clean_tag = entry.get_tag()
                     if clean_tag in incar_dict:
                         self._logger.info("Tag " + entry.get_tag() + " already "
@@ -204,11 +204,13 @@ class Incar(object):
             # create new instance of entry
             if comment is not None:
                 if len(comment) == 2:
-                    entry = IncarItem(tag, comment[0], comment[1])
+                    entry = IncarItem(tag, comment[0], comment[1],
+                                      logger = self._logger)
                 else:
-                    entry = IncarItem(tag, value, comment)
+                    entry = IncarItem(tag, value, comment,
+                                      logger = self._logger)
             else:
-                entry = IncarItem(tag, value, comment)
+                entry = IncarItem(tag, value, comment, logger = self._logger)
             clean_tag = entry.get_tag()
             if clean_tag in incar_dict:
                 self._logger.info("Tag " + entry.get_tag() + " already "
@@ -287,7 +289,7 @@ class Incar(object):
         """
 
         # create a new INCAR item and check it
-        entry = IncarItem(tag, value, comment)
+        entry = IncarItem(tag, value, comment, logger = self._logger)
         # store or modify
         self.entries[entry.get_tag()] = entry
 
@@ -444,6 +446,13 @@ class IncarItem(object):
 
         """
 
+        # set logger
+        if logger is not None:
+            self._logger = logger
+        else:
+            logging.basicConfig(level=logging.DEBUG)
+            self._logger = logging.getLogger('IncarItem')
+        
         # clean tag and value
         clean_tag, clean_value, clean_comment = self._clean_entry(tag,
                                                                   value,
