@@ -41,9 +41,9 @@ except ImportError:
 class Xml(object):
 
     def __init__(self, file_path,
-                 k_before_band = False,
-                 extract_all = True,
-                 logger = None, event = False):
+                 k_before_band=False,
+                 extract_all=True,
+                 logger=None, event=False):
         """Initialize the XmlParser by first trying the lxml and
         fall back to the standard ElementTree if that is not present.
 
@@ -65,11 +65,10 @@ class Xml(object):
         -----
         lxml should be used and is required for large files
         """
-        
+
         self._file_path = file_path
         self._sizecutoff = 500
         self._event = event
-
 
         # set logger
         if logger is not None:
@@ -167,8 +166,8 @@ class Xml(object):
         if lxml and xml_recover:
             if xml_recover:
                 self._logger.debug("Running LXML in recovery mode.")
-            parser = etree.XMLParser(recover = True)
-            vaspxml = etree.parse(self._file_path, parser = parser)
+            parser = etree.XMLParser(recover=True)
+            vaspxml = etree.parse(self._file_path, parser=parser)
         else:
             vaspxml = etree.parse(self._file_path)
 
@@ -307,7 +306,7 @@ class Xml(object):
                     # only store energy for one part as
                     # this is the same for both
                     dos_ispin = self._convert_array2D_f(data, 3)
-                    _dos["energy"] = dos_ispin[:,0]
+                    _dos["energy"] = dos_ispin[:, 0]
                     _dos["total"] = dos_ispin[:, 1]
                     _dos["integrated"] = dos_ispin[:, 2]
                     _dos["partial"] = None
@@ -506,7 +505,6 @@ class Xml(object):
 
                 # now extract data
                 if extract_scstep:
-                    # print element.tag, element.attrib, element.text
                     # energy without entropy
                     if event == "start" and element.tag == "i" and \
                        element.attrib["name"] == "e_0_energy":
@@ -2272,10 +2270,9 @@ class Xml(object):
         dictionary = {'parameters': self._parameters,
                       'lattice': self._lattice,
                       'data': self._data}
-        
+
         return dictionary
-    
-    
+
     def _check_calc_status(self, status):
         allowed_entries = ["initial", "final", "all"]
         if status not in allowed_entries:
@@ -2383,6 +2380,16 @@ class Xml(object):
         """Do a primitive check of XML file to see if it is
         truncated.
 
+        Parameters
+        ----------
+        file_path : string
+            The file path of the xml file to be checked.
+
+        Returns
+        -------
+        bool
+            True if xml is truncated, False otherwise.
+
         """
 
         # check if file exists
@@ -2392,8 +2399,8 @@ class Xml(object):
 
         with open(file_path) as source:
             mapping = mmap.mmap(source.fileno(), 0, prot=mmap.PROT_READ)
-        last_line = mapping[mapping.rfind(b'\n', 0, -1)+1:]
-        if last_line == "</modeling>":
+        last_line = mapping[mapping.rfind(b'\n', 0, -1) + 1:]
+        if last_line == "</modeling>\n":
             return False
         else:
             return True
