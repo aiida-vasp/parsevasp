@@ -1090,44 +1090,38 @@ class Xml(object):
                                        './/calculation/varray[@name="forces"]/v')
             entrystress = self._findall(xml,
                                         './/calculation/varray[@name="stress"]/v')
-            if entrycell is not None:
+            if (entrycell is not None) and (entrypos is not None) and \
+               (entryforce is not None) and (entrystress is not None):
                 entries = len(entrycell)
                 num_calcs = int(entries / 3)
-            if entrycell is not None:
                 cell[1] = self._convert_array2D_f(entrycell[0:3], 3)
                 cell[2] = self._convert_array2D_f(entrycell[-3:], 3)
+                pos[1] = self._convert_array2D_f(entrypos[0:num_atoms], 3)
+                pos[2] = self._convert_array2D_f(entrypos[-num_atoms:], 3)
+                force[1] = self._convert_array2D_f(entryforce[0:num_atoms], 3)
+                force[2] = self._convert_array2D_f(entryforce[-num_atoms:], 3)
+                stress[1] = self._convert_array2D_f(entrystress[0:3], 3)
+                stress[2] = self._convert_array2D_f(entrystress[-3:], 3)
+                for calc in range(1, num_calcs):
+                    basecell = calc * 3
+                    basepos = calc * num_atoms
+                    cell[calc + 1] = self._convert_array2D_f(
+                        entrycell[basecell:basecell + 3], 3)
+                    pos[calc + 1] = self._convert_array2D_f(
+                        entrypos[basepos:basepos + num_atoms], 3)
+                    force[calc + 1] = self._convert_array2D_f(
+                        entryforce[basepos:basepos + num_atoms], 3)
+                    stress[calc + 1] = self._convert_array2D_f(
+                        entrystress[basecell:basecell + 3], 3)
             else:
                 cell[1] = None
                 cell[2] = None
-            if entrypos is not None:
-                pos[1] = self._convert_array2D_f(entrypos[0:num_atoms], 3)
-                pos[2] = self._convert_array2D_f(entrypos[-num_atoms:], 3)
-            else:
                 pos[1] = None
                 pos[2] = None
-            if entryforce is not None:
-                force[1] = self._convert_array2D_f(entryforce[0:num_atoms], 3)
-                force[2] = self._convert_array2D_f(entryforce[-num_atoms:], 3)
-            else:
                 force[1] = None
                 force[2] = None
-            if entrystress is not None:
-                stress[1] = self._convert_array2D_f(entrystress[0:3], 3)
-                stress[2] = self._convert_array2D_f(entrystress[-3:], 3)
-            else:
                 stress[1] = None
                 stress[2] = None
-            for calc in range(1, num_calcs):
-                basecell = calc * 3
-                basepos = calc * num_atoms
-                cell[calc + 1] = self._convert_array2D_f(
-                    entrycell[basecell:basecell + 3], 3)
-                pos[calc + 1] = self._convert_array2D_f(
-                    entrypos[basepos:basepos + num_atoms], 3)
-                force[calc + 1] = self._convert_array2D_f(
-                    entryforce[basepos:basepos + num_atoms], 3)
-                stress[calc + 1] = self._convert_array2D_f(
-                    entrystress[basecell:basecell + 3], 3)
 
         return cell, pos, force, stress
 
