@@ -34,7 +34,7 @@ class Incar(object):
             when printing files.
 
         """
-        print(incar_string, incar_dict, file_path)
+
         self.file_path = file_path
         self.incar_dict = incar_dict
         self.incar_string = incar_string
@@ -515,12 +515,7 @@ class IncarItem(object):
         # give a value what they would in INCAR
 
         # make sure we keep compatibility between Python 2 and 3
-        try:
-            basestring
-        except NameError:
-            basestring = str
-
-        if isinstance(value, basestring):
+        if isinstance(value, str) or isinstance(value, unicode):
             if clean_tag == "system":
                 # if value is SYSTEM, treat it a bit special and
                 # leave its string intact but remove grub
@@ -562,7 +557,8 @@ class IncarItem(object):
 
         else:
             # if the user wants to assign an element as a list, int,
-            # float or bool, accept this
+            # float or bool, accept this, including unicode
+
             if not (isinstance(value, int) or isinstance(value, float)
                     or isinstance(value, bool) or (type(value) is list)):
                 self._logger.error("The type: " + str(type(value)) + " of the "

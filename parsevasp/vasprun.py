@@ -1090,8 +1090,9 @@ class Xml(object):
                                        './/calculation/varray[@name="forces"]/v')
             entrystress = self._findall(xml,
                                         './/calculation/varray[@name="stress"]/v')
-            entries = len(entrycell)
-            num_calcs = int(entries / 3)
+            if entrycell is not None:
+                entries = len(entrycell)
+                num_calcs = int(entries / 3)
             if entrycell is not None:
                 cell[1] = self._convert_array2D_f(entrycell[0:3], 3)
                 cell[2] = self._convert_array2D_f(entrycell[-3:], 3)

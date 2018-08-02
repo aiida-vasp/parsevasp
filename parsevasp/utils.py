@@ -3,10 +3,13 @@
 import sys
 import logging
 import os
+import math
 import numpy as np
 
+
 def readlines_from_file(filename, contains=None):
-    """ Read a file and return the whole file or specific lines
+    """
+    Read a file and return the whole file or specific lines.
 
     Parameters
     ----------
@@ -50,7 +53,8 @@ def readlines_from_file(filename, contains=None):
 
 
 def file_handler(filename="", file_handler=None, status=None):
-    """ Open and close files
+    """
+    Open and close files.
 
     Parameters
     ----------
@@ -84,12 +88,14 @@ def file_handler(filename="", file_handler=None, status=None):
         try:
             file_handler = open(filename, status)
             return file_handler
-        except:
+        except IOError:
             logger.error("Could not open " + filename + ". Exiting.")
             sys.exit(1)
 
+
 def file_exists(file_path):
-    """Check if the file exists.
+    """
+    Check if the file exists.
 
     Parameters
     ----------
@@ -100,25 +106,28 @@ def file_exists(file_path):
     -------
     status : bool
         If file does not exists or `file_path` empty, else False.
-    
     """
+
+    # set logger
+    logger = logging.getLogger(sys._getframe().f_code.co_name)
 
     status = True
     try:
-        file_info = os.stat(file_path)
+        os.stat(file_path)
     except OSError:
         if not file_path:
-            self._logger.error("File path is empty.")
+            logger.error("File path is empty.")
             sys.exit(1)
         else:
-            self._logger.error("Could not locate "+file_path+".")
+            logger.error("Could not locate "+file_path+".")
         status = False
-        
+
     return status
 
 
 def is_sequence(arg):
-    """ Checks to see if something is a sequence (list)
+    """
+    Checks to see if something is a sequence (list).
 
     Parameters
     ----------
@@ -138,21 +147,23 @@ def is_sequence(arg):
 
     return sequence
 
+
 def test_string_content(string):
-    """Detects if string is integer, float or string.
-    
+    """
+    Detects if string is integer, float or string.
+
     Parameters
     ----------
     string : string
         An input string to be tested.
-    
+
     Returns
     -------
     string
         A string with value 'int' if input is an integer,
         'float' if the input is a float and 'string' if it
         is just a regular string.
-    
+
     """
     try:
         float(string)
@@ -162,8 +173,10 @@ def test_string_content(string):
     except ValueError:
         return 'string'
 
-def is_numbers(s, splitter = " "):
-    """ Check if a string only contains numbers
+
+def is_numbers(s, splitter=" "):
+    """
+    Check if a string only contains numbers.
 
     Parameters
     ----------
@@ -175,7 +188,7 @@ def is_numbers(s, splitter = " "):
     Returns
     -------
     is_nums: bool
-        Is True if all entries in the input string is a numbers, 
+        Is True if all entries in the input string is a numbers,
         otherwise False.
 
     """
@@ -186,11 +199,13 @@ def is_numbers(s, splitter = " "):
         if not is_number(entry):
             is_nums = False
             return is_nums
-        
+
     return is_nums
-    
+
+
 def is_number(s):
-    """ Check if a string is a number
+    """
+    Check if a string is a number.
 
     Parameters
     ----------
@@ -212,9 +227,12 @@ def is_number(s):
 
     return is_num
 
-def remove_newline(fobj, num_newlines = 1):
-    """Removes the newline at the end of a file. Usefull
-    to run after a for loop that writes a newline character
+
+def remove_newline(fobj, num_newlines=1):
+    """
+    Removes the newline at the end of a file.
+
+    Usefull to run after a for loop that writes a newline character
     at each step. Other solutions cannot handle very large files.
 
     Parameters
@@ -233,9 +251,11 @@ def remove_newline(fobj, num_newlines = 1):
 
     return
 
+
 def dir_to_cart(v, lattice):
-    """ Convert direct coordinates to cartesian.
-    
+    """
+    Convert direct coordinates to cartesian.
+
     Parameters
     ----------
     v : ndarray
@@ -247,7 +267,7 @@ def dir_to_cart(v, lattice):
 
         The crystal lattice, where the first lattice vector is
         [0,:], the second, [1,:] etc.
-    
+
     Returns
     -------
     cart : ndarray
@@ -258,12 +278,14 @@ def dir_to_cart(v, lattice):
     """
 
     cart = np.dot(v, lattice)
-    
+
     return cart
 
+
 def cart_to_dir(v, lattice):
-    """ Convert cartesian coordinates to direct.
-    
+    """
+    Convert cartesian coordinates to direct.
+
     Parameters
     ----------
     v : ndarray
@@ -284,12 +306,14 @@ def cart_to_dir(v, lattice):
     """
 
     direct = np.dot(v, np.linalg.inv(lattice))
-    
+
     return direct
 
+
 def lat_to_reclat(lattice):
-    """ Convert the lattice to the reciprocal lattice.
-    
+    """
+    Convert the lattice to the reciprocal lattice.
+
     Parameters
     ----------
     lattice : ndarray
@@ -308,10 +332,9 @@ def lat_to_reclat(lattice):
     -----
     In general, `lattice_rec`=2pi*(lattice.T)^-1
 
-    
     """
 
     lattice_trans = np.transpose(lattice)
     lattice_rec = 2 * math.pi * np.linalg.inv(lattice_trans)
-    
+
     return lattice_rec
