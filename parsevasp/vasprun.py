@@ -978,20 +978,21 @@ class Xml(object):
 
         """
 
-        num_atoms = 0
-        if self._lattice["species"] is not None:
-            num_atoms = self._lattice["species"].shape[0]
-        else:
-            self._logger.error("Before extracting the Born effective "
-                               "charges please extract the species first. "
-                               "Exiting.")
-            sys.exit(1)
-
         entry = self._findall(xml, './/calculation/array[@name="born_charges"]/'
                               'set/v')
 
         if entry is None:
             return None
+
+        num_atoms = 0
+        species = self._lattice["species"]
+        if species is None:
+            # Try to fetch species again, if still none, we cannot parse it
+            # and thus we cannot parse the entries in here either.
+            species = self._fetch_speciesw(xml)
+            if species is None:
+                return None, None, None, None
+        num_atoms = species.shape[0]
 
         born = self._convert_array2D_f(entry, 3)
 
@@ -1029,13 +1030,14 @@ class Xml(object):
         force = {}
         stress = {}
         num_atoms = 0
-        if self._lattice["species"] is not None:
-            num_atoms = self._lattice["species"].shape[0]
-        else:
-            self._logger.error("Before extracting the unitcell and"
-                               "positions please extract the species. "
-                               "Exiting.")
-            sys.exit(1)
+        species = self._lattice["species"]
+        if species is None:
+            # Try to fetch species again, if still none, we cannot parse it
+            # and thus we cannot parse the entries in here either.
+            species = self._fetch_speciesw(xml)
+            if species is None:
+                return None, None, None, None
+        num_atoms = species.shape[0]
 
         if not all:
             entry = self._findall(xml,
@@ -1142,12 +1144,12 @@ class Xml(object):
         """
 
         entry = self._findall(xml, './/atominfo/'
-                              'array[@name="atoms"]/set/rc/c')[::2]
+                              'array[@name="atoms"]/set/rc/c')
 
         if entry is None:
             return None
 
-        spec = self._convert_species(entry)
+        spec = self._convert_species(entry[::2])
 
         return spec
 
@@ -1166,21 +1168,20 @@ class Xml(object):
 
         """
 
-        # check if we have extracted the species (number of atoms)
-        if self._lattice["species"] is None:
-            self._logger.error("Before extracting the dynamical "
-                               "matrix, please extract the species. "
-                               "Exiting.")
-            sys.exit(1)
-
-        # number of atoms
-        num_atoms = self._lattice["species"].shape[0]
-
         entry = self._findall(xml, './/calculation/dynmat/'
                               'varray[@name="hessian"]/v')
 
         if entry is None:
             return None
+
+        species = self._lattice["species"]
+        if species is None:
+            # Try to fetch species again, if still none, we cannot parse it
+            # and thus we cannot parse the entries in here either.
+            species = self._fetch_speciesw(xml)
+            if species is None:
+                return None
+        num_atoms = species.shape[0]
 
         hessian = self._convert_array2D_f(entry, num_atoms * 3)
 
@@ -1201,21 +1202,20 @@ class Xml(object):
 
         """
 
-        # check if we have extracted the species (number of atoms)
-        if self._lattice["species"] is None:
-            self._logger.error("Before extracting the dynamical "
-                               "matrix, please extract the species. "
-                               "Exiting.")
-            sys.exit(1)
-
-        # number of atoms
-        num_atoms = self._lattice["species"].shape[0]
-
         entry = self._find(xml, './/calculation/dynmat/'
                            'v[@name="eigenvalues"]')
 
         if entry is None:
             return None
+
+        species = self._lattice["species"]
+        if species is None:
+            # Try to fetch species again, if still none, we cannot parse it
+            # and thus we cannot parse the entries in here either.
+            species = self._fetch_speciesw(xml)
+            if species is None:
+                return None
+        num_atoms = species.shape[0]
 
         eigenvalues = self._convert_array_f(entry)
 
@@ -1483,14 +1483,14 @@ class Xml(object):
             return None
 
         num_atoms = 0
-        # check if we have extracted the species (number of atoms)
-        if self._lattice["species"] is None:
-            self._logger.error("Before extracting the density of states, please"
-                               "extract the species. Exiting.")
-            sys.exit(1)
-
-        # number of atoms
-        num_atoms = self._lattice["species"].shape[0]
+        species = self._lattice["species"]
+        if species is None:
+            # Try to fetch species again, if still none, we cannot parse it
+            # and thus we cannot parse the entries in here either.
+            species = self._fetch_speciesw(xml)
+            if species is None:
+                return None
+        num_atoms = species.shape[0]
 
         if entry_total_ispin2:
             dos = {}
@@ -2180,9 +2180,9 @@ class Xml(object):
 
     def get_lattice(self, status):
 
+        species = self.get_species()
         unitcell = self.get_unitcell(status)
         positions = self.get_positions(status)
-        species = self.get_species()
         return {"unitcell": unitcell, "positions": positions,
                 "species": species}
 
