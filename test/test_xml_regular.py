@@ -89,7 +89,19 @@ def xml_parser_localfield(request, tmpdir_factory):
     tmpfile = str(tmpdir_factory.mktemp('data').join('basic_trunc.xml'))
     xml_truncate(request.param, xmlfile, tmpfile)
     xml  = vasprun.Xml(tmpfile, event = False)
-    
+
+    return xml
+
+@pytest.fixture(scope = 'module', params=[0])
+def xml_parser_magmom(request, tmpdir_factory):
+    """Load XML file. Test both terminated and truncated XML.
+
+    """
+    testdir = os.path.dirname(__file__)
+    xmlfile = testdir + "/magmom.xml"
+    tmpfile = str(tmpdir_factory.mktemp('data').join('basic_trunc.xml'))
+    xml_truncate(request.param, xmlfile, tmpfile)
+    xml = vasprun.Xml(tmpfile, event = False)
     return xml
 
 def xml_truncate(index, original, tmp):
@@ -645,3 +657,29 @@ def test_xml_born(xml_parser_localfield):
                      [-0.01047578,  0.13487262,  0.02706512],
                      [ 0.01046009,  0.0280611 ,  0.13400096]])
     np.testing.assert_allclose(born[5], test)
+
+def test_xml_structure_magmom(xml_parser_magmom):
+    """Check the unitcell and positions for a magmom xml file.
+
+    """
+
+    unitcell_initial = xml_parser_magmom.get_unitcell('initial')
+    test = np.array([[0.     ,3.2395, 3.2395],
+                     [3.2395 ,0.     ,3.2395],
+                     [3.2395 ,3.2395 ,0.    ]])
+    np.testing.assert_allclose(unitcell_initial, test)
+    unitcell_final = xml_parser_magmom.get_unitcell('final')
+    np.testing.assert_allclose(unitcell_final, unitcell_initial)
+    unitcell_all = xml_parser_magmom.get_unitcell('all')
+    np.testing.assert_allclose(unitcell_all[1], unitcell_initial)
+    np.testing.assert_allclose(unitcell_all[2], unitcell_initial)
+
+    positions_initial = xml_parser_magmom.get_positions('initial')
+    test = np.array([[0.   ,0.   ,0.  ],
+                     [0.25 ,0.25 ,0.25]])
+    np.testing.assert_allclose(positions_initial, test)
+    positions_final = xml_parser_magmom.get_positions('final')
+    np.testing.assert_allclose(positions_final, positions_initial)
+    positions_all = xml_parser_magmom.get_positions('all')
+    np.testing.assert_allclose(positions_all[1], positions_initial)
+    np.testing.assert_allclose(positions_all[2], positions_initial)

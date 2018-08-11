@@ -497,7 +497,7 @@ class Xml(object):
                                 sys.exit(1)
                             data = self._convert_array2D_f(data, 3)
                             data = np.split(data, num_atoms)
-                            self._data["born"] = data
+                            self._data["born"] = np.asarray(data)
                             data = []
                             extract_born = False
                     except KeyError:
@@ -634,7 +634,7 @@ class Xml(object):
                     if event == "end" and element.tag == "varray" \
                        and element.attrib.get("name") == "eigenvectors":
                         num_atoms = 0
-                        if selfelf._lattice["species"] is not None:
+                        if self._lattice["species"] is not None:
                             num_atoms = self._lattice["species"].shape[0]
                         else:
                             self._logger.error("Before extracting the "
@@ -729,34 +729,61 @@ class Xml(object):
                         data2.append(element)
 
         # now we need to update some elements
-        if len(cell) == 1:
-            # for static runs, initial is equal to final
-            cell[2] = cell[1]
-            pos[2] = pos[1]
-            force[2] = force[1]
-            stress[2] = stress[1]
-            totens[2] = totens[1]
+        # for static runs, initial is equal to final
+        if cell:
+            if len(cell) == 1:
+                cell[2] = cell[1]
+        if pos:
+            if len(pos) == 1:
+                pos[2] = pos[1]
+        if force:
+            if len(force):
+                force[2] = force[1]
+        if stress:
+            if len(stress):
+                stress[2] = stress[1]
+        if totens:
+            if len(totens) == 1:
+                totens[2] = totens[1]
 
         if not all:
             # only save initial and final
-            self._lattice["unitcell"] = {key: np.asarray(cell[key])
-                                         for key in {1, 2}}
-            self._lattice["positions"] = {key: np.asarray(pos[key])
-                                          for key in {1, 2}}
-            self._data["forces"] = {key: force[key]
-                                    for key in {1, 2}}
-            self._data["stress"] = {key: stress[key]
-                                    for key in {1, 2}}
-            self._data["totens"] = {key: totens[key]
-                                    for key in {1, 2}}
+            if cell:
+                cell = {key: np.asarray(cell[key])
+                        for key in {1, 2}}
+            if pos:
+                pos = {key: np.asarray(pos[key])
+                       for key in {1, 2}}
+            if force:
+                force = {key: force[key]
+                         for key in {1, 2}}
+            if stress:
+                stress = {key: stress[key]
+                          for key in {1, 2}}
+            if totens:
+                totens = {key: totens[key]
+                          for key in {1, 2}}
 
-        else:
-            # save all
-            self._lattice["unitcell"] = cell
-            self._lattice["positions"] = pos
-            self._data["forces"] = force
-            self._data["stress"] = stress
-            self._data["totens"] = totens
+        # if any dict is empty, set to zero
+        if not cell:
+            cell = None
+        if not pos:
+            pos = None
+        if not force:
+            force = None
+        if not stress:
+            stress = None
+        if not totens:
+            totens = None
+
+        # store
+        self._lattice["unitcell"] = cell
+        self._lattice["positions"] = pos
+        self._data["forces"] = force
+        self._data["stress"] = stress
+        self._data["totens"] = totens
+
+        return
 
     def _fetch_symprecw(self, xml):
         """Fetch and set symprec using etree
@@ -1084,6 +1111,7 @@ class Xml(object):
                 force[1] = None
                 force[2] = None
         else:
+            structures = self._findall(xml, './/calculation/structure')
             entrycell = self._findall(xml,
                                       './/calculation/structure/crystal/varray[@name="basis"]/v')
             entrypos = self._findall(xml,
@@ -1092,38 +1120,95 @@ class Xml(object):
                                        './/calculation/varray[@name="forces"]/v')
             entrystress = self._findall(xml,
                                         './/calculation/varray[@name="stress"]/v')
-            if (entrycell is not None) and (entrypos is not None) and \
-               (entryforce is not None) and (entrystress is not None):
-                entries = len(entrycell)
+
+            if structures is not None:
+                entries = len(structures)
                 num_calcs = int(entries / 3)
+            else:
+                return None
+
+            num_entrycell = 0
+            num_entrypos = 0
+            num_entryforce = 0
+            num_entrystress = 0
+
+            if entrycell is not None:
+                num_entrycell = len(entrycell)
                 cell[1] = self._convert_array2D_f(entrycell[0:3], 3)
-                cell[2] = self._convert_array2D_f(entrycell[-3:], 3)
-                pos[1] = self._convert_array2D_f(entrypos[0:num_atoms], 3)
-                pos[2] = self._convert_array2D_f(entrypos[-num_atoms:], 3)
-                force[1] = self._convert_array2D_f(entryforce[0:num_atoms], 3)
-                force[2] = self._convert_array2D_f(entryforce[-num_atoms:], 3)
-                stress[1] = self._convert_array2D_f(entrystress[0:3], 3)
-                stress[2] = self._convert_array2D_f(entrystress[-3:], 3)
-                for calc in range(1, num_calcs):
-                    basecell = calc * 3
-                    basepos = calc * num_atoms
-                    cell[calc + 1] = self._convert_array2D_f(
-                        entrycell[basecell:basecell + 3], 3)
-                    pos[calc + 1] = self._convert_array2D_f(
-                        entrypos[basepos:basepos + num_atoms], 3)
-                    force[calc + 1] = self._convert_array2D_f(
-                        entryforce[basepos:basepos + num_atoms], 3)
-                    stress[calc + 1] = self._convert_array2D_f(
-                        entrystress[basecell:basecell + 3], 3)
+                if num_entrycell > 3:
+                    cell[2] = self._convert_array2D_f(entrycell[-3:], 3)
+                else:
+                    cell[2] = None
             else:
                 cell[1] = None
                 cell[2] = None
+
+            if entrypos is not None:
+                num_entrypos = len(entrypos)
+                pos[1] = self._convert_array2D_f(entrypos[0:num_atoms], 3)
+                if num_entrypos > 3:
+                    pos[2] = self._convert_array2D_f(entrypos[-num_atoms:], 3)
+                else:
+                    pos[2] = None
+            else:
                 pos[1] = None
                 pos[2] = None
+
+            if entryforce is not None:
+                num_entryforce = len(entryforce)
+                force[1] = self._convert_array2D_f(entryforce[0:num_atoms], 3)
+                if num_entryforce > 3:
+                    force[2] = self._convert_array2D_f(entryforce[-num_atoms:], 3)
+                else:
+                    force[2] = None
+            else:
                 force[1] = None
                 force[2] = None
+
+            if entrystress is not None:
+                num_entrystress = len(entrystress)
+                stress[1] = self._convert_array2D_f(entrystress[0:3], 3)
+                if num_entrystress > 3:
+                    stress[2] = self._convert_array2D_f(entrystress[-3:], 3)
+                else:
+                    stress[2] = None
+            else:
                 stress[1] = None
                 stress[2] = None
+
+            max_entries = max(entrystress, max(entryforce, max(num_entrycell, num_entrypos)))
+            if max_entries > 6:
+                for calc in range(1, num_calcs):
+                    basecell = calc * 3
+                    basepos = calc * num_atoms
+                    if entrycell is not None:
+                        cell[calc + 1] = self._convert_array2D_f(
+                            entrycell[basecell:basecell + 3], 3)
+                    if entrypos is not None:
+                        pos[calc + 1] = self._convert_array2D_f(
+                            entrypos[basepos:basepos + num_atoms], 3)
+                    if entryforce is not None:
+                        force[calc + 1] = self._convert_array2D_f(
+                            entryforce[basepos:basepos + num_atoms], 3)
+                    if entrystress is not None:
+                        stress[calc + 1] = self._convert_array2D_f(
+                            entrystress[basecell:basecell + 3], 3)
+
+        # If we still only have one entry, or number two is None, final and initial should
+        # be the same, force them to be similar. We could do this earlier, but this is done
+        # to keep it tidy, and if one in the future would like to utilize the returned None.
+        if cell:
+            if len(cell) == 1 or cell[2] is None:
+                cell[2] = cell[1]
+        if pos:
+            if len(pos) == 1 or pos[2] is None:
+                pos[2] = pos[1]
+        if force:
+            if len(force) == 1 or force[2] is None:
+                force[2] = force[1]
+        if stress:
+            if len(stress) == 1 or stress[2] is None:
+                stress[2] = stress[1]
 
         return cell, pos, force, stress
 
