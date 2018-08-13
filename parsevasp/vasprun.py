@@ -737,10 +737,10 @@ class Xml(object):
             if len(pos) == 1:
                 pos[2] = pos[1]
         if force:
-            if len(force):
+            if len(force) == 1:
                 force[2] = force[1]
         if stress:
-            if len(stress):
+            if len(stress) == 1:
                 stress[2] = stress[1]
         if totens:
             if len(totens) == 1:
@@ -782,7 +782,7 @@ class Xml(object):
         self._data["forces"] = force
         self._data["stress"] = stress
         self._data["totens"] = totens
-
+        print(force)
         return
 
     def _fetch_symprecw(self, xml):
@@ -1122,8 +1122,7 @@ class Xml(object):
                                         './/calculation/varray[@name="stress"]/v')
 
             if structures is not None:
-                entries = len(structures)
-                num_calcs = int(entries / 3)
+                num_calcs = len(structures)
             else:
                 return None
 
@@ -1176,7 +1175,7 @@ class Xml(object):
                 stress[1] = None
                 stress[2] = None
 
-            max_entries = max(entrystress, max(entryforce, max(num_entrycell, num_entrypos)))
+            max_entries = max(num_entrystress, max(num_entryforce, max(num_entrycell, num_entrypos)))
             if max_entries > 6:
                 for calc in range(1, num_calcs):
                     basecell = calc * 3

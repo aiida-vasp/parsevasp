@@ -21,6 +21,19 @@ def xml_parser(request, tmpdir_factory):
     
     return xml
 
+@pytest.fixture(scope = 'module', params=[0, 1])
+def xml_parser_relax(request, tmpdir_factory):
+    """Load XML file. Test only terminated XML.
+
+    """
+
+    testdir = os.path.dirname(__file__)
+    xmlfile = testdir + "/basicrelax.xml"
+    xml  = vasprun.Xml(xmlfile, event = True)
+
+    return xml
+
+
 @pytest.fixture(scope = 'module')
 def xml_parser_spin(request, tmpdir_factory):
     """Load XML file. Test only terminated XML.
@@ -648,3 +661,37 @@ def test_xml_structure_magmom(xml_parser_magmom):
     positions_all = xml_parser_magmom.get_positions('all')
     np.testing.assert_allclose(positions_all[1], positions_initial)
     np.testing.assert_allclose(positions_all[2], positions_initial)
+
+def test_xml_ionic(xml_parser_relax):
+    """Check the unitcell, positions, forces and stress for multiple ionic steps.
+
+    """
+
+    unitcells = xml_parser_relax.get_unitcell('all')
+    positions = xml_parser_relax.get_positions('all')
+    forces = xml_parser_relax.get_forces('all')
+    stress = xml_parser_relax.get_stress('all')
+
+    # check that all entries are present
+    assert len(unitcells) == 19
+    assert len(positions) == 19
+    assert len(forces) == 19
+    assert len(stress) == 19
+
+    # check some random entries
+    testing = np.array([0.00000000e+00, 5.46644175e+00, 4.10279000e-03])
+    np.testing.assert_allclose(unitcells[8][1], testing)
+    testing = np.array([0.00000000e+00, 8.30440000e-04, 5.46738152e+00])
+    np.testing.assert_allclose(unitcells[15][2], testing)
+    testing = np.array([-0.00630478, 0.5, 0.5])
+    np.testing.assert_allclose(positions[6][1], testing)
+    testing = np.array([0.24381576, 0.75131665, 0.74868335])
+    np.testing.assert_allclose(positions[14][6], testing)
+    testing = np.array([-0.69286285, 0.0, 0.0])
+    np.testing.assert_allclose(forces[2][1], testing)
+    testing = np.array([0.00344071, -0.0331652, -0.0331652])
+    np.testing.assert_allclose(forces[11][4], testing)
+    testing = np.array([-6.18541234,0.0, 0.0])
+    np.testing.assert_allclose(stress[2][0], testing)
+    testing = np.array([0.0, 0.60834449, -3.20314152])
+    np.testing.assert_allclose(stress[10][1], testing)
