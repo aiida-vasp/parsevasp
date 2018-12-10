@@ -96,13 +96,34 @@ def xml_parser_localfield(request, tmpdir_factory):
 
 @pytest.fixture(scope = 'module', params=[0])
 def xml_parser_magmom(request, tmpdir_factory):
-    """Load XML file. Test both terminated and truncated XML.
+    """Load XML file. Test only terminated XML.
 
     """
     testdir = os.path.dirname(__file__)
     xmlfile = testdir + "/magmom.xml"
     xml = vasprun.Xml(xmlfile, event = True)
     return xml
+
+@pytest.fixture(scope = 'module', params=[0])
+def xml_parser_velocities(request, tmpdir_factory):
+    """Load XML file. Test only terminated XML.
+
+    """
+    testdir = os.path.dirname(__file__)
+    xmlfile = testdir + "/velocities.xml"
+    xml = vasprun.Xml(xmlfile, event = True)
+    return xml
+
+@pytest.fixture(scope = 'module', params=[0])
+def xml_parser_specific(request, tmpdir_factory):
+    """Load XML file. Test both terminated and truncated XML.
+
+    """
+    testdir = os.path.dirname(__file__)
+    xmlfile = testdir + "/specific.xml"
+    xml = vasprun.Xml(xmlfile, event = True)
+    return xml
+
 
 def test_xml_exist(xml_parser):
     """Check if xml_parser exists.
@@ -461,6 +482,88 @@ def test_xml_eigenvalues(xml_parser):
         9.63680000e+00,   9.81580000e+00,   9.36060000e+00,   9.72520000e+00,
         9.69530000e+00,   8.89970000e+00,   9.02760000e+00,   8.98830000e+00])
     np.testing.assert_allclose(eigenvalues['total'][23], test)
+
+def test_xml_eigenvelocities(xml_parser_velocities):
+    """Check the egenvelocities.
+
+    """
+
+    eigenvelocities = xml_parser_velocities.get_eigenvelocities()
+    kpoints = xml_parser_velocities.get_kpoints_specific()
+    kpointsw = xml_parser_velocities.get_kpointsw_specific()
+    assert eigenvelocities['total'].shape == (20, 10, 4)
+    assert kpoints.shape == (10, 3)
+    assert kpointsw.shape == (10,)
+    test = np.array([[-6.07600e+00,  0.00000e+00,  0.00000e+00,  0.00000e+00],
+        [-6.05780e+00,  2.82600e-01, -2.82600e-01,  2.82600e-01],
+        [-6.00310e+00,  5.63900e-01, -5.63900e-01,  5.63900e-01],
+        [-5.91220e+00,  8.41300e-01, -8.41300e-01,  8.41300e-01],
+        [-5.78580e+00,  1.11350e+00, -1.11350e+00,  1.11350e+00],
+        [-5.62460e+00,  1.37730e+00, -1.37730e+00,  1.37730e+00],
+        [-5.43020e+00,  1.62690e+00, -1.62690e+00,  1.62690e+00],
+        [-5.20480e+00,  1.85610e+00, -1.85610e+00,  1.85610e+00],
+        [-4.95170e+00,  2.05120e+00, -2.05120e+00,  2.05120e+00],
+        [-4.67680e+00,  2.18960e+00, -2.18960e+00,  2.18960e+00]])
+    np.testing.assert_allclose(eigenvelocities['total'][0], test)
+    test = np.array([[ 8.60150e+00, -0.00000e+00, -0.00000e+00, -0.00000e+00],
+        [ 8.64780e+00,  1.12470e+00,  1.44300e-01,  1.12620e+00],
+        [ 8.67860e+00, -1.58400e-01,  1.58300e-01, -1.58400e-01],
+        [ 8.61650e+00, -7.42900e-01,  7.42900e-01, -7.42900e-01],
+        [ 8.50010e+00, -1.01760e+00,  1.01770e+00, -1.01760e+00],
+        [ 8.36380e+00, -1.11280e+00,  1.11290e+00, -1.11280e+00],
+        [ 8.22020e+00, -1.09640e+00,  1.09650e+00, -1.09640e+00],
+        [ 8.08310e+00, -1.01650e+00,  1.01660e+00, -1.01650e+00],
+        [ 7.95850e+00, -9.00300e-01,  9.00400e-01, -9.00300e-01],
+        [ 7.85110e+00, -7.57400e-01,  7.57400e-01, -7.57400e-01]])
+    np.testing.assert_allclose(eigenvelocities['total'][4], test)
+    test = np.array([[ 0.          ,0.          ,0.        ],
+                     [ 0.03703704  ,0.          ,0.        ],
+                     [ 0.07407407  ,0.          ,0.        ],
+                     [ 0.11111111 ,-0.         ,-0.        ],
+                     [ 0.14814815 ,-0.          ,0.        ],
+                     [ 0.18518519  ,0.          ,0.        ],
+                     [ 0.22222222 ,-0.         ,-0.        ],
+                     [ 0.25925926  ,0.          ,0.        ],
+                     [ 0.2962963  ,-0.          ,0.        ],
+                     [ 0.33333333 ,-0.         ,-0.        ]])
+    np.testing.assert_allclose(kpoints, test)
+    test = np.array([5.081e-05, 5.081e-05, 5.081e-05, 5.081e-05,
+                     5.081e-05, 5.081e-05, 5.081e-05, 5.081e-05,
+                     5.081e-05, 5.081e-05])
+    np.testing.assert_allclose(kpointsw, test)
+
+def test_xml_eigenvalues_specific(xml_parser_specific):
+    """Check the egenvalues on specific k-point grids.
+
+    """
+
+    eigenvalues = xml_parser_specific.get_eigenvalues_specific()
+    print(type(eigenvalues))
+    kpoints = xml_parser_specific.get_kpoints_specific()
+    kpointsw = xml_parser_specific.get_kpointsw_specific()
+    assert eigenvalues['total'].shape == (20, 10)
+    assert kpoints.shape == (10, 3)
+    assert kpointsw.shape == (10,)
+    test = np.array([-6.076 , -6.0578, -6.0031, -5.9122, -5.7858, -5.6246, -5.4302,
+        -5.2048, -4.9517, -4.6768])
+    np.testing.assert_allclose(eigenvalues['total'][0], test) 
+    test = np.array([ 9.5694,  9.6943, 10.0793, 10.646 , 11.2894, 11.9561, 12.6122,
+        13.2292, 13.6978, 13.9563])
+    np.testing.assert_allclose(eigenvalues['total'][7], test) 
+    test = np.array([[ 0.          ,0.          ,0.        ],
+                     [ 0.03703704  ,0.          ,0.        ],
+                     [ 0.07407407  ,0.         ,-0.        ],
+                     [ 0.11111111  ,0.         ,-0.        ],
+                     [ 0.14814815  ,0.         ,-0.        ],
+                     [ 0.18518519 ,-0.          ,0.        ],
+                     [ 0.22222222 ,-0.          ,0.        ],
+                     [ 0.25925926 ,-0.          ,0.        ],
+                     [ 0.2962963  ,-0.         ,-0.        ],
+                     [ 0.33333333 ,-0.         ,-0.        ]])
+    np.testing.assert_allclose(kpoints, test)
+    test = np.array([5.0810e-05, 4.0644e-04, 4.0644e-04, 4.0644e-04, 4.0644e-04, 4.0644e-04,
+                     4.0644e-04, 4.0644e-04, 4.0644e-04, 4.0644e-04])
+    np.testing.assert_allclose(kpointsw, test)
 
 def test_xml_occupancies(xml_parser):
     """Check the occupancies.
