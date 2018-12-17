@@ -94,6 +94,19 @@ def xml_parser_disp(request, tmpdir_factory):
     return xml
 
 @pytest.fixture(scope = 'module', params=[0, 1])
+def xml_parser_disp_details(request, tmpdir_factory):
+    """Load XML file. Test both terminated and truncated XML.
+
+    """
+    testdir = os.path.dirname(__file__)
+    xmlfile = testdir + "/disp_details.xml"
+    tmpfile = str(tmpdir_factory.mktemp('data').join('basic_trunc.xml'))
+    xml_truncate(request.param, xmlfile, tmpfile)
+    xml  = vasprun.Xml(tmpfile, event = False)
+    
+    return xml
+
+@pytest.fixture(scope = 'module', params=[0, 1])
 def xml_parser_localfield(request, tmpdir_factory):
     """Load XML file. Test both terminated and truncated XML.
 
@@ -744,6 +757,22 @@ def test_xml_dielectrics(xml_parser_dielectrics):
                       10.1492,  10.1698])
     np.testing.assert_allclose(dielectrics['energy'][490:495], test)
 
+def test_xml_epsilons(xml_parser_disp_details):
+    """Check the epsilon entries.
+
+    """
+
+    epsilon = xml_parser_disp_details.get_epsilon()
+    epsilon_ion = xml_parser_disp_details.get_epsilon_ion()
+    test = np.array([[13.05544887 ,-0.         ,  0.        ],
+                     [-0.         ,13.05544887 , -0.        ],
+                     [ 0.         , 0.         , 13.05544887]])
+    np.testing.assert_allclose(epsilon, test)
+    test = np.array([[0. ,-0.         ,  0.        ],
+                     [-0.         ,0. , -0.        ],
+                     [ 0.         , 0.         , 0.]])
+    np.testing.assert_allclose(epsilon_ion, test)
+    
 def test_xml_dynmat(xml_parser_disp):
     """Check the dynamical matrix from displacements.
     

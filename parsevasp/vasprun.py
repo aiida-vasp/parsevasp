@@ -2073,6 +2073,7 @@ class Xml(object):
             If `method` is 'bse'.
             The real part of the BSE dielectric function.
             See `diel_imag` at the top for layout.
+        epsilon : (3,3) list of list of float
 
         """
 
@@ -2089,18 +2090,37 @@ class Xml(object):
             entry = self._findall(xml,
                                   './/calculation/' + tag + '/imag/array/set/r')
             if entry is None:
-                return None
-            data = self._convert_array2D_f(entry, 7)
-            diel["energy"] = data[:, 0]
-            diel["imag"] = data[:, 1:7]
+                diel["imag"] = None
+                diel["energy"] = None
+            else:
+                data = self._convert_array2D_f(entry, 7)
+                diel["energy"] = data[:, 0]
+                diel["imag"] = data[:, 1:7]
 
             # real part
             entry = self._findall(xml,
                                   './/calculation/' + tag + '/real/array/set/r')
             if entry is None:
-                return None
-            data = self._convert_array2D_f(entry, 7)
-            diel["real"] = data[:, 1:7]
+                diel["real"] = None
+            else:
+                data = self._convert_array2D_f(entry, 7)
+                diel["real"] = data[:, 1:7]
+
+            # epsilon part
+            entry = self._findall(xml,
+                                  './/calculation/varray[@name="epsilon"]/v')
+            if entry is not None:
+                diel["epsilon"] = self._convert_array2D_f(entry, 3)
+            else:
+                diel["epsilon"] = None
+
+            # ionic epsilon part
+            entry = self._findall(xml,
+                                  './/calculation/varray[@name="epsilon_ion"]/v')
+            if entry is not None:
+                diel["epsilon_ion"] = self._convert_array2D_f(entry, 3)
+            else:
+                diel["epsilon_ion"] = None
 
             return diel
 
@@ -2689,11 +2709,16 @@ class Xml(object):
         dielectrics = self._data["dielectrics"]
         return dielectrics
 
-    def get_dielectrics_specific(self):
+    def get_epsilon(self):
 
-        dielectrics_specific = self._data["dielectrics_specific"]
-        return dielectrics_specific
+        epsilon = self._data["dielectrics"]["epsilon"]
+        return epsilon
 
+    def get_epsilon_ion(self):
+
+        epsilon_ion = self._data["dielectrics"]["epsilon_ion"]
+        return epsilon_ion
+    
     def get_fermi_level(self):
 
         fermi_level = self._data["dos"]["total"]["fermi_level"]
