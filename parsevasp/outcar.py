@@ -25,7 +25,7 @@ class Outcar(object):
             when printing files.
 
         """
-
+        
         self._file_path = file_path
         self._conserve_order = conserve_order
 
@@ -138,7 +138,12 @@ class Outcar(object):
                     self._data['symmetry']['num_point_group_operations'][config].append(int(outcar[index+1].strip().split()[1]))
                 if ('configuration has the point symmetry') in line :
                     self._data['symmetry']['point_group'][config].append(line.strip().split()[7])
-                    self._data['symmetry']['space_group'][config].append(outcar[index+1].strip().split()[10])
+                    next_line = outcar[index+1].strip().split()
+                    if next_line:
+                        # Space group only available in recent versions
+                        self._data['symmetry']['space_group'][config].append(next_line[10])
+                    else:
+                        self._data['symmetry']['space_group'][config].append(None)
                     config=''
 
             # then the elastic tensors etc. in kBar
