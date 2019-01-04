@@ -36,24 +36,22 @@ def test_outcar_symmetry(outcar_parser):
 
     symmetry = outcar_parser.get_symmetry()
     test = ['T_d', 'D_2d.', 'D_2d.', 'D_2d.', 'D_2d.', 'D_2d.', 'D_2d.', 'C_2', 'C_2', 'C_2', 'C_2', 'C_2', 'C_2', 'C_2v.', 'C_2v.', 'T_d']
+    assert symmetry['site_symmetry_at_origin']['static'] == test
+    assert symmetry['site_symmetry_at_origin']['dynamic'] == test
+    test = ['O_h', 'D_4h.', 'D_4h.', 'D_4h.', 'D_4h.', 'D_4h.', 'D_4h.', 'C_2h.', 'C_2h.', 'C_2h.', 'C_2h.', 'C_2h.', 'C_2h.', 'D_2h.', 'D_2h.', 'O_h']
     assert symmetry['point_group']['static'] == test
     assert symmetry['point_group']['dynamic'] == test
-    test = ['O_h', 'D_4h.', 'D_4h.', 'D_4h.', 'D_4h.', 'D_4h.', 'D_4h.', 'C_2h.', 'C_2h.', 'C_2h.', 'C_2h.', 'C_2h.', 'C_2h.', 'D_2h.', 'D_2h.', 'O_h']
-    assert symmetry['space_group']['static'] == test
-    assert symmetry['space_group']['dynamic'] == test
     test = [48, 16, 16, 16, 16, 16, 16, 4, 4, 4, 4, 4, 4, 8, 8, 48]
     assert symmetry['num_space_group_operations']['static'] == test
     assert symmetry['num_space_group_operations']['dynamic'] == test
-    test = [24, 8, 8, 8, 8, 8, 8, 2, 2, 2, 2, 2, 2, 4, 4, 24]
-    assert symmetry['num_point_group_operations']['static'] == test
-    assert symmetry['num_point_group_operations']['dynamic'] == test
     test = ['primitive cell', 'primitive cell', 'primitive cell', 'primitive cell', 'primitive cell', 'primitive cell', 'primitive cell', 'primitive cell', 'primitive cell', 'primitive cell', 'primitive cell', 'primitive cell', 'primitive cell', 'primitive cell', 'primitive cell', 'primitive cell']
     assert symmetry['original_cell_type']['static'] == test
     assert symmetry['original_cell_type']['dynamic'] == test
     test = ['face centered cubic supercell.', 'body centered tetragonal supercell.', 'body centered tetragonal supercell.', 'body centered tetragonal supercell.', 'body centered tetragonal supercell.', 'body centered tetragonal supercell.', 'body centered tetragonal supercell.', 'base centered monoclinic supercell.', 'base centered monoclinic supercell.', 'base centered monoclinic supercell.', 'base centered monoclinic supercell.', 'base centered monoclinic supercell.', 'base centered monoclinic supercell.', 'face centered cubic supercell.', 'face centered cubic supercell.', 'face centered cubic supercell.']
     assert symmetry['symmetrized_cell_type']['static'] == test
     assert symmetry['symmetrized_cell_type']['dynamic'] == test
-    assert symmetry
+    test = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+    assert symmetry['primitive_translations'] == test
 
 def test_outcar_elastic(outcar_parser):
     """Check if outcar_parser returns correct elastic moduli entries.
