@@ -3,10 +3,11 @@ import sys
 import logging
 import numpy as np
 from collections import Counter
-import StringIO
-from itertools import groupby
+from io import StringIO
 
-import utils
+from six import iteritems
+
+from . import utils
 
 
 class Poscar(object):
@@ -144,7 +145,7 @@ class Poscar(object):
                         site.set_velocities(velocities)
                     site.set_direct(True)
 
-                    
+
     def _from_list(self, poscar):
         """Go through the list and analyze for = and ; in order to
         deentangle grouped entries etc.
@@ -747,7 +748,7 @@ class Poscar(object):
 
 
         dictionary = {}
-        for key, entry in self.entries.iteritems():
+        for key, entry in iteritems(self.entries):
             if key == 'sites':
                 sites_temp = []
                 for element in entry:
@@ -968,7 +969,7 @@ class Site(object):
 
         self.position = position
         return
-    
+
     def get_position(self):
         """Return the position.
 
@@ -1008,7 +1009,7 @@ class Site(object):
         self.velocities = velocities
         return
 
-    
+
     def get_velocities(self):
         """Return the velocities.
 
@@ -1050,14 +1051,14 @@ class Site(object):
 
         self.direct = direct
         return
-    
+
     def get_direct(self):
         """Return the direct status of the coordinate.
 
         Returns
         -------
         direct : bool
-            True if the coordinates are given in direct coordinates, 
+            True if the coordinates are given in direct coordinates,
             otherwise for direct, False.
 
         """

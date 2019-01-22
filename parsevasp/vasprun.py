@@ -6,8 +6,8 @@ import logging
 import mmap
 import copy
 
-import constants
-import utils
+from . import constants
+from . import utils
 
 from lxml import etree
 
@@ -1669,7 +1669,7 @@ class Xml(object):
 
         Returns
         -------
-        eigenvalues : ndarray            
+        eigenvalues : ndarray
             An ndarray containing the
             eigenvalues for each spin, band and
             kpoint index.
@@ -1704,7 +1704,7 @@ class Xml(object):
                                                    entry_ispin2, len(self._data['kpoints']))
 
         return eigenvalues
-    
+
     def _fetch_eigenvelocitiesw(self, xml):
         """Fetch the eigenvelocities and eigenvalues..
 
@@ -2718,7 +2718,7 @@ class Xml(object):
 
         epsilon_ion = self._data["dielectrics"]["epsilon_ion"]
         return epsilon_ion
-    
+
     def get_fermi_level(self):
 
         fermi_level = self._data["dos"]["total"]["fermi_level"]

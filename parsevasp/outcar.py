@@ -2,11 +2,8 @@
 import sys
 import logging
 import numpy as np
-from collections import Counter
-import StringIO
-from itertools import groupby
 
-import utils
+from . import utils
 
 
 class Outcar(object):
@@ -25,7 +22,7 @@ class Outcar(object):
             when printing files.
 
         """
-        
+
         self._file_path = file_path
         self._conserve_order = conserve_order
 
@@ -60,7 +57,7 @@ class Outcar(object):
                                    'point_group': {'static': [], 'dynamic': []}}
                       }
 
-        
+
         # parse parse parse
         self._parse()
 
@@ -117,7 +114,7 @@ class Outcar(object):
 
         config = ''
         for index, line in enumerate(outcar):
-            
+
             # first, fetch the symmetry
             if line.strip().startswith('Analysis of symmetry for initial positions (statically)'):
                 config = 'static'
@@ -148,7 +145,7 @@ class Outcar(object):
             if line.strip().startswith('Subroutine INISYM returns'):
                 prim_line = outcar[index+2].strip().split()
                 self._data['symmetry']['primitive_translations'].append(int(prim_line[2]))
-                    
+
             # then the elastic tensors etc. in kBar
             if line.strip().startswith('ELASTIC MODULI  (kBar)'):
                 tensor = []
@@ -166,7 +163,7 @@ class Outcar(object):
                     tensor.append([float(item) for item in outcar[index+idx].strip().split()[1:]])
                 self._data['elastic_moduli']['total'] = np.asarray(tensor)
 
-                
+
     def get_symmetry(self):
         """Return the symmetry.
 
