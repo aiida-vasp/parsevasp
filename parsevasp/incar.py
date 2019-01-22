@@ -1,15 +1,14 @@
 #!/usr/bin/python
 import sys
-import os
-import numpy as np
 import logging
-import mmap
-import StringIO
+from io import StringIO
 # sys.path.append(os.path.dirname(__file__))
 # print sys.path
 
-import utils
-import constants
+from six import iteritems
+from past.builtins import basestring 
+
+from . import utils
 
 
 class Incar(object):
@@ -51,7 +50,7 @@ class Incar(object):
             self._prec = 12
         else:
             self._prec = prec
-        self._width = self._prec + 4    
+        self._width = self._prec + 4
 
         # check that only one argument is supplied
         if (incar_string is not None and incar_dict is not None) \
@@ -60,7 +59,7 @@ class Incar(object):
             self._logger.error("Please only supply one argument when "
                               "initializing Incar. Exiting.")
             sys.exit(1)
-            
+
         # check that at least one is supplied
         if (incar_string is None and incar_dict is None
                 and file_path is None):
@@ -80,7 +79,7 @@ class Incar(object):
             incar = self._from_list(incar_list)
         else:
             incar = self._from_dict(incar_dict)
-            
+
         # validate dictionary
         self.validate()
 
@@ -190,7 +189,7 @@ class Incar(object):
         """
 
         incar_dict = {}
-        for tag, value in incar.iteritems():
+        for tag, value in iteritems(incar):
             # check for comment in value, if so skip shuffle to comment
             comment = None
             if isinstance(value, str):
@@ -219,7 +218,7 @@ class Incar(object):
             incar_dict[clean_tag] = entry
 
         return incar_dict
-    
+
     def _convert_value_to_string(self, value):
         """Converts a value for an INCAR entry to a string that
         is compatible with VASP.
@@ -246,7 +245,7 @@ class Incar(object):
         # 1.0 - float
         # [1.0, 2.0, 3.0] - list of floats
 
-        
+
         if type(value) is list:
             # list of values (we know all are either string, int or float)
             string = ' '.join(map(str, value))
@@ -259,7 +258,7 @@ class Incar(object):
             string = str(value)
 
         return string
-    
+
     def validate(self):
         """Validate the content of the current Incar instance.
 
@@ -299,7 +298,7 @@ class Incar(object):
         Parameters
         ----------
         tag : string
-            The entry tag of the INCAR entry.        
+            The entry tag of the INCAR entry.
 
         """
 
@@ -314,7 +313,7 @@ class Incar(object):
         Parameters
         ----------
         tag : string
-            The entry tag of the INCAR entry.        
+            The entry tag of the INCAR entry.
         comment : bool, optional
             If set to True, the comment is also returned, otherwise
             not.
@@ -353,9 +352,9 @@ class Incar(object):
             A dictionary on INCAR compatible form.
 
         """
-        
+
         dictionary = {}
-        for key, entry in self.entries.iteritems():
+        for key, entry in iteritems(self.entries):
             dictionary[key] = entry.get_value()
 
         return dictionary
@@ -378,8 +377,8 @@ class Incar(object):
         string_object.close()
 
         return incar_string
-        
-        
+
+
     def write(self, file_path, comments=False):
         """Write the content of the current Incar instance to
         file.
@@ -393,11 +392,11 @@ class Incar(object):
             else not.
 
         """
-        
-        incar = utils.file_handler(file_path, status='w')        
+
+        incar = utils.file_handler(file_path, status='w')
         self._write(incar = incar)
-        utils.file_handler(file_handler=incar)        
-        
+        utils.file_handler(file_handler=incar)
+
     def _write(self, incar, comments=False):
         """Write the content of the current Incar instance to
         file or string.
@@ -452,7 +451,7 @@ class IncarItem(object):
         else:
             logging.basicConfig(level=logging.DEBUG)
             self._logger = logging.getLogger('IncarItem')
-        
+
         # clean tag and value
         clean_tag, clean_value, clean_comment = self._clean_entry(tag,
                                                                   value,
@@ -460,7 +459,7 @@ class IncarItem(object):
         self.tag = clean_tag
         self.value = clean_value
         self.comment = clean_comment
-        
+
     def get_tag(self):
         return self.tag
 
@@ -515,7 +514,7 @@ class IncarItem(object):
         # give a value what they would in INCAR
 
         # make sure we keep compatibility between Python 2 and 3
-        if isinstance(value, str) or isinstance(value, unicode):
+        if isinstance(value, basestring):
             if clean_tag == "system":
                 # if value is SYSTEM, treat it a bit special and
                 # leave its string intact but remove grub
@@ -541,7 +540,7 @@ class IncarItem(object):
                     # we have here also have a bool, so check that
                     cnt = self._test_string_for_bool(element)
                 clean_value.append(cnt)
-                
+
             # now if there is only one element in clean_value
             # remove list
             if len(clean_value) == 1:

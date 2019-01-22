@@ -2,11 +2,11 @@
 import sys
 import logging
 import numpy as np
-from collections import Counter
-from decimal import getcontext as gctx
-import StringIO
+from io import StringIO
 
-import utils
+from six import iteritems
+
+from . import utils
 
 
 class Kpoints(object):
@@ -49,7 +49,7 @@ class Kpoints(object):
         else:
             self._prec = prec
         self._width = self._prec + 4
-            
+
         # check that only one argument is supplied
         if (kpoints_string is not None and kpoints_dict is not None) \
            or (kpoints_string is not None and file_path is not None) \
@@ -218,7 +218,7 @@ class Kpoints(object):
                     coordinate = np.asarray([float(element) for element in entry])
                     point = Kpoint(coordinate, 1.0)
                     points.append(point)
-                
+
         mode = "explicit"
         if automatic:
             mode = "automatic"
@@ -301,7 +301,7 @@ class Kpoints(object):
                 self._check_mode(mode = value)
             if entry == "num_kpoints":
                 self._check_num_kpoints(num_kpoints = value)
-                
+
             self.entries[entry] = value
 
     def delete_point(self, point_number):
@@ -361,7 +361,7 @@ class Kpoints(object):
         ----------
         entry : string
             Contains the entry to be checked.
-        
+
         """
 
         if not (("comment" in entry) or ("points" in entry) or
@@ -379,7 +379,7 @@ class Kpoints(object):
     def _check_comment(self, comment = None):
         """Check that the comment entry is present and
         is a string.
-        
+
         Parameters
         ----------
         comment, optional
@@ -410,7 +410,7 @@ class Kpoints(object):
             'points' key in the 'entries' is checked.
 
         """
-        
+
         if points is None:
             try:
                 points = self.entries["points"]
@@ -424,7 +424,7 @@ class Kpoints(object):
                 self._logger.error("The 'points' entry "
                                   "have to be a list. Exiting.")
                 sys.exit(1)
-        
+
     def _check_point(self, point = None):
         """Check that the point entry is a Kpoint() object.
 
@@ -453,7 +453,7 @@ class Kpoints(object):
                 self._logger.error("The 'point' "
                                   "is not a Kpoint() object. Exiting.")
                 sys.exit(1)
-                
+
     def _check_point_number(self, point_number):
         """Check that the point_number is an int and that
         it is not out of bounds.
@@ -464,7 +464,7 @@ class Kpoints(object):
             The point_number to be checked
 
         """
-        
+
         if not isinstance(point_number, int):
             self._logger.error("The supplied 'point_number' is "
                               "not an integer. Exiting.")
@@ -478,7 +478,7 @@ class Kpoints(object):
     def _check_shifts(self, shifts = None):
         """Check that the shifts are either None or
         a list of three floats.
-        
+
         Parameters
         ----------
         shifts : list, optional
@@ -494,7 +494,7 @@ class Kpoints(object):
                 self._logger.error("There is no key 'divitions' in "
                                   "'entries'. Exiting.")
                 sys.exit(1)
-        if shifts is not None:        
+        if shifts is not None:
             if not isinstance(shifts, list):
                 self._logger.error("The supplied 'shifts' is not a list. "
                                   "Exiting.")
@@ -507,9 +507,9 @@ class Kpoints(object):
                         sys.exit(1)
 
     def _check_tetra_volume(self, volume = None):
-        """Check that the volume of the tetrahedron is  
+        """Check that the volume of the tetrahedron is
         either None or a float.
-        
+
         Parameters
         ----------
         volume : float
@@ -525,15 +525,15 @@ class Kpoints(object):
                 self._logger.error("There is no key 'divitions' in "
                                   "'entries'. Exiting.")
                 sys.exit(1)
-        if volume is not None:        
+        if volume is not None:
             if not isinstance(volume, float):
                 self._logger.error("The supplied 'tetra_volume' is not a float. "
                                   "Exiting.")
-                        
+
     def _check_divisions(self, divisions = None):
         """Check that the divisions are either None or
         a list of three integers.
-        
+
         Parameters
         ----------
         divisions : list, optional
@@ -549,7 +549,7 @@ class Kpoints(object):
                 self._logger.error("There is no key 'divitions' in "
                                   "'entries'. Exiting.")
                 sys.exit(1)
-        if divisions is not None:        
+        if divisions is not None:
             if not isinstance(divisions, list):
                 self._logger.error("The supplied 'divisions' is not a list. "
                                   "Exiting.")
@@ -564,7 +564,7 @@ class Kpoints(object):
     def _check_tetra(self, tetra = None):
         """Check that tetra are either None or
         a list of four integers.
-        
+
         Parameters
         ----------
         tetra : list, optional
@@ -580,7 +580,7 @@ class Kpoints(object):
                 self._logger.error("There is no key 'divisions' in "
                                   "'entries'. Exiting.")
                 sys.exit(1)
-        if tetra is not None:        
+        if tetra is not None:
             if not isinstance(tetra, list):
                 self._logger.error("The supplied 'tetra' is not a list. "
                                   "Exiting.")
@@ -600,7 +600,7 @@ class Kpoints(object):
                             self._logger.error("Entry: " + str(entry) +
                                               " is not an integer. Exiting.")
                             sys.exit(1)
-                            
+
     def _check_centering(self, centering = None):
         """Check that the centering flag is valid.
 
@@ -632,7 +632,7 @@ class Kpoints(object):
         Parameters
         ----------
         num_kpoints : int, optional
-            The num_kpoints to be checked. If not supplied, the 
+            The num_kpoints to be checked. If not supplied, the
             num_kpoints of the current instance is checked.
 
         """
@@ -648,7 +648,7 @@ class Kpoints(object):
             self._logger.error("The 'num_kpoints' need to be an integer. "
                               "Exiting.")
             sys.exit(1)
-            
+
     def _check_mode(self, mode = None):
         """Check that the mode flag is valid.
 
@@ -673,7 +673,7 @@ class Kpoints(object):
                 self._logger.error("The supplied 'mode' have to be either "
                                   "explicit, automatic or line-mode. Exiting.")
                 sys.exit(1)
-                            
+
     def _validate(self):
         """Validate the content of entries
 
@@ -697,14 +697,14 @@ class Kpoints(object):
     def _to_cart(self, point):
 
         return point
-        
+
     def get(self, tag):
         """Return the value and comment of the entry with tag.
 
         Parameters
         ----------
         tag : string
-            The entry tag of the KPOINTS entry.        
+            The entry tag of the KPOINTS entry.
 
         Returns
         -------
@@ -731,9 +731,9 @@ class Kpoints(object):
             A dictionary on KPOINTS compatible form.
 
         """
-        
+
         dictionary = {}
-        for key, entry in self.entries.iteritems():
+        for key, entry in iteritems(self.entries):
             if key == 'points':
                 if entry is not None:
                     dictionary[key] = [[element.get_point(),
@@ -759,14 +759,14 @@ class Kpoints(object):
             current instance.
 
         """
-        
+
         string_object = StringIO.StringIO()
         self._write(kpoints = string_object)
         kpoints_string = string_object.getvalue()
         string_object.close()
 
         return poscar_string
-        
+
     def write(self, file_path):
         """ Write KPOINTS like files
 
@@ -781,7 +781,7 @@ class Kpoints(object):
         kpoints = utils.file_handler(file_path, status='w')
         self._write(kpoints = kpoints)
         utils.file_handler(file_handler=kpoints)
-        
+
     def _write(self, kpoints):
         """ Write KPOINTS like files to a file or string
 
@@ -878,7 +878,7 @@ class Kpoints(object):
             utils.remove_newline(kpoints)
 
 class Kpoint(object):
-    
+
     def __init__(self, point, weight, direct = True, logger=None):
         """A site, typically a position in POSCAR.
 
@@ -905,6 +905,6 @@ class Kpoint(object):
 
     def get_weight(self):
         return self.weight
-    
+
     def get_direct(self):
         return self.direct
