@@ -141,6 +141,9 @@ class Incar(object):
                 # now split on ; as we could have combined entries
                 splitted = splitted[0].split(';')
                 for ntry in splitted:
+                    if ntry == '\n':
+                        # skip if the user used ; at the end of a line
+                        continue;
                     # then split on = and analyze each entry
                     final_split = ntry.split("=")
                     if len(final_split) > 2:
