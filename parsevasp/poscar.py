@@ -13,7 +13,7 @@ from . import utils
 class Poscar(object):
 
     def __init__(self, poscar_string=None, poscar_dict=None,
-                 file_path=None, logger=None, prec=None, conserve_order=False):
+                 file_path=None, file_handler=None, logger=None, prec=None, conserve_order=False):
         """Initialize a POSCAR object and set content as a dictionary.
 
         Parameters
@@ -25,6 +25,8 @@ class Poscar(object):
             A dictionary containing the POSCAR entries.
         file_path : string
             The file path in which the POSCAR is read.
+        file_hander: object
+            A valid file handler object.
         logger : object, optional
             A standard Python logger object.
         prec : int, optional
@@ -37,6 +39,7 @@ class Poscar(object):
         """
 
         self._file_path = file_path
+        self._file_handler = file_handler
         self._poscar_dict = poscar_dict
         self._poscar_string = poscar_string
         self._conserve_order = conserve_order
@@ -44,13 +47,13 @@ class Poscar(object):
         # check that only one argument is supplied
         if (self._poscar_string is not None and self._poscar_dict is not None) \
            or (self._poscar_string is not None and file_path is not None) \
-           or (self._poscar_dict is not None and file_path is not None):
+           or (self._poscar_dict is not None and file_path is not None and file_handler is not None):
             self._logger.error("Please only supply one argument when "
                                "initializing Poscar. Exiting.")
             sys.exit(1)
         # check that at least one is suplpied
         if (self._poscar_string is None and self._poscar_dict is None
-                and file_path is None):
+                and file_path is None and file_handler is None):
             self._logger.error("Please supply one argument when "
                                "initializing Poscar. Exiting.")
             sys.exit(1)
@@ -93,7 +96,7 @@ class Poscar(object):
 
         """
 
-        poscar = utils.readlines_from_file(self._file_path)
+        poscar = utils.readlines_from_file(self._file_path, self._file_handler)
         poscar_dict = self._from_list(poscar)
         return poscar_dict
 

@@ -12,7 +12,7 @@ from . import utils
 class Kpoints(object):
 
     def __init__(self, kpoints_string=None, kpoints_dict=None,
-                 file_path=None, logger=None, prec=None):
+                 file_path=None, file_handler=None, logger=None, prec=None):
         """Initialize a KPOINTS object and set content as a dictionary.
 
         Parameters
@@ -24,6 +24,9 @@ class Kpoints(object):
             A dictionary containing the KPOINTS entries.
         file_path : string
             The file path in which the KPOINTS is read.
+        file_hander: object
+            A valid file handler object.
+
         logger : object, optional
             A standard Python logger object.
         prec : int, optional
@@ -33,6 +36,7 @@ class Kpoints(object):
         """
 
         self.file_path = file_path
+        self.file_handler = file_handler
         self.kpoints_dict = kpoints_dict
         self.kpoints_string = kpoints_string
 
@@ -53,13 +57,13 @@ class Kpoints(object):
         # check that only one argument is supplied
         if (kpoints_string is not None and kpoints_dict is not None) \
            or (kpoints_string is not None and file_path is not None) \
-           or (kpoints_dict is not None and file_path is not None):
+           or (kpoints_dict is not None and file_path is not None and file_handler is not None):
             self._logger.error("Please only supply one argument when "
                               "initializing Kpoints. Exiting.")
             sys.exit(1)
         # check that at least one is suplpied
         if (kpoints_string is None and kpoints_dict is None
-                and file_path is None):
+                and file_path is None and file_handler is None):
             self._logger.error("Please supply one argument when "
                               "initializing Kpoints. Exiting.")
             sys.exit(1)
@@ -85,7 +89,7 @@ class Kpoints(object):
 
         """
 
-        kpoints = utils.readlines_from_file(self.file_path)
+        kpoints = utils.readlines_from_file(self.file_path, self.file_handler)
         kpoints_dict = self._from_list(kpoints)
         return kpoints_dict
 

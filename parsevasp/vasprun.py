@@ -41,7 +41,7 @@ except ImportError:
 
 class Xml(object):
 
-    def __init__(self, file_path,
+    def __init__(self, file_path=None, file_handler=None,
                  k_before_band=False,
                  extract_all=True,
                  logger=None, event=False):
@@ -54,6 +54,8 @@ class Xml(object):
             The logger to be used for outputting messages
         file_path : string
             The path of the XML file that is to be opened
+        file_hander: object
+            A valid file handler object.
         k_before_band : bool
             If True the kpoint index runs before the bands
             index.
@@ -66,11 +68,12 @@ class Xml(object):
         -----
         lxml should be used and is required for large files
         """
-
+        
         self._file_path = file_path
+        self._file_handler = file_handler
         self._sizecutoff = 500
         self._event = event
-
+        
         # set logger
         if logger is not None:
             self._logger = logger
@@ -78,6 +81,10 @@ class Xml(object):
             logging.basicConfig(level=logging.DEBUG)
             self._logger = logging.getLogger('XmlParser')
 
+        if self._file_path is None and self._file_handler is None:
+            self._logger.error("Neither a file path or file handler was supplied.")
+            return None
+            
         # extract data from all calculations (e.g. ionic steps)
         self._extract_all = extract_all
 
@@ -164,7 +171,11 @@ class Xml(object):
         self._logger.debug("Running parsew.")
 
         # now open the complete file
-        self._check_file(self._file_path)
+        if self._file_handler is None:
+            filer = self._file_path
+            self._check_file(filer)
+        else:
+            filer = self._file_handler
         # make sure we enable the recovery mode
         # pretty sure there is a performance bottleneck running this
         # enabled at all times, so consider to add check for
@@ -173,9 +184,9 @@ class Xml(object):
             if xml_recover:
                 self._logger.debug("Running LXML in recovery mode.")
             parser = etree.XMLParser(recover=True)
-            vaspxml = etree.parse(self._file_path, parser=parser)
+            vaspxml = etree.parse(filer, parser=parser)
         else:
-            vaspxml = etree.parse(self._file_path)
+            vaspxml = etree.parse(filer)
 
         # do we want to extract data from all calculations (e.g. ionic steps)
         all = self._extract_all
@@ -280,9 +291,14 @@ class Xml(object):
         # do we want to extract data from all calculations (e.g. ionic steps)
         all = self._extract_all
 
+        if self._file_handler is None:
+            filer = self._file_path
+        else:
+            filer = self._file_handler
+        
         # index that control the calculation step (e.g. ionic step)
         calc = 1
-        for event, element in etree.iterparse(self._file_path,
+        for event, element in etree.iterparse(filer,
                                               events=("start", "end")):
             # set extraction points (what to read and when to read it)
             # here we also set the relevant data elements when the tags
@@ -2970,13 +2986,15 @@ class Xml(object):
             logger.error(file_path + "was not found. Exiting.")
             sys.exit(1)
 
-    def _file_size(self, file_path):
+    def _file_size(self, file_path=None, file_handler=None):
         """Returns the file size of a file.
 
         Parameters
         ----------
         filepath : string
             The file path to the file to be checked.
+        file_hander: object
+            A valid file handler object.
 
         Returns
         -------
@@ -2984,15 +3002,23 @@ class Xml(object):
 
         """
 
-        # check if file exists
-        if not utils.file_exists(file_path):
-            self._logger.error("Can not calculate size.")
+        if file_path is None and file_handler is None:
+            self._logger.error("Neither a file path or a file object is given.")
             return None
 
-        file_size = os.stat(file_path).st_size
+        if file_handler is None:
+            # check if file exists
+            if not utils.file_exists(file_path):
+                self._logger.error("Can not calculate size.")
+                return None
+
+            file_size = os.stat(file_path).st_size
+        else:
+            file_size = os.fstat(file_handler.fileno()).st_size
+
         return file_size / 1048576.0
 
-    def _check_xml(self, file_path):
+    def _check_xml(self, file_path=None, file_handler=None):
         """Do a primitive check of XML file to see if it is
         truncated.
 
@@ -3000,7 +3026,8 @@ class Xml(object):
         ----------
         file_path : string
             The file path of the xml file to be checked.
-
+        file_hander: object
+            A valid file handler object.
         Returns
         -------
         bool
@@ -3008,12 +3035,18 @@ class Xml(object):
 
         """
 
+        if file_handler is not None:
+            handler = file_handler
+        else:
+            handler = open(file_path)
+        
         # check if file exists
-        if not utils.file_exists(file_path):
-            self._logger.error("Can not check file.")
-            return None
+        if file_handler is None:
+            if not utils.file_exists(file_path):
+                self._logger.error("Can not check file.")
+                return None
 
-        with open(file_path) as source:
+        with handler as source:
             mapping = mmap.mmap(source.fileno(), 0, prot=mmap.PROT_READ)
         last_line = mapping[mapping.rfind(b'\n', 0, -1) + 1:]
         if last_line == "</modeling>\n":
