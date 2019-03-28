@@ -73,7 +73,7 @@ class Xml(object):
         self._file_handler = file_handler
         self._sizecutoff = 500
         self._event = event
-        
+
         # set logger
         if logger is not None:
             self._logger = logger
@@ -147,12 +147,12 @@ class Xml(object):
         # Check size of the XML file. For large files we need to
         # perform event driven parsing. For smaller files this is
         # not necessary and is too slow.
-        file_size = self._file_size(self._file_path)
+        file_size = self._file_size()
         if file_size is None:
             return None
 
         # Do a quick check to see if the XML file is not truncated
-        xml_recover = self._check_xml(self._file_path)
+        xml_recover = self._check_xml()
 
         if ((file_size < self._sizecutoff) or xml_recover) and \
            not self._event:
@@ -176,10 +176,12 @@ class Xml(object):
             self._check_file(filer)
         else:
             filer = self._file_handler
+
         # make sure we enable the recovery mode
         # pretty sure there is a performance bottleneck running this
         # enabled at all times, so consider to add check for
         # truncated XML files and then enable
+
         if lxml and xml_recover:
             if xml_recover:
                 self._logger.debug("Running LXML in recovery mode.")
@@ -290,7 +292,7 @@ class Xml(object):
 
         # do we want to extract data from all calculations (e.g. ionic steps)
         all = self._extract_all
-
+        
         if self._file_handler is None:
             filer = self._file_path
         else:
@@ -2986,15 +2988,8 @@ class Xml(object):
             logger.error(file_path + "was not found. Exiting.")
             sys.exit(1)
 
-    def _file_size(self, file_path=None, file_handler=None):
+    def _file_size(self):
         """Returns the file size of a file.
-
-        Parameters
-        ----------
-        filepath : string
-            The file path to the file to be checked.
-        file_hander: object
-            A valid file handler object.
 
         Returns
         -------
@@ -3002,32 +2997,25 @@ class Xml(object):
 
         """
 
-        if file_path is None and file_handler is None:
+        if self._file_path is None and self._file_handler is None:
             self._logger.error("Neither a file path or a file object is given.")
             return None
-
-        if file_handler is None:
+        if self._file_handler is None:
             # check if file exists
-            if not utils.file_exists(file_path):
+            if not utils.file_exists(self._file_path):
                 self._logger.error("Can not calculate size.")
                 return None
 
-            file_size = os.stat(file_path).st_size
+            file_size = os.stat(self._file_path).st_size
         else:
-            file_size = os.fstat(file_handler.fileno()).st_size
+            file_size = os.fstat(self._file_handler.fileno()).st_size
 
         return file_size / 1048576.0
 
-    def _check_xml(self, file_path=None, file_handler=None):
+    def _check_xml(self):
         """Do a primitive check of XML file to see if it is
         truncated.
 
-        Parameters
-        ----------
-        file_path : string
-            The file path of the xml file to be checked.
-        file_hander: object
-            A valid file handler object.
         Returns
         -------
         bool
@@ -3035,19 +3023,17 @@ class Xml(object):
 
         """
 
-        if file_handler is not None:
-            handler = file_handler
+        if self._file_handler is not None:
+            handler = self._file_handler
+            mapping = mmap.mmap(handler.fileno(), 0, prot=mmap.PROT_READ)
         else:
-            handler = open(file_path)
-        
-        # check if file exists
-        if file_handler is None:
-            if not utils.file_exists(file_path):
+            if not utils.file_exists(self._file_path):
                 self._logger.error("Can not check file.")
                 return None
-
-        with handler as source:
-            mapping = mmap.mmap(source.fileno(), 0, prot=mmap.PROT_READ)
+            handler = open(self._file_path)
+            with handler as source:
+                mapping = mmap.mmap(source.fileno(), 0, prot=mmap.PROT_READ)
+        
         last_line = mapping[mapping.rfind(b'\n', 0, -1) + 1:]
         if last_line == "</modeling>\n":
             return False

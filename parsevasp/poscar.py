@@ -72,7 +72,7 @@ class Poscar(object):
             self._prec = prec
         self._width = self._prec + 4
 
-        if file_path is not None:
+        if self._file_path is not None or self._file_handler is not None:
             # create dictionary from a file
             self._poscar_dict = self._from_file()
 

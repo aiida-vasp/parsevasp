@@ -68,7 +68,7 @@ class Kpoints(object):
                               "initializing Kpoints. Exiting.")
             sys.exit(1)
 
-        if file_path is not None:
+        if file_path is not None or file_handler is not None:
             # create dictionary from a file
             kpoints_dict = self._from_file()
 

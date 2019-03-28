@@ -14,7 +14,7 @@ from . import utils
 class Incar(object):
 
     def __init__(self, incar_string=None, incar_dict=None,
-                 file_path=None, file_hander=None, logger=None, prec = None):
+                 file_path=None, file_handler=None, logger=None, prec = None):
         """Initialize an INCAR object and set content as a dictionary.
 
         Parameters
@@ -37,9 +37,9 @@ class Incar(object):
         """
 
         self.file_path = file_path
+        self.file_handler = file_handler
         self.incar_dict = incar_dict
         self.incar_string = incar_string
-        self.file_hander = file_handler
 
         # set logger
         if logger is not None:

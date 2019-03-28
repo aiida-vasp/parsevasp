@@ -16,6 +16,21 @@ def outcar_parser(request, tmpdir_factory):
     
     return outcar
 
+@pytest.fixture(scope = 'module', params=[0])
+def outcar_parser_file_objects(request, tmpdir_factory):
+    """Load OUTCAR file from a file object.
+
+    """
+    testdir = os.path.dirname(__file__)
+    outcarfile = testdir + "/OUTCAR"
+    tmpfile = str(tmpdir_factory.mktemp('data').join('OUTCAR'))
+    outcar_truncate(request.param, outcarfile, tmpfile)
+    outcar = None
+    with open(tmpfile) as file_handler:
+        outcar = Outcar(file_handler=file_handler)
+    
+    return outcar
+
 def outcar_truncate(index, original, tmp):
     """Truncate the OUTCAR file.
 
@@ -59,6 +74,41 @@ def test_outcar_elastic(outcar_parser):
     """
 
     elastic = outcar_parser.get_elastic_moduli()
+    test = np.array([[ 1.6740702e+03,  7.0419980e+02,  7.0419980e+02, -0.0000000e+00,
+                       0.0000000e+00,  0.0000000e+00],
+                     [ 7.0502380e+02,  1.6748491e+03,  7.0502380e+02, -0.0000000e+00,
+                       -0.0000000e+00,  0.0000000e+00],
+                     [ 7.0499350e+02,  7.0499350e+02,  1.6748165e+03,  0.0000000e+00,
+                       -0.0000000e+00,  0.0000000e+00],
+                     [ 8.2260000e-01,  8.7980000e-01,  1.2896000e+00,  1.1225901e+03,
+                       -0.0000000e+00,  0.0000000e+00],
+                     [-7.8000000e-03, -4.9500000e-02,  1.4700000e-02,  0.0000000e+00,
+                      1.1230829e+03, -0.0000000e+00],
+                     [-2.9200000e-02, -5.3200000e-02, -2.1970000e-01, -0.0000000e+00,
+                      0.0000000e+00,  1.1223147e+03]])
+    np.testing.assert_allclose(elastic['non_symmetrized'], test)
+    test = np.array([[1674.5786,  704.739 ,  704.739 ,   -0.    ,    0.    ,    0.    ],
+                     [ 704.739 , 1674.5786,  704.739 ,   -0.    ,    0.    ,    0.    ],
+                     [ 704.739 ,  704.739 , 1674.5786,   -0.    ,   -0.    ,    0.    ],
+                     [  -0.    ,   -0.    ,   -0.    , 1122.6622,    0.    ,   -0.    ],
+                     [   0.    ,    0.    ,   -0.    ,    0.    , 1122.6622,   -0.    ],
+                     [   0.    ,    0.    ,    0.    ,   -0.    ,   -0.    , 1122.6622]])
+    np.testing.assert_allclose(elastic['symmetrized'], test)
+    test = np.array([[1674.5786,  704.739 ,  704.739 ,   -0.    ,    0.    ,    0.    ],
+                     [ 704.739 , 1674.5786,  704.739 ,   -0.    ,    0.    ,    0.    ],
+                     [ 704.739 ,  704.739 , 1674.5786,   -0.    ,   -0.    ,    0.    ],
+                     [  -0.    ,   -0.    ,   -0.    ,  775.8054,    0.    ,   -0.    ],
+                     [   0.    ,    0.    ,   -0.    ,    0.    ,  775.8054,   -0.    ],
+                     [   0.    ,    0.    ,    0.    ,   -0.    ,   -0.    ,  775.8054]])
+    np.testing.assert_allclose(elastic['total'], test)
+
+
+def test_outcar_elastic_file_object(outcar_parser_file_objects):
+    """Check if outcar_parser returns correct elastic moduli entries.
+
+    """
+
+    elastic = outcar_parser_file_objects.get_elastic_moduli()
     test = np.array([[ 1.6740702e+03,  7.0419980e+02,  7.0419980e+02, -0.0000000e+00,
                        0.0000000e+00,  0.0000000e+00],
                      [ 7.0502380e+02,  1.6748491e+03,  7.0502380e+02, -0.0000000e+00,

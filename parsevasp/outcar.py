@@ -30,8 +30,8 @@ class Outcar(object):
         self._conserve_order = conserve_order
 
         # check that at least one is suplpied
-        if self._file_path is None:
-            self._logger.error("Please supply file_path when "
+        if self._file_path is None and self._file_handler is None:
+            self._logger.error("Please supply file_path or file handler when "
                                "initializing Outcar. Exiting.")
             sys.exit(1)
 
@@ -81,7 +81,7 @@ class Outcar(object):
 
         """
 
-        if self._file_path is None:
+        if self._file_path is None and self._file_handler is None:
             return
 
         # create dictionary from a file
