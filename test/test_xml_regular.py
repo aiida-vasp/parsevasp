@@ -28,6 +28,22 @@ def xml_parser(request, tmpdir_factory):
     return xml
 
 @pytest.fixture(scope = 'module', params=[0, 1])
+def xml_parser_file_object(request, tmpdir_factory):
+    """Load XML file from a file object. Test both terminated and truncated XML.
+
+    """
+
+    testdir = os.path.dirname(__file__)
+    xmlfile = testdir + "/basic.xml"
+    tmpfile = str(tmpdir_factory.mktemp('data').join('basic_trunc.xml'))
+    xml_truncate(request.param, xmlfile, tmpfile)
+    xml = None
+    with open(tmpfile) as file_handler:
+        xml  = vasprun.Xml(file_handler=file_handler, event = False)
+
+    return xml
+
+@pytest.fixture(scope = 'module', params=[0, 1])
 def xml_parser_relax(request, tmpdir_factory):
     """Load XML file. Test both terminated and truncated XML.
 
@@ -188,6 +204,20 @@ def test_xml_energies(xml_parser):
     assert utils.isclose(energies[0], -43.312106219999997)
     assert utils.isclose(energies[1], -43.312106219999997)
 
+def test_xml_energies_file_object(xml_parser_file_object):
+    """Check energies using file object.
+
+    """
+    print(xml_parser_file_object)
+    energy = xml_parser_file_object.get_energies('initial')[0]
+    assert utils.isclose(energy, -43.312106219999997)
+    energy = xml_parser_file_object.get_energies('final')[0]
+    assert utils.isclose(energy, -43.312106219999997)
+    energies = xml_parser_file_object.get_energies('all')
+    assert utils.isclose(energies[0], -43.312106219999997)
+    assert utils.isclose(energies[1], -43.312106219999997)
+
+    
 def test_xml_forces(xml_parser):
     """Check forces.
 

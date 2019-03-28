@@ -8,13 +8,15 @@ from . import utils
 
 class Outcar(object):
 
-    def __init__(self, file_path=None, logger=None, prec=None, conserve_order=False):
+    def __init__(self, file_path=None, file_handler=None, logger=None, prec=None, conserve_order=False):
         """Initialize an OUTCAR object and set content as a dictionary.
 
         Parameters
         ----------
         file_path : string
             The file path in which the OUTCAR is read.
+        file_hander: object
+            A valid file handler object.
         logger : object, optional
             A standard Python logger object.
         prec : int, optional
@@ -24,11 +26,12 @@ class Outcar(object):
         """
 
         self._file_path = file_path
+        self._file_handler = file_handler
         self._conserve_order = conserve_order
 
         # check that at least one is suplpied
-        if self._file_path is None:
-            self._logger.error("Please supply file_path when "
+        if self._file_path is None and self._file_handler is None:
+            self._logger.error("Please supply file_path or file handler when "
                                "initializing Outcar. Exiting.")
             sys.exit(1)
 
@@ -38,6 +41,10 @@ class Outcar(object):
         else:
             logging.basicConfig(level=logging.DEBUG)
             self._logger = logging.getLogger('OutcarParser')
+
+        if self._file_path is None and self._file_handler is None:
+            self._logger.error("Neither a file path or file handler was supplied.")
+            return None
 
         # set precision
         if prec is None:
@@ -74,7 +81,7 @@ class Outcar(object):
 
         """
 
-        if self._file_path is None:
+        if self._file_path is None and self._file_handler is None:
             return
 
         # create dictionary from a file
@@ -86,7 +93,7 @@ class Outcar(object):
 
         """
 
-        outcar = utils.readlines_from_file(self._file_path)
+        outcar = utils.readlines_from_file(self._file_path, self._file_handler)
         self._from_list(outcar)
 
     def _from_list(self, outcar):

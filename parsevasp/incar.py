@@ -14,7 +14,7 @@ from . import utils
 class Incar(object):
 
     def __init__(self, incar_string=None, incar_dict=None,
-                 file_path=None, logger=None, prec = None):
+                 file_path=None, file_handler=None, logger=None, prec = None):
         """Initialize an INCAR object and set content as a dictionary.
 
         Parameters
@@ -26,6 +26,8 @@ class Incar(object):
             A dictionary containing the INCAR entries.
         file_path : string, optional
             The file path in which the INCAR is read.
+        file_hander: object
+            A valid file handler object.
         logger : object, optional
             A standard Python logger object.
         prec : int, optional
@@ -35,6 +37,7 @@ class Incar(object):
         """
 
         self.file_path = file_path
+        self.file_handler = file_handler
         self.incar_dict = incar_dict
         self.incar_string = incar_string
 
@@ -55,19 +58,19 @@ class Incar(object):
         # check that only one argument is supplied
         if (incar_string is not None and incar_dict is not None) \
            or (incar_string is not None and file_path is not None) \
-           or (incar_dict is not None and file_path is not None):
+           or (incar_dict is not None and file_path is not None) and file_handler is not None:
             self._logger.error("Please only supply one argument when "
                               "initializing Incar. Exiting.")
             sys.exit(1)
 
         # check that at least one is supplied
         if (incar_string is None and incar_dict is None
-                and file_path is None):
+                and file_path is None and file_handler is None):
             self._logger.error("Please supply one argument when "
                               "initializing Incar. Exiting.")
             sys.exit(1)
 
-        if file_path is not None:
+        if file_path is not None or file_handler is not None:
             # create list from a file
             incar_list = self._from_file()
 
@@ -92,7 +95,7 @@ class Incar(object):
 
         """
 
-        incar = utils.readlines_from_file(self.file_path)
+        incar = utils.readlines_from_file(self.file_path, self.file_handler)
         return incar
 
     def _from_string(self):

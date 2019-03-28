@@ -26,6 +26,21 @@ def incar_parser(request, tmpdir_factory):
     
     return incar
 
+@pytest.fixture(scope = 'module', params=[0])
+def incar_parser_file_object(request, tmpdir_factory):
+    """Load INCAR file using a file object.
+
+    """
+    testdir = os.path.dirname(__file__)
+    incarfile = testdir + "/INCAR"
+    tmpfile = str(tmpdir_factory.mktemp('data').join('INCAR'))
+    incar_truncate(request.param, incarfile, tmpfile)
+    incar = None
+    with open(tmpfile) as file_handler:
+        incar = Incar(file_handler = file_handler)
+    
+    return incar
+
 def incar_truncate(index, original, tmp):
     """Truncate the INCAR file.
 
@@ -62,6 +77,21 @@ def test_incar_parameters(incar_parser):
     assert dictionary['ismear'] == -5
     assert dictionary['algo'] == 'V'
 
+def test_incar_parameters_file_object(incar_parser_file_object):
+    """Check parameters of the INCAR using a file object
+
+    """
+    dictionary = incar_parser_file_object.get_dict()
+    assert dictionary['emin'] == 5.5
+    assert dictionary['emax'] == 7.5
+    assert dictionary['nedos'] == 100000
+    assert dictionary['prec'] == 'A'
+    assert dictionary['loptics'] == True
+    assert dictionary['encut'] == 350
+    assert dictionary['test'] == [1,2,2]
+    assert dictionary['ismear'] == -5
+    assert dictionary['algo'] == 'V'
+    
 @pytest.mark.incar
 def test_incar_from_dict(incar_dict):
     """Test passing a dictionary.

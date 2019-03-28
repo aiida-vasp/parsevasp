@@ -16,6 +16,20 @@ def poscar_parser():
     return poscar
 
 @pytest.fixture(scope = 'module')
+def poscar_parser_file_object():
+    """Load POSCAR file using a file object.
+
+    """
+    
+    testdir = os.path.dirname(__file__)
+    poscarfile = testdir + "/POSCAR"
+    poscar = None
+    with open(poscarfile) as file_handler:
+        poscar = Poscar(file_handler=file_handler)
+    
+    return poscar
+
+@pytest.fixture(scope = 'module')
 def poscar_parser_names():
     """Load POSCAR file.
 
@@ -105,8 +119,49 @@ def test_poscar_entries(poscar_parser):
     assert sites[8]['velocities'] == None
     np.testing.assert_allclose(sites[8]['predictors'], np.array([0.0, 9.0, 0.0]))
     assert sites[8]['direct']
-    
 
+def test_poscar_entries_file_object(poscar_parser_file_object):
+    """Check POSCAR entries.
+
+    """
+    
+    poscar = poscar_parser_file_object.get_dict()
+    assert poscar['comment'] == 'Compound: Co7Sb24.'
+    unitcell = poscar['unitcell']
+    test = np.array([[ 9.0164589999999993,  0.      ,  0.      ],
+                     [ 0.      ,  9.0164589999999993,  0.      ],
+                     [ 0.      ,  0.      ,  9.0164589999999993]])
+    np.testing.assert_allclose(unitcell, test)
+    sites = poscar['sites']
+    assert len(sites) == 32
+    test = {'specie': 'Co', 'position': np.array([ 0.24999947,  0.24999947,  0.24999947]),
+            'selective': [True, True, True], 'velocities': None,
+            'predictors': None, 'direct': True}
+    np.testing.assert_allclose(sites[0]['position'], test['position'])
+    assert sites[0]['specie'] == test['specie']
+    assert sites[0]['selective'] == [True, True, True]
+    assert sites[0]['velocities'] == None
+    np.testing.assert_allclose(sites[0]['predictors'], np.array([0.0, 0.0, 0.0]))
+    assert sites[0]['direct']
+    test = {'specie': 'Co', 'position': np.array([ 0.74999953,  0.24999947,  0.24999947]),
+            'selective': [True, True, True], 'velocties': None,
+            'predictors': None, 'direct': True}
+    np.testing.assert_allclose(sites[7]['position'], test['position'])
+    assert sites[7]['specie'] == test['specie']
+    assert sites[7]['selective'] == [True, True, True]
+    assert sites[7]['velocities'] == None
+    np.testing.assert_allclose(sites[7]['predictors'], np.array([8.0, 0.0, 0.0]))
+    assert sites[7]['direct']
+    test = {'specie': 'Sb', 'position': np.array([ 0.        ,  0.33510051,  0.15804985]),
+            'selective': [True, True, True], 'velocities': None,
+            'predictors': None, 'direct': True}
+    np.testing.assert_allclose(sites[8]['position'], test['position'])
+    assert sites[8]['specie'] == test['specie']
+    assert sites[8]['selective'] == [True, True, True]
+    assert sites[8]['velocities'] == None
+    np.testing.assert_allclose(sites[8]['predictors'], np.array([0.0, 9.0, 0.0]))
+    assert sites[8]['direct']
+    
 def test_poscar_entries_vel(poscar_parser_vel):
     """Check POSCAR entries including velocities.
 

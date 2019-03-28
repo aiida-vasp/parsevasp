@@ -17,6 +17,21 @@ def kpoints_parser_auto():
     return kpoints
 
 @pytest.fixture(scope = 'module')
+def kpoints_parser_auto_file_object():
+    """Load KPOINTS file.
+
+    """
+
+    testdir = os.path.dirname(__file__)
+    kpointsfile = testdir + "/KPOINTS"
+    kpoints = None
+    with open(kpointsfile) as file_handler:
+        kpoints = Kpoints(file_handler=file_handler)
+    
+    return kpoints
+
+
+@pytest.fixture(scope = 'module')
 def kpoints_parser_explicit():
     """Load KPOINTS file.
 
@@ -63,6 +78,22 @@ def test_kpoints_params_auto(kpoints_parser_auto):
     assert kpoints['tetra_volume'] == None
     assert kpoints['num_kpoints'] == 0    
 
+def test_kpoints_params_auto_file_object(kpoints_parser_auto_file_object):
+    """Check parameters in KPOINTS for automatic generation using a file object.
+
+    """
+    
+    kpoints = kpoints_parser_auto_file_object.get_dict()
+    assert kpoints['mode'] == 'automatic'
+    assert kpoints['comment'] == 'Example file'
+    assert kpoints['divisions'] == [4, 4, 4]
+    assert kpoints['shifts'] == None
+    assert kpoints['points'] == None
+    assert kpoints['centering'] == 'Gamma'
+    assert kpoints['tetra'] == None
+    assert kpoints['tetra_volume'] == None
+    assert kpoints['num_kpoints'] == 0
+    
 def test_kpoints_params_explicit(kpoints_parser_explicit):
     """Check parameters in KPOINTS for explicit generation.
 

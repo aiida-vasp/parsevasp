@@ -7,7 +7,7 @@ import math
 import numpy as np
 
 
-def readlines_from_file(filename, contains=None):
+def readlines_from_file(filename, input_file_handler, contains=None):
     """
     Read a file and return the whole file or specific lines.
 
@@ -15,6 +15,9 @@ def readlines_from_file(filename, contains=None):
     ----------
     filename : str
         The location and filename to be read.
+    file_handler : object
+        A valid file handler. If both filename and file_handler is set,
+        the file handler takes presence.
     contains : list of str
         A list of string of identifiers for the lines that is to be
         returned. If None, the whole file is returned.
@@ -27,9 +30,14 @@ def readlines_from_file(filename, contains=None):
 
     """
 
-    inputfile = file_handler(filename, status='r')
-    file_data = inputfile.readlines()
-    file_handler(file_handler=inputfile)
+    if input_file_handler is not None:
+        inputfile = input_file_handler
+        file_data = inputfile.readlines()
+    else:
+        inputfile = file_handler(filename, status='r')
+        file_data = inputfile.readlines()
+        file_handler(file_handler=inputfile)
+
     lines = []
 
     # first check if contains is a list
