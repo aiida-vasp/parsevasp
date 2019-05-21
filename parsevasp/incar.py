@@ -515,14 +515,15 @@ class IncarItem(object):
         # 1 2 3 4 - set of integers
         # 1.0 - float
         # 1.0 2.0 3.0 - set of floats
+        # 10*1.0 etc., interpreted as strings here
 
         # however, let us also open for the fact that users might
         # give a value what they would in INCAR
 
         # make sure we keep compatibility between Python 2 and 3
         if isinstance(value, basestring):
-            if clean_tag == "system":
-                # if value is SYSTEM, treat it a bit special and
+            if clean_tag == "system" or clean_tag == "magmom":
+                # if value is SYSTEM or MAGMOM (can contain asterix), treat it a bit special and
                 # leave its string intact but remove grub
                 clean_value = value.strip()
                 return clean_tag, clean_value, None
