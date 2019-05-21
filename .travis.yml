@@ -3,6 +3,7 @@ notifications:
 language: python
 python: 
  - 2.7
+ - 3.7
 cache: pip
 install:
     - pip install -e .[dev]
