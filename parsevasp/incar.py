@@ -9,12 +9,13 @@ from six import iteritems
 from past.builtins import basestring 
 
 from . import utils
+from . import constants
 
 
 class Incar(object):
 
     def __init__(self, incar_string=None, incar_dict=None,
-                 file_path=None, file_handler=None, logger=None, prec = None):
+                 file_path=None, file_handler=None, logger=None, prec=None, validate_tags=True):
         """Initialize an INCAR object and set content as a dictionary.
 
         Parameters
@@ -33,6 +34,8 @@ class Incar(object):
         prec : int, optional
             An integer describing how many decimals the users wants
             when printing files.
+        validate_tags : bool, optional
+            If True, validate the tags supplied against the VASP documentation.
 
         """
 
@@ -40,6 +43,7 @@ class Incar(object):
         self.file_handler = file_handler
         self.incar_dict = incar_dict
         self.incar_string = incar_string
+        self.validate_tags = validate_tags
 
         # set logger
         if logger is not None:
@@ -83,11 +87,11 @@ class Incar(object):
         else:
             incar = self._from_dict(incar_dict)
 
-        # validate dictionary
-        self.validate()
-
         # store entries
         self.entries = incar
+            
+        # validate dictionary
+        self.validate()
 
     def _from_file(self):
         """Create rudimentary dictionary of entries from a
@@ -271,10 +275,22 @@ class Incar(object):
         Notes
         -----
         Uses a table that is synced with the VASP developers and thus gives
-        an additional consistency check with respect to allowed parameters
-        and their combinations.
+        an additional consistency check with respect to allowed parameters.
+        Currently, only the tag name is checked, not its parameters.
 
         """
+        # If we do not want to validate (e.g. if you supply a set which contains
+        # unsupported keys, return now).
+        if not self.validate_tags:
+            return
+        
+        allowed_keys = constants.incar_tags.keys()
+        for key, value in self.entries.items():
+            if key not in allowed_keys:
+                self._logger.error("The supplied tag {} is not recognized as an "
+                                   "officially supported INCAR tag. Please consult "
+                                   "the manual. Exiting.".format(key.upper()))
+                sys.exit(1)
 
         return
 

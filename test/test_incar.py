@@ -73,7 +73,7 @@ def test_incar_parameters(incar_parser):
     assert dictionary['prec'] == 'A'
     assert dictionary['loptics'] == True
     assert dictionary['encut'] == 350
-    assert dictionary['test'] == [1,2,2]
+    assert dictionary['dipol'] == [1,2,2]
     assert dictionary['ismear'] == -5
     assert dictionary['algo'] == 'V'
 
@@ -88,7 +88,7 @@ def test_incar_parameters_file_object(incar_parser_file_object):
     assert dictionary['prec'] == 'A'
     assert dictionary['loptics'] == True
     assert dictionary['encut'] == 350
-    assert dictionary['test'] == [1,2,2]
+    assert dictionary['dipol'] == [1,2,2]
     assert dictionary['ismear'] == -5
     assert dictionary['algo'] == 'V'
     
@@ -108,11 +108,11 @@ def test_from_string():
 
     """
     
-    test_str = 'TRUE = .True.\nFalse=.false.'
+    test_str = 'LOPTICS = .True.\nAddgrid=.false.'
     incar_io = Incar(incar_string = test_str)
     incar_dict = incar_io.get_dict()
-    assert incar_dict.pop('true') is True
-    assert incar_dict.pop('false') is False
+    assert incar_dict.pop('loptics') is True
+    assert incar_dict.pop('addgrid') is False
     assert not incar_dict
 
 @pytest.mark.incar
@@ -121,22 +121,45 @@ def test_parser():
 
     """
 
-    test_string = '''TRUE = .True.
-    FALSE=.False. # this is a comment; FLOAT\t=\t1.45e-03
-    SOMEOTHERTHING = THIS ; ANDTHAT = .TRUE.
-    INT = 45  # endline comment; may contain '#' and ';' NOPARAM = this is not a parameter
-    LIST = 1 2 -33 5
+    test_string = '''LOPTICS = .True.
+    EVENONLY = .False. # this is a comment; FLOAT\t=\t1.45e-03
+    ISMEAR = THIS ; SIGMA = THAT
+    NBANDS = 45  # endline comment; may contain '#' and ';' NOPARAM = this is not a parameter
+    DIPOL = 1 2 -33 5
     '''
     parsed = Incar(incar_string = test_string)
     incar_dict = parsed.get_dict()
-    assert incar_dict['true'] is True
-    assert incar_dict['false'] is False
-    assert incar_dict['someotherthing'] == 'THIS'
-    assert incar_dict['andthat'] is True
-    assert incar_dict['list'] == [1, 2, -33, 5]
-    assert incar_dict['int'] == 45
+    assert incar_dict['loptics'] is True
+    assert incar_dict['evenonly'] is False
+    assert incar_dict['ismear'] == 'THIS'
+    assert incar_dict['sigma'] == 'THAT'
+    assert incar_dict['dipol'] == [1, 2, -33, 5]
+    assert incar_dict['nbands'] == 45
     assert 'noparam' not in incar_dict
     assert 'float' not in incar_dict    
+
+
+@pytest.mark.incar
+def test_parser_invalid_tag():
+    """Test passing a tag that is not recognized.
+
+    """
+
+    
+    test_string = '''SOMEINVALIDTAG = .TRUE.'''
+    with pytest.raises(SystemExit):
+        parsed = Incar(incar_string = test_string)
+
+@pytest.mark.incar
+def test_parser_invalid_tag():
+    """Test passing a tag that is not recognized and its override.
+
+    """
+
+    test_string = '''SOMEINVALIDTAG = .TRUE.'''
+    parsed = Incar(incar_string=test_string, validate_tags=False)
+    incar_dict = parsed.get_dict()
+    assert list(incar_dict.keys())[0] == 'someinvalidtag'
 
 @pytest.mark.incar
 def test_incar_item():
