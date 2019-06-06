@@ -2,6 +2,7 @@ from setuptools import setup, find_packages
 setup(
   name = 'parsevasp',
   packages = find_packages(exclude=['test']),
+  include_package_data=True,
   version = '0.2.23',
   description = 'A general parser for VASP',
   author = 'Espen Flage-Larsen',
@@ -16,6 +17,6 @@ setup(
 	         'License :: OSI Approved :: MIT License',
 	         'Programming Language :: Python :: 2.7',
                  'Programming Language :: Python :: 3.6'],
-  install_requires=['numpy', 'lxml', 'six', 'future'],
+  install_requires=['numpy', 'lxml', 'six', 'future', 'pyyaml'],
   extras_require={'dev': ['pytest', 'pytest-cov', 'click']}
 )

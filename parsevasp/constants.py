@@ -1,3 +1,6 @@
+import os
+import yaml
+
 elements = {"x": 0,
             "h": 1,
             "he": 2,
@@ -117,3 +120,9 @@ elements = {"x": 0,
             "uuh": 116,
             "uus": 117,
             "uuo": 118, }
+
+incar_tags = None
+file_path = os.path.dirname(os.path.abspath(__file__))
+incar_tags_file_path = os.path.join(file_path, 'incar_tags.yml')
+with open(incar_tags_file_path, 'r') as stream:
+    incar_tags = yaml.safe_load(stream)
