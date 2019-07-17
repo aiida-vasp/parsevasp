@@ -4,47 +4,33 @@ import logging
 import numpy as np
 
 from . import utils
+from base import BaseParser
 
-
-class Outcar(object):
+class Outcar(BaseParser):
 
     def __init__(self, file_path=None, file_handler=None, logger=None, prec=None, conserve_order=False):
         """Initialize an OUTCAR object and set content as a dictionary.
 
         Parameters
         ----------
-        file_path : string
-            The file path in which the OUTCAR is read.
-        file_hander: object
-            A valid file handler object.
-        logger : object, optional
-            A standard Python logger object.
         prec : int, optional
             An integer describing how many decimals the users wants
             when printing files.
 
         """
 
-        self._file_path = file_path
-        self._file_handler = file_handler
+        super(Outcar, self).__init__(file_path=file_path, file_handler=file_handler, logger=logger)
+        
         self._conserve_order = conserve_order
 
         # check that at least one is suplpied
         if self._file_path is None and self._file_handler is None:
-            self._logger.error("Please supply file_path or file handler when "
-                               "initializing Outcar. Exiting.")
-            sys.exit(1)
-
-        # set logger
-        if logger is not None:
-            self._logger = logger
-        else:
-            logging.basicConfig(level=logging.DEBUG)
-            self._logger = logging.getLogger('OutcarParser')
+            self._logger.error(self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
+            sys.exit(self.ERROR_USE_ONE_ARGUMENT)
 
         if self._file_path is None and self._file_handler is None:
-            self._logger.error("Neither a file path or file handler was supplied.")
-            return None
+            self._logger.error(self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
+            sys.exit(self.ERROR_USE_ONE_ARGUMENT)
 
         # set precision
         if prec is None:
@@ -84,7 +70,8 @@ class Outcar(object):
         if self._file_path is None and self._file_handler is None:
             return
 
-        # create dictionary from a file
+        # create dictionary from a file, but first check if it exists
+        self._check_file()
         self._from_file()
 
     def _from_file(self):

@@ -2,46 +2,36 @@
 import sys
 import logging
 from io import StringIO
-# sys.path.append(os.path.dirname(__file__))
-# print sys.path
 
 from six import iteritems
 from past.builtins import basestring 
 
 from . import utils
 from . import constants
+from base import BaseParser
 
-class WrongArguments(Exception):
-    """Raise when the arguments supplied to the class are wrong."""
-    def __init__(self, message, *args):
-        self.message = message
-        self.value = 10
-        super(WrongArguments, self).__init__(message, *args)
+class Incar(BaseParser):
 
-class Incar(object):
-
-    ERROR_USE_ONE_ARGUMENT = 10
     ERROR_UNSUPPORTED_TAG = 100
     ERROR_TWO_EQUALS = 101
     ERROR_INVALID_COMMENT_SIGN = 102
     ERROR_MULTIPLE_COMMENTS = 103
     ERROR_VALUES_NOT_SAME_TYPE = 104
     ERROR_INVALID_TYPE = 105
-    ERROR_MESSAGES = {ERROR_USE_ONE_ARGUMENT: "Supply only one argument when initializing "
-                      "Incar.",
-                      ERROR_TWO_EQUALS: "Detected two equal signs for an entry in the INCAR file.",
-                      ERROR_INVALID_COMMENT_SIGN: "Detected a comment line that does not start "
-                      "with a #. Please correct and be consistent.",
-                      ERROR_MULTIPLE_COMMENTS: "Multiple comment tags detected.",
-                      ERROR_UNSUPPORTED_TAG: "The supplied INCAR tag is not "
-                      "officially supported. Please consult the VASP manual or "
-                      "set the validate_tags attribute for the Incar class initializer to "
-                      "False if you want to disable tag checking.",
-                      ERROR_VALUES_NOT_SAME_TYPE: "All values of an INCAR tag are not of the same type. "
-                      "Maybe you forgot to add # as a comment tag?",
-                      ERROR_INVALID_TYPE: "The type one of the supplied values for the INCAR tag "
-                      "is not recognized."
-    }
+    ERROR_MESSAGES = BaseParser.ERROR_MESSAGES.update({
+        ERROR_TWO_EQUALS: "Detected two equal signs for an entry in the INCAR file.",
+        ERROR_INVALID_COMMENT_SIGN: "Detected a comment line that does not start "
+        "with a #. Please correct and be consistent.",
+        ERROR_MULTIPLE_COMMENTS: "Multiple comment tags detected.",
+        ERROR_UNSUPPORTED_TAG: "The supplied INCAR tag is not "
+        "officially supported. Please consult the VASP manual or "
+        "set the validate_tags attribute for the Incar class initializer to "
+        "False if you want to disable tag checking.",
+        ERROR_VALUES_NOT_SAME_TYPE: "All values of an INCAR tag are not of the same type. "
+        "Maybe you forgot to add # as a comment tag?",
+        ERROR_INVALID_TYPE: "The type one of the supplied values for the INCAR tag "
+        "is not recognized."
+    })
     
     def __init__(self, incar_string=None, incar_dict=None,
                  file_path=None, file_handler=None, logger=None, prec=None, validate_tags=True):
@@ -54,12 +44,6 @@ class Incar(object):
             breaks if multiline, otherwise the INCAR will be mangled.
         incar_dict : dict, optional
             A dictionary containing the INCAR entries.
-        file_path : string, optional
-            The file path in which the INCAR is read.
-        file_hander: object
-            A valid file handler object.
-        logger : object, optional
-            A standard Python logger object.
         prec : int, optional
             An integer describing how many decimals the users wants
             when printing files.
@@ -68,18 +52,11 @@ class Incar(object):
 
         """
 
-        self.file_path = file_path
-        self.file_handler = file_handler
-        self.incar_dict = incar_dict
-        self.incar_string = incar_string
-        self.validate_tags = validate_tags
-
-        # set logger
-        if logger is not None:
-            self._logger = logger
-        else:
-            logging.basicConfig(level=logging.DEBUG)
-            self._logger = logging.getLogger('Incar')
+        super(Incar, self).__init__(file_path=file_path, file_handler=file_handler, logger=logger)
+        
+        self._incar_dict = incar_dict
+        self._incar_string = incar_string
+        self._validate_tags = validate_tags
 
         # set precision
         if prec is None:
@@ -89,30 +66,31 @@ class Incar(object):
         self._width = self._prec + 4
 
         # check that only one argument is supplied
-        if (incar_string is not None and incar_dict is not None) \
-           or (incar_string is not None and file_path is not None) \
-           or (incar_dict is not None and file_path is not None) and file_handler is not None:
+        if (self._incar_string is not None and self._incar_dict is not None) \
+           or (self._incar_string is not None and self._file_path is not None) \
+           or (self._incar_dict is not None and self._file_path is not None) and self._file_handler is not None:
             self._logger.error(self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
             sys.exit(self.ERROR_USE_ONE_ARGUMENT)
 
         # check that at least one is supplied
-        if (incar_string is None and incar_dict is None
-                and file_path is None and file_handler is None):
+        if (self._incar_string is None and self._incar_dict is None
+                and self._file_path is None and self._file_handler is None):
             self._logger.error(self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
             sys.exit(self.ERROR_USE_ONE_ARGUMENT)
 
-        if file_path is not None or file_handler is not None:
-            # create list from a file
+        if self._file_path is not None or self._file_handler is not None:
+            # create list from a file, but first check if it exists
+            self._check_file()
             incar_list = self._from_file()
 
-        if incar_string is not None:
+        if self._incar_string is not None:
             # create list from a string
             incar_list = self._from_string()
 
-        if incar_dict is None:
+        if self._incar_dict is None:
             incar = self._from_list(incar_list)
         else:
-            incar = self._from_dict(incar_dict)
+            incar = self._from_dict(self._incar_dict)
 
         # store entries
         self.entries = incar
@@ -126,7 +104,7 @@ class Incar(object):
 
         """
 
-        incar = utils.readlines_from_file(self.file_path, self.file_handler)
+        incar = utils.readlines_from_file(self._file_path, self._file_handler)
         return incar
 
     def _from_string(self):
@@ -135,7 +113,7 @@ class Incar(object):
 
         """
 
-        incar = self.incar_string.splitlines()
+        incar = self._incar_string.splitlines()
         return incar
 
     def _from_list(self, incar):
@@ -306,7 +284,7 @@ class Incar(object):
         """
         # If we do not want to validate (e.g. if you supply a set which contains
         # unsupported keys, return now).
-        if not self.validate_tags:
+        if not self._validate_tags:
             return
         
         allowed_keys = constants.incar_tags.keys()
