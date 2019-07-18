@@ -1,22 +1,24 @@
+"""
+Install the parsevasp python package.
+
+usage: pip install .
+"""
+
+import os
+import json
 from setuptools import setup, find_packages
-setup(
-  name = 'parsevasp',
-  packages = find_packages(exclude=['test']),
-  include_package_data=True,
-  version = '0.3.0',
-  description = 'A general parser for VASP',
-  author = 'Espen Flage-Larsen',
-  author_email = 'espen.flage-larsen@sintef.no',
-  license = 'MIT',
-  url = 'https://github.com/espenfl/parsevasp',
-  download_url = 'https://github.com/espenfl/parsevasp/archive/0.3.0.tar.gz',
-  keywords = ['VASP', 'parser', 'python', 'xml'],
-  classifiers = ['Development Status :: 4 - Beta',
-	         'Intended Audience :: Science/Research',
-	         'Topic :: Scientific/Engineering :: Physics',
-	         'License :: OSI Approved :: MIT License',
-	         'Programming Language :: Python :: 2.7',
-                 'Programming Language :: Python :: 3.6'],
-  install_requires=['numpy', 'lxml', 'six', 'future', 'pyyaml'],
-  extras_require={'dev': ['pytest', 'pytest-cov', 'click']}
-)
+
+SETUP_JSON_PATH = os.path.join(os.path.dirname(__file__), 'setup.json')
+README_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'README.md')
+
+with open(README_PATH, 'r') as readme:
+    LONG_DESCRIPTION = readme.read()
+
+if __name__ == '__main__':
+    with open(SETUP_JSON_PATH, 'r') as info:
+        SETUP_KWARGS = json.load(info)
+    setup(
+        packages = find_packages(exclude=['test']),
+        keywords = ['VASP', 'parser', 'python', 'xml'],
+        long_description=LONG_DESCRIPTION,
+        **SETUP_KWARGS)
