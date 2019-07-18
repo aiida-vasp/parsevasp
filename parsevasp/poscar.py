@@ -7,8 +7,8 @@ from io import StringIO
 
 from six import iteritems
 
-from . import utils
-from base import BaseParser
+from parsevasp import utils
+from parsevasp.base import BaseParser
 
 class Poscar(BaseParser):
 
@@ -19,6 +19,7 @@ class Poscar(BaseParser):
     ERROR_TOO_LARGE_SITE_INDEX = 304
     ERROR_INVALID_ENTRY = 305
     ERROR_NO_DIRECT = 306
+    ERROR_NEGATIVE_SCALING = 307
     ERROR_MESSAGES = BaseParser.ERROR_MESSAGES.update({
         ERROR_NEGATIVE_SCALING: "Currently negative scaling values in POSCAR is not supported.",
         ERROR_VASPFOUR: "VASP 4 POSCAR is not supported. User, please modernize. ",
@@ -77,8 +78,7 @@ class Poscar(BaseParser):
         self._width = self._prec + 4
 
         if self._file_path is not None or self._file_handler is not None:
-            # create dictionary from a file, but first check if it exists
-            self._check_file()
+            # create dictionary from a file
             self._poscar_dict = self._from_file()
 
         if self._poscar_string is not None:
@@ -804,9 +804,9 @@ class Poscar(BaseParser):
 
         """
 
-        poscar = utils.file_handler(file_path, status='w')
+        poscar = utils.file_handler(file_path, status='w', logger=self._logger)
         self._write(poscar=poscar)
-        utils.file_handler(file_handler=poscar)
+        utils.file_handler(file_handler=poscar, logger=self._logger)
 
     def _write(self, poscar):
         """ Write POSCAR like files to a file or string

@@ -6,8 +6,8 @@ from io import StringIO
 
 from six import iteritems
 
-from . import utils
-from base import BaseParser
+from parsevasp import utils
+from parsevasp.base import BaseParser
 
 class Kpoints(BaseParser):
 
@@ -76,18 +76,17 @@ class Kpoints(BaseParser):
         # check that only one argument is supplied
         if (self._kpoints_string is not None and self._kpoints_dict is not None) \
            or (self._kpoints_string is not None and self._file_path is not None) \
-           or (self._kpoints_dict is not None and self._file_path is not None and _file_handler is not None):
+           or (self._kpoints_dict is not None and self._file_path is not None and self._file_handler is not None):
             self._logger.error(self.ERROR_MESSAGES[self.USE_ONE_ARGUMENT])
             sys.exit(self.USE_ONE_ARGUMENT)
         # check that at least one is suplpied
         if (self._kpoints_string is None and self._kpoints_dict is None
-                and self._file_path is None and _file_handler is None):
+                and self._file_path is None and self._file_handler is None):
             self._logger.error(self.ERROR_MESSAGES[self.USE_ONE_ARGUMENT])
             sys.exit(self.USE_ONE_ARGUMENT)
 
         if self._file_path is not None or self._file_handler is not None:
-            # create dictionary from a file, but first check if it exists
-            self._check_file()
+            # create dictionary from a file
             self._kpoints_dict = self._from_file()
 
         if self._kpoints_string is not None:
@@ -774,9 +773,9 @@ class Kpoints(BaseParser):
 
         """
 
-        kpoints = utils.file_handler(file_path, status='w')
+        kpoints = utils.file_handler(file_path, status='w', logger=self._logger)
         self._write(kpoints = kpoints)
-        utils.file_handler(file_handler=kpoints)
+        utils.file_handler(file_handler=kpoints, logger=self._logger)
 
     def _write(self, kpoints):
         """ Write KPOINTS like files to a file or string

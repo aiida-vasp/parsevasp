@@ -5,9 +5,9 @@ import logging
 import os
 import math
 import numpy as np
+from parsevasp.base import BaseParser
 
-
-def readlines_from_file(filename, input_file_handler, contains=None):
+def readlines_from_file(filename, input_file_handler, contains=None, logger=None):
     """
     Read a file and return the whole file or specific lines.
 
@@ -21,6 +21,8 @@ def readlines_from_file(filename, input_file_handler, contains=None):
     contains : list of str
         A list of string of identifiers for the lines that is to be
         returned. If None, the whole file is returned.
+    logger : object, optional
+        A logger object to use.
 
     Returns
     -------
@@ -30,13 +32,16 @@ def readlines_from_file(filename, input_file_handler, contains=None):
 
     """
 
+    if logger is None:
+        logger = logging.getLogger(sys._getframe().f_code.co_name)
+    
     if input_file_handler is not None:
         inputfile = input_file_handler
         file_data = inputfile.readlines()
     else:
-        inputfile = file_handler(filename, status='r')
+        inputfile = file_handler(filename=filename, status='r', logger=logger)
         file_data = inputfile.readlines()
-        file_handler(file_handler=inputfile)
+        file_handler(logger, file_handler=inputfile, logger=logger)
 
     lines = []
 
@@ -60,7 +65,7 @@ def readlines_from_file(filename, input_file_handler, contains=None):
     return lines
 
 
-def file_handler(filename="", file_handler=None, status=None):
+def file_handler(filename="", file_handler=None, status=None, logger=None):
     """
     Open and close files.
 
@@ -75,6 +80,8 @@ def file_handler(filename="", file_handler=None, status=None):
         The string containing the status to write, read, append etc.
         If not supplied, assume file close and `file_handler` need
         to be supplied.
+    logger : object, optional
+        A logger object to use.
 
     Returns
     -------
@@ -84,24 +91,25 @@ def file_handler(filename="", file_handler=None, status=None):
 
     """
 
-    # set logger
-    logger = logging.getLogger(sys._getframe().f_code.co_name)
+    if logger is None:
+        logger = logging.getLogger(sys._getframe().f_code.co_name)
 
     if status is None:
         if file_handler is None:
-            logger.error("Could not close an empty file handler. Exiting.")
-            sys.exit(1)
+            logger.error(BaseParser.ERROR_MESSAGES[BaseParser.ERROR_EMPTY_HANDLER])
+            sys.exit(BaseParser.ERROR_EMPTY_HANDLER)
         file_handler.close()
     else:
         try:
             file_handler = open(filename, status)
             return file_handler
         except IOError:
-            logger.error("Could not open " + filename + ". Exiting.")
-            sys.exit(1)
+            logger.error(BaseParser.ERROR_MESSAGES(BaseParser.ERROR_FILE_NOT_FOUND) +
+                         " The file in question is: {}".format(filename))
+            sys.exit(BaseParser.ERROR_FILE_NOT_FOUND)
 
 
-def file_exists(file_path):
+def file_exists(file_path, logger=None):
     """
     Check if the file exists.
 
@@ -109,6 +117,8 @@ def file_exists(file_path):
     ----------
     file_path : string
         The file path to be checked.
+    logger : object, optional
+        A logger object to use.
 
     Returns
     -------
@@ -116,18 +126,19 @@ def file_exists(file_path):
         If file does not exists or `file_path` empty, else False.
     """
 
-    # set logger
-    logger = logging.getLogger(sys._getframe().f_code.co_name)
-
+    if logger is None:
+        logger = logging.getLogger(sys._getframe().f_code.co_name)
+    
+    if not file_path:
+        logger.error(BaseParser.ERROR_MESSAGES[BaseParser.ERROR_EMPTY_FILE_PATH])
+        sys.exit(BaseParser.ERROR_EMPTY_FILE_PATH)
+    
     status = True
     try:
         os.stat(file_path)
     except OSError:
-        if not file_path:
-            logger.error("File path is empty.")
-            sys.exit(1)
-        else:
-            logger.error("Could not locate "+file_path+".")
+        logger.error(BaseParser.ERROR_MESSAGES(BaseParser.ERROR_FILE_NOT_FOUND) +
+                     " The file in question is: {}".format(file_path))
         status = False
 
     return status

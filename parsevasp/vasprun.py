@@ -6,9 +6,9 @@ import logging
 import mmap
 import copy
 
-from . import constants
-from . import utils
-from base import BaseParser
+from parsevasp import constants
+from parsevasp import utils
+from parsevasp.base import BaseParser
 
 from lxml import etree
 
@@ -44,24 +44,28 @@ class Xml(BaseParser):
 
     ERROR_MULTIPLE_ENTRIES = 500
     ERROR_NO_SPECIES = 501
-    ERROR_NO_IPIN = 502
+    ERROR_NO_ISPIN = 502
     ERROR_NO_NBANDS = 503
     ERROR_NO_KPOINTS = 504
     ERROR_MISMATCH_KPOINTS_NBANDS = 505
     ERROR_UNKNOWN_ELEMENT = 506
     ERROR_UNSUPPORTED_STATUS = 507
-    ERROR_MESSAGES = BaseParser.ERROR_MESSAGES.update({
+    ERROR_NO_SIZE = 508
+    ERROR_OVERFLOW = 509
+    BaseParser.ERROR_MESSAGES.update({
         ERROR_NO_SPECIES: "Please extract the species first.",
-        ERROR_MULTIPLE_ENTRIES_LOCATED: "Multiple entries of were located.",
+        ERROR_MULTIPLE_ENTRIES: "Multiple entries of were located.",
         ERROR_NO_ISPIN: "Please extract ISPIN first.",
         ERROR_NO_NBANDS: "Please extract NBANDS first.",
         ERROR_NO_KPOINTS: "Please extract the kpoints first.",
         ERROR_MISMATCH_KPOINTS_NBANDS: "The number of kpoints and bands for the entries does not match the number of "
         "located kpoints and NBANDS.",
         ERROR_UNKNOWN_ELEMENT: "There is an atomic element present in the XML file that is unknown.",
-        ERROR_UNSUPPORTED_STATUS: "The supplied status is not supported."
+        ERROR_UNSUPPORTED_STATUS: "The supplied status is not supported.",
+        ERROR_NO_SIZE: "Can not calculate size.",
+        ERROR_OVERFLOW: "Overflow detected in the XML file."
     })
-
+    ERROR_MESSAGES = BaseParser.ERROR_MESSAGES
     
     def __init__(self, file_path=None, file_handler=None,
                  k_before_band=False,
@@ -2475,7 +2479,12 @@ class Xml(BaseParser):
 
         data = None
         if entry is not None:
-            data = np.fromstring(entry.text, sep=' ', dtype='intc')
+            try:
+                data = np.fromstring(entry.text, sep=' ', dtype='intc')
+            except ValueError as e:
+                if str(e) == 'setting an array element with a sequence.':
+                    self._logger.error(self.ERROR_MESSAGES[self.ERROR_OVERFLOW])
+                    sys.exit(self.ERROR_OVERFLOW)
 
         return data
 
@@ -2498,7 +2507,12 @@ class Xml(BaseParser):
 
         data = None
         if entry is not None:
-            data = np.fromstring(entry.text, sep=' ', dtype='double')
+            try:
+                data = np.fromstring(entry.text, sep=' ', dtype='double')
+            except ValueError as e:
+                if str(e) == 'setting an array element with a sequence.':
+                    self._logger.error(self.ERROR_MESSAGES[self.ERROR_OVERFLOW])
+                    sys.exit(self.ERROR_OVERFLOW)
 
         return data
 
@@ -2523,7 +2537,12 @@ class Xml(BaseParser):
         if entry is not None:
             data = np.zeros(len(entry), dtype='intc')
         for index, element in enumerate(entry):
-            data[index] = np.fromstring(element.text, sep=' ')
+            try:
+                data[index] = np.fromstring(element.text, sep=' ')
+            except ValueError as e:
+                if str(e) == 'setting an array element with a sequence.':
+                    self._logger.error(self.ERROR_MESSAGES[self.ERROR_OVERFLOW])
+                    sys.exit(self.ERROR_OVERFLOW)
 
         return data
 
@@ -2545,10 +2564,16 @@ class Xml(BaseParser):
         """
 
         data = None
+
         if entry is not None:
             data = np.zeros(len(entry), dtype='double')
         for index, element in enumerate(entry):
-            data[index] = np.fromstring(element.text, sep=' ')
+            try:
+                data[index] = np.fromstring(element.text, sep=' ')
+            except ValueError as e:
+                if str(e) == 'setting an array element with a sequence.':
+                    self._logger.error(self.ERROR_MESSAGES[self.ERROR_OVERFLOW])
+                    sys.exit(self.ERROR_OVERFLOW)
 
         return data
 
@@ -2578,7 +2603,12 @@ class Xml(BaseParser):
                             dtype='double')
 
         for index, element in enumerate(entry):
-            data[index] = np.fromstring(element.text, sep=' ')
+            try:
+                data[index] = np.fromstring(element.text, sep=' ')
+            except ValueError as e:
+                if str(e) == 'setting an array element with a sequence.':
+                    self._logger.error(self.ERROR_MESSAGES[self.ERROR_OVERFLOW])
+                    sys.exit(self.ERROR_OVERFLOW)                
 
         return data
 
@@ -2599,8 +2629,11 @@ class Xml(BaseParser):
 
         data = None
         if entry.text is not None:
+            if '****' in entry.text:
+                self._logger.error(self.ERROR_MESSAGES[self.ERROR_OVERFLOW])
+                sys.exit(self.ERROR_OVERFLOW)
             data = float(entry.text)
-
+        
         return data
 
     def _convert_i(self, entry):
@@ -2620,6 +2653,9 @@ class Xml(BaseParser):
 
         data = None
         if entry.text is not None:
+            if '****' in entry.text:
+                self._logger.error(self.ERROR_MESSAGES[self.ERROR_OVERFLOW])
+                sys.exit(self.ERROR_OVERFLOW)
             data = int(entry.text)
 
         return data
@@ -2946,12 +2982,12 @@ class Xml(BaseParser):
         """
 
         if self._file_path is None and self._file_handler is None:
-            self._logger.error("Neither a file path or a file object is given.")
+            self._logger.error(self.ERROR_MESSAGES[self.ERROR_ONLY_ONE_ARGUMENT])
             return None
         if self._file_handler is None:
             # check if file exists
-            if not utils.file_exists(self._file_path):
-                self._logger.error("Can not calculate size.")
+            if not utils.file_exists(self._file_path, logger=self._logger):
+                self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_SIZE])
                 return None
 
             file_size = os.stat(self._file_path).st_size
@@ -2975,7 +3011,6 @@ class Xml(BaseParser):
             handler = self._file_handler
             mapping = mmap.mmap(handler.fileno(), 0, prot=mmap.PROT_READ)
         else:
-            self._check_file()
             handler = open(self._file_path)
             with handler as source:
                 mapping = mmap.mmap(source.fileno(), 0, prot=mmap.PROT_READ)

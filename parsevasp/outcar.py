@@ -3,8 +3,8 @@ import sys
 import logging
 import numpy as np
 
-from . import utils
-from base import BaseParser
+from parsevasp import utils
+from parsevasp.base import BaseParser
 
 class Outcar(BaseParser):
 
@@ -70,8 +70,7 @@ class Outcar(BaseParser):
         if self._file_path is None and self._file_handler is None:
             return
 
-        # create dictionary from a file, but first check if it exists
-        self._check_file()
+        # create dictionary from a file
         self._from_file()
 
     def _from_file(self):

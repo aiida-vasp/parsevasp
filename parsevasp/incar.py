@@ -6,9 +6,9 @@ from io import StringIO
 from six import iteritems
 from past.builtins import basestring 
 
-from . import utils
-from . import constants
-from base import BaseParser
+from parsevasp import utils
+from parsevasp import constants
+from parsevasp.base import BaseParser
 
 class Incar(BaseParser):
 
@@ -79,8 +79,7 @@ class Incar(BaseParser):
             sys.exit(self.ERROR_USE_ONE_ARGUMENT)
 
         if self._file_path is not None or self._file_handler is not None:
-            # create list from a file, but first check if it exists
-            self._check_file()
+            # create list from a file
             incar_list = self._from_file()
 
         if self._incar_string is not None:
@@ -417,9 +416,9 @@ class Incar(BaseParser):
 
         """
 
-        incar = utils.file_handler(file_path, status='w')
+        incar = utils.file_handler(file_path, status='w', logger=self._logger)
         self._write(incar = incar)
-        utils.file_handler(file_handler=incar)
+        utils.file_handler(file_handler=incar, logger=self._logger)
 
     def _write(self, incar, comments=False):
         """Write the content of the current Incar instance to
