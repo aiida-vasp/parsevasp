@@ -6,8 +6,9 @@ import logging
 import mmap
 import copy
 
-from . import constants
-from . import utils
+from parsevasp import constants
+from parsevasp import utils
+from parsevasp.base import BaseParser
 
 from lxml import etree
 
@@ -35,12 +36,37 @@ except ImportError:
                     import elementtree.ElementTree as etree
                 except ImportError:
                     logging.error(
-                        "Failed to import ElementTree. Exiting.")
-                    sys.exit(1)
+                        "Failed to import ElementTree.")
+                    sys.exit("Failed to import ElementTree.")
 
 
-class Xml(object):
+class Xml(BaseParser):
 
+    ERROR_MULTIPLE_ENTRIES = 500
+    ERROR_NO_SPECIES = 501
+    ERROR_NO_ISPIN = 502
+    ERROR_NO_NBANDS = 503
+    ERROR_NO_KPOINTS = 504
+    ERROR_MISMATCH_KPOINTS_NBANDS = 505
+    ERROR_UNKNOWN_ELEMENT = 506
+    ERROR_UNSUPPORTED_STATUS = 507
+    ERROR_NO_SIZE = 508
+    ERROR_OVERFLOW = 509
+    BaseParser.ERROR_MESSAGES.update({
+        ERROR_NO_SPECIES: "Please extract the species first.",
+        ERROR_MULTIPLE_ENTRIES: "Multiple entries of were located.",
+        ERROR_NO_ISPIN: "Please extract ISPIN first.",
+        ERROR_NO_NBANDS: "Please extract NBANDS first.",
+        ERROR_NO_KPOINTS: "Please extract the kpoints first.",
+        ERROR_MISMATCH_KPOINTS_NBANDS: "The number of kpoints and bands for the entries does not match the number of "
+        "located kpoints and NBANDS.",
+        ERROR_UNKNOWN_ELEMENT: "There is an atomic element present in the XML file that is unknown.",
+        ERROR_UNSUPPORTED_STATUS: "The supplied status is not supported.",
+        ERROR_NO_SIZE: "Can not calculate size.",
+        ERROR_OVERFLOW: "Overflow detected in the XML file."
+    })
+    ERROR_MESSAGES = BaseParser.ERROR_MESSAGES
+    
     def __init__(self, file_path=None, file_handler=None,
                  k_before_band=False,
                  extract_all=True,
@@ -50,12 +76,6 @@ class Xml(object):
 
         Parameters
         ----------
-        logger : object
-            The logger to be used for outputting messages
-        file_path : string
-            The path of the XML file that is to be opened
-        file_hander: object
-            A valid file handler object.
         k_before_band : bool
             If True the kpoint index runs before the bands
             index.
@@ -68,22 +88,15 @@ class Xml(object):
         -----
         lxml should be used and is required for large files
         """
+
+        super(Xml, self).__init__(file_path=file_path, file_handler=file_handler, logger=logger)
         
-        self._file_path = file_path
-        self._file_handler = file_handler
         self._sizecutoff = 500
         self._event = event
 
-        # set logger
-        if logger is not None:
-            self._logger = logger
-        else:
-            logging.basicConfig(level=logging.DEBUG)
-            self._logger = logging.getLogger('XmlParser')
-
         if self._file_path is None and self._file_handler is None:
-            self._logger.error("Neither a file path or file handler was supplied.")
-            return None
+            self._logger.error(self.ERROR_MESSAGES[self.ERROR_ONLY_ONE_ARGUMENT])
+            sys.exit(self.ERROR_ONLY_ONE_ARGUMENT)
             
         # extract data from all calculations (e.g. ionic steps)
         self._extract_all = extract_all
@@ -170,10 +183,9 @@ class Xml(object):
 
         self._logger.debug("Running parsew.")
 
-        # now open the complete file
+        # now open the complete file, we have already checked its presence when we checked the recover.
         if self._file_handler is None:
             filer = self._file_path
-            self._check_file(filer)
         else:
             filer = self._file_handler
 
@@ -409,10 +421,8 @@ class Xml(object):
                     if self._lattice["species"] is not None:
                         num_atoms = self._lattice["species"].shape[0]
                     else:
-                        self._logger.error("Before extracting the density of "
-                                           "states, please extract the species. "
-                                           "Exiting.")
-                        sys.exit(1)
+                        self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_SPECIES])
+                        sys.exit(self.ERROR_NO_SPECIES)
                     if data2:
                         dos_ispin = self._convert_array2D_f(data, 10)
                         # do not need the energy term (similar to total)
@@ -434,9 +444,9 @@ class Xml(object):
                     if len(data4) == 1:
                         fermi_level = self._convert_f(data4[0])
                     elif len(data4) > 1:
-                        self._logger.error("Multiple entries of efermi was located. "
-                                           "Exiting.")
-                        sys.exit(1)
+                        self._logger.error(self.ERROR_MESSAGES[self.ERROR_MULTIPLE_ENTRIES] +
+                                           " The tag in question is 'efermi'.")
+                        sys.exit(self.ERROR_MULTIPLE_ENTRIES)
                     else:
                         fermi_level = None
 
@@ -484,10 +494,8 @@ class Xml(object):
                     if self._lattice["species"] is not None:
                         num_atoms = self._lattice["species"].shape[0]
                     else:
-                        self._logger.error("Before extracting the density of "
-                                           "states, please extract the species. "
-                                           "Exiting.")
-                        sys.exit(1)
+                        self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_SPECIES])
+                        sys.exit(self.ERROR_NO_SPECIES)
                     if data2:
                         dos_ispin = self._convert_array2D_f(data, 10)
                         # do not need the energy term (similar to total)
@@ -509,9 +517,9 @@ class Xml(object):
                     if len(data4) == 1:
                         fermi_level = self._convert_f(data4[0])
                     elif len(data4) > 1:
-                        self._logger.error("Multiple entries of efermi was located. "
-                                           "Exiting.")
-                        sys.exit(1)
+                        self._logger.error(self.ERROR_MESSAGES[self.ERROR_MULTIPLE_ENTRIES] +
+                                           " The tag in question is 'efermi'.")
+                        sys.exit(self.ERROR_MULTIPLE_ENTRIES)
                     else:
                         fermi_level = None
 
@@ -631,11 +639,8 @@ class Xml(object):
                             if self._lattice["species"] is not None:
                                 num_atoms = self._lattice["species"].shape[0]
                             else:
-                                self._logger.error("Before extracting the "
-                                                   "density of states, please "
-                                                   "extract the species. "
-                                                   "Exiting.")
-                                sys.exit(1)
+                                self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_SPECIES])
+                                sys.exit(self.ERROR_NO_SPECIES)
                             data = self._convert_array2D_f(data, 3)
                             data = np.split(data, num_atoms)
                             self._data["born"] = np.asarray(data)
@@ -843,11 +848,8 @@ class Xml(object):
                         if self._lattice["species"] is not None:
                             num_atoms = self._lattice["species"].shape[0]
                         else:
-                            self._logger.error("Before extracting the "
-                                               "density of states, please "
-                                               "extract the species. "
-                                               "Exiting.")
-                            sys.exit(1)
+                            self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_SPECIES])
+                            sys.exit(self.ERROR_NO_SPECIES)
                         hessian = self._convert_array2D_f(
                             data, num_atoms * 3)
                         self._data["hessian"] = hessian
@@ -862,11 +864,8 @@ class Xml(object):
                         if self._lattice["species"] is not None:
                             num_atoms = self._lattice["species"].shape[0]
                         else:
-                            self._logger.error("Before extracting the "
-                                               "density of states, please "
-                                               "extract the species. "
-                                               "Exiting.")
-                            sys.exit(1)
+                            self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_SPECIES])
+                            sys.exit(self.ERROR_NO_SPECIES)
                         eigenvec = self._convert_array2D_f(
                             data, num_atoms * 3)
                         dynmat["eigenvectors"] = eigenvec
@@ -2239,15 +2238,13 @@ class Xml(object):
 
         # then check if we have asigned ispin
         if self._parameters["ispin"] is None:
-            self._logger.error("Before extracting the eigenvalues, please"
-                               "extract ISPIN. Exiting.")
-            sys.exit(1)
+            self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_ISPIN])
+            sys.exit(self.ERROR_NO_ISPIN)
 
         # then check if we have asigned nbands
         if self._parameters["nbands"] is None:
-            self._logger.error("Before extracting the eigenvalues, please"
-                               "extract NBANDS. Exiting.")
-            sys.exit(1)
+            self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_NBANDS])
+            sys.exit(self.ERROR_NO_NBADS)
 
         # ispin
         ispin = self._parameters["ispin"]
@@ -2262,10 +2259,8 @@ class Xml(object):
         data = []
 
         if len(spin1) != num_bands * num_kpoints:
-            self._logger.error("The number of eigenvalues found does not match "
-                               "the number of located kpoints and NBANDS. "
-                               "Exiting.")
-            sys.exit(1)
+            self._logger.error(self.ERROR_MESSAGES[self.ERROR_MISMATCH_KPOINTS_NBANDS])
+            sys.exit(self.ERROR_MISMATCH_KPOINTS_NBANDS)
 
         # check number of elements in first entry of spin1 (we assume all are equal)
         entries = len(spin1[0].text.split())
@@ -2276,10 +2271,8 @@ class Xml(object):
         data[0] = np.asarray(np.split(data[0], num_kpoints))
         if spin2 is not None:
             if len(spin2) != num_bands * num_kpoints:
-                self._logger.error("The number of eigenvalues found does not match "
-                                   "the number of located kpoints and NBANDS. "
-                                   "Exiting.")
-                sys.exit(1)
+                self._logger.error(self.ERROR_MESSAGES[self.ERROR_MISMATCH_KPOINTS_NBANDS])
+                sys.exit(self.ERROR_MISMATCH_KPOINTS_NBANDS)
             if entries > 1:
                 data.append(self._convert_array2D_f(spin2, entries))
             else:
@@ -2336,15 +2329,13 @@ class Xml(object):
 
         # check if we have asigned ispin
         if self._parameters["ispin"] is None:
-            self._logger.error("Before extracting the eigenvelocities, please"
-                               "extract ISPIN. Exiting.")
-            sys.exit(1)
+            self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_ISPIN])
+            sys.exit(self.ERROR_NO_ISPIN)
 
         # then check if we have asigned nbands
         if self._parameters["nbands"] is None:
-            self._logger.error("Before extracting the eigenvelocities, please"
-                               "extract NBANDS. Exiting.")
-            sys.exit(1)
+            self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_NBANDS])
+            sys.exit(self.ERROR_NO_NBANDS)
 
         # ispin
         ispin = self._parameters["ispin"]
@@ -2357,18 +2348,14 @@ class Xml(object):
 
         data = []
         if len(spin1) != num_bands * num_kpoints:
-            self._logger.error("The number of eigenvelocities found does not match "
-                               "the number of located kpoints and NBANDS. "
-                               "Exiting.")
-            sys.exit(1)
+            self._logger.error(self.ERROR_MESSAGES[self.ERROR_MISMATCH_KPOINTS_NBANDS])
+            sys.exit(self.ERROR_MISMATCH_KPOINTS_NBANDS)
         data.append(self._convert_array2D_f(spin1, 4))
         data[0] = np.asarray(np.split(data[0], num_kpoints))
         if spin2 is not None:
             if len(spin2) != num_bands * num_kpoints:
-                self._logger.error("The number of eigenvelocities found does not match "
-                                   "the number of located kpoints and NBANDS. "
-                                   "Exiting.")
-                sys.exit(1)
+                self._logger.error(self.ERROR_MESSAGES[self.ERROR_MISMATCH_KPOINTS_NBANDS])
+                sys.exit(self.ERROR_MISMATCH_KPOINTS_NBANDS)
             data.append(self._convert_array2D_f(spin2, 4))
             data[1] = np.asarray(np.split(data[1], num_kpoints))
 
@@ -2408,29 +2395,24 @@ class Xml(object):
 
         # first check if we have extracted the kpoints
         if self._lattice["kpoints"] is None:
-            self._logger.error("Before extracting the projectors, please"
-                               "extract the kpoints. Exiting.")
-            sys.exit(1)
+            self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_KPOINTS])
+            sys.exit(self.ERROR_NO_KPOINTS)
 
         # then check if we have asigned ispin
         if self._parameters["ispin"] is None:
-            self._logger.error("Before extracting the projectors, please"
-                               "extract ISPIN. Exiting.")
-            sys.exit(1)
+            self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_ISPIN])
+            sys.exit(self.ERROR_NO_ISPIN)
 
         # then check if we have asigned nbands
         if self._parameters["nbands"] is None:
-            self._logger.error("Before extracting the projectors, please"
-                               "extract NBANDS. Exiting.")
-            sys.exit(1)
+            self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_NBANDS])
+            sys.exit(self.ERROR_NO_NBANDS)
 
         num_atoms = 0
         # also need the number of atoms if the projected values are supplied
         if self._lattice["species"] is None:
-            self._logger.error("Before extracting the projected "
-                               "projectors, please extract NBANDS. "
-                               "the species. Exiting.")
-            sys.exit(1)
+            self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_NBANDS])
+            sys.exit(self.ERROR_NO_NBANDS)
         else:
             num_atoms = self._lattice["species"].shape[0]
 
@@ -2448,21 +2430,15 @@ class Xml(object):
 
         pdata = []
         if len(spin1) != num_bands * num_kpoints * num_atoms:
-            self._logger.error("The number of projectors found "
-                               "does not match the number of located "
-                               "kpoints, NBANDS and number of atoms. "
-                               "Exiting.")
-            sys.exit(1)
+            self._logger.error(self.ERROR_MESSAGES[self.ERROR_MISMATCH_KPOINTS_NBANDS])
+            sys.exit(self.ERROR_MISMATCH_KPOINTS_NBANDS)
         pdata.append(self._convert_array2D_f(spin1, 9))
         pdata[0] = np.asarray(np.split(pdata[0], num_kpoints))
         pdata[0] = np.asarray(np.split(pdata[0], num_bands, axis=1))
         if spin2 is not None:
             if len(spin2) != num_bands * num_kpoints * num_atoms:
-                self._logger.error("The number of projectors found "
-                                   "does not match the number of located "
-                                   "kpoints, NBANDS and number of atoms. "
-                                   "Exiting.")
-                sys.exit(1)
+                self._logger.error(self.ERROR_MESSAGES[self.ERROR_MISMATCH_KPOINTS_NBANDS])
+                sys.exit(self.ERROR_MISMATCH_KPOINTS_NBANDS)
             pdata.append(self._convert_array2D_f(spin2, 9))
             pdata[1] = np.asarray(np.split(pdata[1], num_kpoints))
             pdata[1] = np.asarray(np.split(pdata[1], num_bands, axis=1))
@@ -2503,7 +2479,12 @@ class Xml(object):
 
         data = None
         if entry is not None:
-            data = np.fromstring(entry.text, sep=' ', dtype='intc')
+            try:
+                data = np.fromstring(entry.text, sep=' ', dtype='intc')
+            except ValueError as e:
+                if str(e) == 'setting an array element with a sequence.':
+                    self._logger.error(self.ERROR_MESSAGES[self.ERROR_OVERFLOW])
+                    sys.exit(self.ERROR_OVERFLOW)
 
         return data
 
@@ -2526,7 +2507,12 @@ class Xml(object):
 
         data = None
         if entry is not None:
-            data = np.fromstring(entry.text, sep=' ', dtype='double')
+            try:
+                data = np.fromstring(entry.text, sep=' ', dtype='double')
+            except ValueError as e:
+                if str(e) == 'setting an array element with a sequence.':
+                    self._logger.error(self.ERROR_MESSAGES[self.ERROR_OVERFLOW])
+                    sys.exit(self.ERROR_OVERFLOW)
 
         return data
 
@@ -2551,7 +2537,12 @@ class Xml(object):
         if entry is not None:
             data = np.zeros(len(entry), dtype='intc')
         for index, element in enumerate(entry):
-            data[index] = np.fromstring(element.text, sep=' ')
+            try:
+                data[index] = np.fromstring(element.text, sep=' ')
+            except ValueError as e:
+                if str(e) == 'setting an array element with a sequence.':
+                    self._logger.error(self.ERROR_MESSAGES[self.ERROR_OVERFLOW])
+                    sys.exit(self.ERROR_OVERFLOW)
 
         return data
 
@@ -2573,10 +2564,16 @@ class Xml(object):
         """
 
         data = None
+
         if entry is not None:
             data = np.zeros(len(entry), dtype='double')
         for index, element in enumerate(entry):
-            data[index] = np.fromstring(element.text, sep=' ')
+            try:
+                data[index] = np.fromstring(element.text, sep=' ')
+            except ValueError as e:
+                if str(e) == 'setting an array element with a sequence.':
+                    self._logger.error(self.ERROR_MESSAGES[self.ERROR_OVERFLOW])
+                    sys.exit(self.ERROR_OVERFLOW)
 
         return data
 
@@ -2606,7 +2603,12 @@ class Xml(object):
                             dtype='double')
 
         for index, element in enumerate(entry):
-            data[index] = np.fromstring(element.text, sep=' ')
+            try:
+                data[index] = np.fromstring(element.text, sep=' ')
+            except ValueError as e:
+                if str(e) == 'setting an array element with a sequence.':
+                    self._logger.error(self.ERROR_MESSAGES[self.ERROR_OVERFLOW])
+                    sys.exit(self.ERROR_OVERFLOW)                
 
         return data
 
@@ -2627,8 +2629,11 @@ class Xml(object):
 
         data = None
         if entry.text is not None:
+            if '****' in entry.text:
+                self._logger.error(self.ERROR_MESSAGES[self.ERROR_OVERFLOW])
+                sys.exit(self.ERROR_OVERFLOW)
             data = float(entry.text)
-
+        
         return data
 
     def _convert_i(self, entry):
@@ -2648,6 +2653,9 @@ class Xml(object):
 
         data = None
         if entry.text is not None:
+            if '****' in entry.text:
+                self._logger.error(self.ERROR_MESSAGES[self.ERROR_OVERFLOW])
+                sys.exit(self.ERROR_OVERFLOW)
             data = int(entry.text)
 
         return data
@@ -2678,9 +2686,8 @@ class Xml(object):
                 species[index] = constants.elements[
                     entry[index].text.split()[0].lower()]
             except KeyError:
-                self._logger.warning("There is an atomic element present in the "
-                                     "XML file that is unknown. Exiting.")
-                sys.exit(1)
+                self._logger.warning(self.ERROR_MESSAGES[self.ERROR_UNKNOWN_ELEMENT])
+                sys.exit(self.ERROR_UNKNOWN_ELEMENT)
 
         return species
 
@@ -2910,10 +2917,10 @@ class Xml(object):
     def _check_calc_status(self, status):
         allowed_entries = ["initial", "final", "all"]
         if status not in allowed_entries:
-            self._logger.error("The supplied status is not supported, "
-                               "please use any of the following values "
-                               + str(allowed_entries) + ". Exiting.")
-            sys.exit(1)
+            self._logger.error(self.ERROR_MESSAGES[self.ERROR_UNSUPPORTED_STATUS] + 
+                               " Please use any of the following values "
+                               + str(allowed_entries))
+            sys.exit(self.ERROR_UNSUPPORTED_STATUS)
 
     def _find(self, xml, locator):
         """Wrapper to check if the request returns something.
@@ -2965,29 +2972,6 @@ class Xml(object):
         else:
             return entry
 
-    def _check_file(self, file_path):
-        """
-        Check if a file exists
-
-        Parameters
-        ----------
-        file_path : string
-            The path of the file to be checked.
-
-        Returns
-        -------
-        None
-
-        """
-
-        # set logger
-        logger = logging.getLogger(sys._getframe().f_code.co_name)
-        logger.debug("Running check_file.")
-
-        if not os.path.isfile(file_path):
-            logger.error(file_path + "was not found. Exiting.")
-            sys.exit(1)
-
     def _file_size(self):
         """Returns the file size of a file.
 
@@ -2998,12 +2982,12 @@ class Xml(object):
         """
 
         if self._file_path is None and self._file_handler is None:
-            self._logger.error("Neither a file path or a file object is given.")
+            self._logger.error(self.ERROR_MESSAGES[self.ERROR_ONLY_ONE_ARGUMENT])
             return None
         if self._file_handler is None:
             # check if file exists
-            if not utils.file_exists(self._file_path):
-                self._logger.error("Can not calculate size.")
+            if not utils.file_exists(self._file_path, logger=self._logger):
+                self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_SIZE])
                 return None
 
             file_size = os.stat(self._file_path).st_size
@@ -3027,9 +3011,6 @@ class Xml(object):
             handler = self._file_handler
             mapping = mmap.mmap(handler.fileno(), 0, prot=mmap.PROT_READ)
         else:
-            if not utils.file_exists(self._file_path):
-                self._logger.error("Can not check file.")
-                return None
             handler = open(self._file_path)
             with handler as source:
                 mapping = mmap.mmap(source.fileno(), 0, prot=mmap.PROT_READ)

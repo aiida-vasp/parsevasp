@@ -1,7 +1,7 @@
 import os
 import pytest
 import numpy as np
-from parsevasp import vasprun
+from parsevasp.vasprun import Xml
 import utils
 
 """Test parsee, the event based extraction. This mode only
@@ -9,128 +9,28 @@ supports properly terminated XML files.
 
 """
 
-@pytest.fixture(scope = 'module')
-def xml_parser(request, tmpdir_factory):
+@pytest.fixture
+def xml_parser(request):
     """Load XML file. Test only terminated XML.
 
     """
-
+    filename = request.param
     testdir = os.path.dirname(__file__)
-    xmlfile = testdir + "/basic.xml"
-    xml  = vasprun.Xml(xmlfile, event = True)
+    xmlfile = os.path.join(testdir, filename)
+    xml  = Xml(xmlfile, event = True)
     
     return xml
 
-@pytest.fixture(scope = 'module', params=[0, 1])
-def xml_parser_relax(request, tmpdir_factory):
-    """Load XML file. Test only terminated XML.
 
-    """
-
-    testdir = os.path.dirname(__file__)
-    xmlfile = testdir + "/basicrelax.xml"
-    xml  = vasprun.Xml(xmlfile, event = True)
-
-    return xml
-
-
-@pytest.fixture(scope = 'module')
-def xml_parser_spin(request, tmpdir_factory):
-    """Load XML file. Test only terminated XML.
-
-    """
-
-    testdir = os.path.dirname(__file__)
-    xmlfile = testdir + "/basicspin.xml"
-    xml  = vasprun.Xml(xmlfile, event = True)
-    
-    return xml
-
-@pytest.fixture(scope = 'module', params=[0, 1])
-def xml_parser_partial(request, tmpdir_factory):
-    """Load XML file. Test only terminated XML.
-
-    """
-
-    testdir = os.path.dirname(__file__)
-    xmlfile = testdir + "/basicpartial.xml"
-    xml  = vasprun.Xml(xmlfile, event = True)
-    
-    return xml
-
-@pytest.fixture(scope = 'module', params=[0, 1])
-def xml_parser_dielectrics(request, tmpdir_factory):
-    """Load XML file. Test only terminated XML.
-
-    """
-
-    testdir = os.path.dirname(__file__)
-    xmlfile = testdir + "/dielectrics.xml"
-    xml  = vasprun.Xml(xmlfile, event = True)
-    
-    return xml
-
-@pytest.fixture(scope = 'module', params=[0, 1])
-def xml_parser_disp(request, tmpdir_factory):
-    """Load XML file. Test only terminated XML.
-
-    """
-
-    testdir = os.path.dirname(__file__)
-    xmlfile = testdir + "/disp.xml"
-    xml  = vasprun.Xml(xmlfile, event = True)
-    
-    return xml
-
-@pytest.fixture(scope = 'module', params=[0, 1])
-def xml_parser_localfield(request, tmpdir_factory):
-    """Load XML file. Test only terminated XML.
-
-    """
-
-    testdir = os.path.dirname(__file__)
-    xmlfile = testdir + "/localfield.xml"
-    xml  = vasprun.Xml(xmlfile, event = True)
-
-    return xml
-
-@pytest.fixture(scope = 'module', params=[0])
-def xml_parser_magmom(request, tmpdir_factory):
-    """Load XML file. Test only terminated XML.
-
-    """
-    testdir = os.path.dirname(__file__)
-    xmlfile = testdir + "/magmom.xml"
-    xml = vasprun.Xml(xmlfile, event = True)
-    return xml
-
-@pytest.fixture(scope = 'module', params=[0])
-def xml_parser_velocities(request, tmpdir_factory):
-    """Load XML file. Test only terminated XML.
-
-    """
-    testdir = os.path.dirname(__file__)
-    xmlfile = testdir + "/velocities.xml"
-    xml = vasprun.Xml(xmlfile, event = True)
-    return xml
-
-@pytest.fixture(scope = 'module', params=[0])
-def xml_parser_specific(request, tmpdir_factory):
-    """Load XML file. Test both terminated and truncated XML.
-
-    """
-    testdir = os.path.dirname(__file__)
-    xmlfile = testdir + "/specific.xml"
-    xml = vasprun.Xml(xmlfile, event = True)
-    return xml
-
-
+@pytest.mark.parametrize('xml_parser', ['basic.xml'], indirect=True)
 def test_xml_exist(xml_parser):
     """Check if xml_parser exists.
 
     """
     assert xml_parser.get_dict()
-    
+
+
+@pytest.mark.parametrize('xml_parser', ['basic.xml'], indirect=True)
 def test_xml_energies(xml_parser):
     """Check energies.
 
@@ -144,6 +44,8 @@ def test_xml_energies(xml_parser):
     assert utils.isclose(energies[0], -43.312106219999997)
     assert utils.isclose(energies[1], -43.312106219999997)
 
+
+@pytest.mark.parametrize('xml_parser', ['basic.xml'], indirect=True)
 def test_xml_forces(xml_parser):
     """Check forces.
 
@@ -164,8 +66,9 @@ def test_xml_forces(xml_parser):
     forces = xml_parser.get_forces('all')
     np.testing.assert_allclose(forces[1], test)
     np.testing.assert_allclose(forces[2], test)
-    
 
+
+@pytest.mark.parametrize('xml_parser', ['basic.xml'], indirect=True)
 def test_xml_stress(xml_parser):
     """Check stress.
 
@@ -182,6 +85,8 @@ def test_xml_stress(xml_parser):
     np.testing.assert_allclose(stress[1], test)
     np.testing.assert_allclose(stress[2], test)
 
+
+@pytest.mark.parametrize('xml_parser', ['basic.xml'], indirect=True)
 def test_xml_hessian(xml_parser):
     """Check hessian matrix.
 
@@ -189,6 +94,8 @@ def test_xml_hessian(xml_parser):
 
     assert xml_parser.get_hessian() == None
 
+
+@pytest.mark.parametrize('xml_parser', ['basic.xml'], indirect=True)
 def test_xml_dynmat(xml_parser):
     """Check the dynamical metrix.
 
@@ -196,6 +103,8 @@ def test_xml_dynmat(xml_parser):
     
     assert xml_parser.get_dynmat() == None
 
+
+@pytest.mark.parametrize('xml_parser', ['basic.xml'], indirect=True)
 def test_xml_dielectrics(xml_parser):
     """Check the dielectric functions.
 
@@ -203,6 +112,8 @@ def test_xml_dielectrics(xml_parser):
 
     assert xml_parser.get_dielectrics() == None
 
+
+@pytest.mark.parametrize('xml_parser', ['basic.xml'], indirect=True)
 def test_xml_born(xml_parser):
     """Check the born effective masses.
 
@@ -210,6 +121,8 @@ def test_xml_born(xml_parser):
     
     assert xml_parser.get_born() == None
 
+
+@pytest.mark.parametrize('xml_parser', ['basic.xml'], indirect=True)
 def test_xml_fermi_level(xml_parser):
     """Check the Fermi level.
 
@@ -217,6 +130,8 @@ def test_xml_fermi_level(xml_parser):
 
     assert xml_parser.get_fermi_level() == 5.92134456
 
+
+@pytest.mark.parametrize('xml_parser', ['basic.xml'], indirect=True)
 def test_xml_unitcell(xml_parser):
     """Check the unitcell.
 
@@ -232,8 +147,9 @@ def test_xml_unitcell(xml_parser):
     unitcell = xml_parser.get_unitcell('all')
     np.testing.assert_allclose(unitcell[1], test)
     np.testing.assert_allclose(unitcell[2], test)
-                                
 
+
+@pytest.mark.parametrize('xml_parser', ['basic.xml'], indirect=True)
 def test_xml_positions(xml_parser):
     """Check the positions.
 
@@ -254,7 +170,9 @@ def test_xml_positions(xml_parser):
     positions = xml_parser.get_positions('all')
     np.testing.assert_allclose(positions[1], test)
     np.testing.assert_allclose(positions[2], test)
-                                
+
+
+@pytest.mark.parametrize('xml_parser', ['basic.xml'], indirect=True)
 def test_xml_kpoints(xml_parser):
     """Check the kpoints.
 
@@ -282,7 +200,9 @@ def test_xml_kpoints(xml_parser):
                      [ 0.5       ,  0.5       ,  0.33333333],
                      [ 0.5       ,  0.5       ,  0.5       ]])
     np.testing.assert_allclose(kpoints, test)
-    
+
+
+@pytest.mark.parametrize('xml_parser', ['basic.xml'], indirect=True)
 def test_xml_kpointsw(xml_parser):
     """Check the kpoint weights.
 
@@ -298,6 +218,8 @@ def test_xml_kpointsw(xml_parser):
                      0.02777778,  0.00462963])
     np.testing.assert_allclose(kpointsw, test)
 
+
+@pytest.mark.parametrize('xml_parser', ['basic.xml'], indirect=True)
 def test_xml_dos(xml_parser):
     """Check the density of states
     
@@ -461,6 +383,8 @@ def test_xml_dos(xml_parser):
         0.00000000e+00])
     np.testing.assert_allclose(dos['total']['total'], test)
 
+
+@pytest.mark.parametrize('xml_parser', ['basic.xml'], indirect=True)
 def test_xml_eigenvalues(xml_parser):
     """Check the egenvalues.
     
@@ -483,14 +407,16 @@ def test_xml_eigenvalues(xml_parser):
         9.69530000e+00,   8.89970000e+00,   9.02760000e+00,   8.98830000e+00])
     np.testing.assert_allclose(eigenvalues['total'][23], test)
 
-def test_xml_eigenvelocities(xml_parser_velocities):
+
+@pytest.mark.parametrize('xml_parser', ['velocities.xml'], indirect=True)
+def test_xml_eigenvelocities(xml_parser):
     """Check the egenvelocities.
 
     """
 
-    eigenvelocities = xml_parser_velocities.get_eigenvelocities()
-    kpoints = xml_parser_velocities.get_kpoints_specific()
-    kpointsw = xml_parser_velocities.get_kpointsw_specific()
+    eigenvelocities = xml_parser.get_eigenvelocities()
+    kpoints = xml_parser.get_kpoints_specific()
+    kpointsw = xml_parser.get_kpointsw_specific()
     assert eigenvelocities['total'].shape == (20, 10, 4)
     assert kpoints.shape == (10, 3)
     assert kpointsw.shape == (10,)
@@ -532,15 +458,17 @@ def test_xml_eigenvelocities(xml_parser_velocities):
                      5.081e-05, 5.081e-05])
     np.testing.assert_allclose(kpointsw, test)
 
-def test_xml_eigenvalues_specific(xml_parser_specific):
+
+@pytest.mark.parametrize('xml_parser', ['specific.xml'], indirect=True)
+def test_xml_eigenvalues_specific(xml_parser):
     """Check the egenvalues on specific k-point grids.
 
     """
 
-    eigenvalues = xml_parser_specific.get_eigenvalues_specific()
+    eigenvalues = xml_parser.get_eigenvalues_specific()
     print(type(eigenvalues))
-    kpoints = xml_parser_specific.get_kpoints_specific()
-    kpointsw = xml_parser_specific.get_kpointsw_specific()
+    kpoints = xml_parser.get_kpoints_specific()
+    kpointsw = xml_parser.get_kpointsw_specific()
     assert eigenvalues['total'].shape == (20, 10)
     assert kpoints.shape == (10, 3)
     assert kpointsw.shape == (10,)
@@ -565,6 +493,8 @@ def test_xml_eigenvalues_specific(xml_parser_specific):
                      4.0644e-04, 4.0644e-04, 4.0644e-04, 4.0644e-04])
     np.testing.assert_allclose(kpointsw, test)
 
+
+@pytest.mark.parametrize('xml_parser', ['basic.xml'], indirect=True)
 def test_xml_occupancies(xml_parser):
     """Check the occupancies.
     
@@ -587,13 +517,14 @@ def test_xml_occupancies(xml_parser):
         1.00000000e+00,   1.00000000e+00,   1.00000000e+00,   1.00000000e+00])
     np.testing.assert_allclose(occupancies[15], test)
 
-    
-def test_xml_dos_spin(xml_parser_spin):
+
+@pytest.mark.parametrize('xml_parser', ['basicspin.xml'], indirect=True)
+def test_xml_dos_spin(xml_parser):
     """Check the density of states for spin resolved.
     
     """
     
-    dos = xml_parser_spin.get_dos()
+    dos = xml_parser.get_dos()
     assert dos['down']['partial'] == None
     assert dos['up']['partial'] == None
     test = np.array([-10.    ,  -9.98  ,  -9.96,
@@ -614,12 +545,14 @@ def test_xml_dos_spin(xml_parser_spin):
     
     np.testing.assert_allclose(dos['up']['total'][460:470], test)
 
-def test_xml_eigenvalues_spin(xml_parser_spin):
+
+@pytest.mark.parametrize('xml_parser', ['basicspin.xml'], indirect=True)
+def test_xml_eigenvalues_spin(xml_parser):
     """Check the egenvalues for spin resolved.
     
     """
     
-    eigenvalues = xml_parser_spin.get_eigenvalues()
+    eigenvalues = xml_parser.get_eigenvalues()
     test = np.array([-6.2357,  -6.1505,  -5.8992])
     np.testing.assert_allclose(eigenvalues['down'][0, 0:3],test)
     test = np.array([8.2369,   8.5213,   9.536])
@@ -629,12 +562,14 @@ def test_xml_eigenvalues_spin(xml_parser_spin):
     test = np.array([8.2371,   8.5208,   9.5273])
     np.testing.assert_allclose(eigenvalues['up'][23, 0:3], test)
 
-def test_xml_dos_partial(xml_parser_partial):
+
+@pytest.mark.parametrize('xml_parser', ['basicpartial.xml'], indirect=True)
+def test_xml_dos_partial(xml_parser):
     """Check the decomposed density of states.
     
     """
 
-    dos = xml_parser_partial.get_dos()
+    dos = xml_parser.get_dos()
     assert dos['total']['partial'].shape == (8, 1000, 9)
     test = np.array([ 0.1287,  0.1216,
                       0.1152,  0.1095,
@@ -648,15 +583,17 @@ def test_xml_dos_partial(xml_parser_partial):
                       0.1059,  0.1031,
                       0.101 ,  0.0995])
     np.testing.assert_allclose(dos['total']['partial'][7, 460:470, 0], test)
-    
-def test_xml_eivenalues_partial(xml_parser_partial):
+
+
+@pytest.mark.parametrize('xml_parser', ['basicpartial.xml'], indirect=True)
+def test_xml_eivenalues_partial(xml_parser):
     """Check the decomposed eigenvalues.
     
     """
 
-    eigenvalues = xml_parser_partial.get_eigenvalues()
+    eigenvalues = xml_parser.get_eigenvalues()
     assert eigenvalues['total'].shape == (21, 64)
-    projected = xml_parser_partial.get_projectors()
+    projected = xml_parser.get_projectors()
     assert projected['total'].shape == (8, 21, 64, 9)
     test = np.array([ 0.0518,  0.0507,  0.0521])
     np.testing.assert_allclose(projected['total'][0, 0, 2:5, 0], test)
@@ -665,12 +602,14 @@ def test_xml_eivenalues_partial(xml_parser_partial):
     test = np.array([ 0.025 ,  0.0001,  0.0243])
     np.testing.assert_allclose(projected['total'][4, 10, 2:5, 1], test) 
 
-def test_xml_dielectrics(xml_parser_dielectrics):
+
+@pytest.mark.parametrize('xml_parser', ['dielectrics.xml'], indirect=True)
+def test_xml_dielectrics(xml_parser):
     """Check the dielectric function.
     
     """
 
-    dielectrics = xml_parser_dielectrics.get_dielectrics()
+    dielectrics = xml_parser.get_dielectrics()
     assert dielectrics['real'].shape == (1000, 6)
     assert dielectrics['imag'].shape == (1000, 6)
     assert dielectrics['energy'].shape == (1000,)
@@ -690,12 +629,14 @@ def test_xml_dielectrics(xml_parser_dielectrics):
                       10.1492,  10.1698])
     np.testing.assert_allclose(dielectrics['energy'][490:495], test)
 
-def test_xml_dynmat(xml_parser_disp):
+
+@pytest.mark.parametrize('xml_parser', ['disp.xml'], indirect=True)
+def test_xml_dynmat(xml_parser):
     """Check the dynamical matrix from displacements.
     
     """
 
-    dynmat = xml_parser_disp.get_dynmat()
+    dynmat = xml_parser.get_dynmat()
     assert dynmat['eigenvectors'].shape == (24, 24)
     assert dynmat['eigenvalues'].shape == (24,)
     test = np.array([ -5.16257351e-01,
@@ -708,13 +649,15 @@ def test_xml_dynmat(xml_parser_disp):
     np.testing.assert_allclose(dynmat['eigenvectors'][10, 12:15], test)
     test = np.array([-0.73230558, -0.73016562, -0.72285018])
     np.testing.assert_allclose(dynmat['eigenvalues'][5:8], test)
-    
-def test_xml_hessian(xml_parser_disp):
+
+
+@pytest.mark.parametrize('xml_parser', ['disp.xml'], indirect=True)
+def test_xml_hessian(xml_parser):
     """Check the hessian from displacements.
     
     """
 
-    hessian = xml_parser_disp.get_hessian()
+    hessian = xml_parser.get_hessian()
     assert hessian.shape == (24, 24)
     test = np.array([-0.46355041, 0.          , 0.         , -0.05917741])
     np.testing.assert_allclose(hessian[0][0:4], test)
@@ -723,12 +666,14 @@ def test_xml_hessian(xml_parser_disp):
     test = np.array([ 0.11431486, -0.0818301 ])
     np.testing.assert_allclose(hessian[15][9:11], test)
 
-def test_xml_born(xml_parser_localfield):
+
+@pytest.mark.parametrize('xml_parser', ['localfield.xml'], indirect=True)
+def test_xml_born(xml_parser):
     """Check the hessian from displacements.
     
     """
 
-    born = xml_parser_localfield.get_born()
+    born = xml_parser.get_born()
     assert born.shape == (8,3,3)
     test = np.array([[ 0.00637225, 0.        , 0.        ],
                      [-0.00064313,-0.20498926, 0.05499278],
@@ -739,41 +684,45 @@ def test_xml_born(xml_parser_localfield):
                      [ 0.01046009,  0.0280611 ,  0.13400096]])
     np.testing.assert_allclose(born[5], test)
 
-def test_xml_structure_magmom(xml_parser_magmom):
+
+@pytest.mark.parametrize('xml_parser', ['magmom.xml'], indirect=True)
+def test_xml_structure_magmom(xml_parser):
     """Check the unitcell and positions for a magmom xml file.
 
     """
 
-    unitcell_initial = xml_parser_magmom.get_unitcell('initial')
+    unitcell_initial = xml_parser.get_unitcell('initial')
     test = np.array([[0.     ,3.2395, 3.2395],
                      [3.2395 ,0.     ,3.2395],
                      [3.2395 ,3.2395 ,0.    ]])
     np.testing.assert_allclose(unitcell_initial, test)
-    unitcell_final = xml_parser_magmom.get_unitcell('final')
+    unitcell_final = xml_parser.get_unitcell('final')
     np.testing.assert_allclose(unitcell_final, unitcell_initial)
-    unitcell_all = xml_parser_magmom.get_unitcell('all')
+    unitcell_all = xml_parser.get_unitcell('all')
     np.testing.assert_allclose(unitcell_all[1], unitcell_initial)
     np.testing.assert_allclose(unitcell_all[2], unitcell_initial)
 
-    positions_initial = xml_parser_magmom.get_positions('initial')
+    positions_initial = xml_parser.get_positions('initial')
     test = np.array([[0.   ,0.   ,0.  ],
                      [0.25 ,0.25 ,0.25]])
     np.testing.assert_allclose(positions_initial, test)
-    positions_final = xml_parser_magmom.get_positions('final')
+    positions_final = xml_parser.get_positions('final')
     np.testing.assert_allclose(positions_final, positions_initial)
-    positions_all = xml_parser_magmom.get_positions('all')
+    positions_all = xml_parser.get_positions('all')
     np.testing.assert_allclose(positions_all[1], positions_initial)
     np.testing.assert_allclose(positions_all[2], positions_initial)
 
-def test_xml_ionic(xml_parser_relax):
+
+@pytest.mark.parametrize('xml_parser', ['basicrelax.xml'], indirect=True)
+def test_xml_ionic(xml_parser):
     """Check the unitcell, positions, forces and stress for multiple ionic steps.
 
     """
 
-    unitcells = xml_parser_relax.get_unitcell('all')
-    positions = xml_parser_relax.get_positions('all')
-    forces = xml_parser_relax.get_forces('all')
-    stress = xml_parser_relax.get_stress('all')
+    unitcells = xml_parser.get_unitcell('all')
+    positions = xml_parser.get_positions('all')
+    forces = xml_parser.get_forces('all')
+    stress = xml_parser.get_stress('all')
 
     # check that all entries are present
     assert len(unitcells) == 19

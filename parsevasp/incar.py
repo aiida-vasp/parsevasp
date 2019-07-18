@@ -2,18 +2,37 @@
 import sys
 import logging
 from io import StringIO
-# sys.path.append(os.path.dirname(__file__))
-# print sys.path
 
 from six import iteritems
 from past.builtins import basestring 
 
-from . import utils
-from . import constants
+from parsevasp import utils
+from parsevasp import constants
+from parsevasp.base import BaseParser
 
+class Incar(BaseParser):
 
-class Incar(object):
-
+    ERROR_UNSUPPORTED_TAG = 100
+    ERROR_TWO_EQUALS = 101
+    ERROR_INVALID_COMMENT_SIGN = 102
+    ERROR_MULTIPLE_COMMENTS = 103
+    ERROR_VALUES_NOT_SAME_TYPE = 104
+    ERROR_INVALID_TYPE = 105
+    ERROR_MESSAGES = BaseParser.ERROR_MESSAGES.update({
+        ERROR_TWO_EQUALS: "Detected two equal signs for an entry in the INCAR file.",
+        ERROR_INVALID_COMMENT_SIGN: "Detected a comment line that does not start "
+        "with a #. Please correct and be consistent.",
+        ERROR_MULTIPLE_COMMENTS: "Multiple comment tags detected.",
+        ERROR_UNSUPPORTED_TAG: "The supplied INCAR tag is not "
+        "officially supported. Please consult the VASP manual or "
+        "set the validate_tags attribute for the Incar class initializer to "
+        "False if you want to disable tag checking.",
+        ERROR_VALUES_NOT_SAME_TYPE: "All values of an INCAR tag are not of the same type. "
+        "Maybe you forgot to add # as a comment tag?",
+        ERROR_INVALID_TYPE: "The type one of the supplied values for the INCAR tag "
+        "is not recognized."
+    })
+    
     def __init__(self, incar_string=None, incar_dict=None,
                  file_path=None, file_handler=None, logger=None, prec=None, validate_tags=True):
         """Initialize an INCAR object and set content as a dictionary.
@@ -25,12 +44,6 @@ class Incar(object):
             breaks if multiline, otherwise the INCAR will be mangled.
         incar_dict : dict, optional
             A dictionary containing the INCAR entries.
-        file_path : string, optional
-            The file path in which the INCAR is read.
-        file_hander: object
-            A valid file handler object.
-        logger : object, optional
-            A standard Python logger object.
         prec : int, optional
             An integer describing how many decimals the users wants
             when printing files.
@@ -39,18 +52,11 @@ class Incar(object):
 
         """
 
-        self.file_path = file_path
-        self.file_handler = file_handler
-        self.incar_dict = incar_dict
-        self.incar_string = incar_string
-        self.validate_tags = validate_tags
-
-        # set logger
-        if logger is not None:
-            self._logger = logger
-        else:
-            logging.basicConfig(level=logging.DEBUG)
-            self._logger = logging.getLogger('Incar')
+        super(Incar, self).__init__(file_path=file_path, file_handler=file_handler, logger=logger)
+        
+        self._incar_dict = incar_dict
+        self._incar_string = incar_string
+        self._validate_tags = validate_tags
 
         # set precision
         if prec is None:
@@ -60,32 +66,30 @@ class Incar(object):
         self._width = self._prec + 4
 
         # check that only one argument is supplied
-        if (incar_string is not None and incar_dict is not None) \
-           or (incar_string is not None and file_path is not None) \
-           or (incar_dict is not None and file_path is not None) and file_handler is not None:
-            self._logger.error("Please only supply one argument when "
-                              "initializing Incar. Exiting.")
-            sys.exit(1)
+        if (self._incar_string is not None and self._incar_dict is not None) \
+           or (self._incar_string is not None and self._file_path is not None) \
+           or (self._incar_dict is not None and self._file_path is not None) and self._file_handler is not None:
+            self._logger.error(self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
+            sys.exit(self.ERROR_USE_ONE_ARGUMENT)
 
         # check that at least one is supplied
-        if (incar_string is None and incar_dict is None
-                and file_path is None and file_handler is None):
-            self._logger.error("Please supply one argument when "
-                              "initializing Incar. Exiting.")
-            sys.exit(1)
+        if (self._incar_string is None and self._incar_dict is None
+                and self._file_path is None and self._file_handler is None):
+            self._logger.error(self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
+            sys.exit(self.ERROR_USE_ONE_ARGUMENT)
 
-        if file_path is not None or file_handler is not None:
+        if self._file_path is not None or self._file_handler is not None:
             # create list from a file
             incar_list = self._from_file()
 
-        if incar_string is not None:
+        if self._incar_string is not None:
             # create list from a string
             incar_list = self._from_string()
 
-        if incar_dict is None:
+        if self._incar_dict is None:
             incar = self._from_list(incar_list)
         else:
-            incar = self._from_dict(incar_dict)
+            incar = self._from_dict(self._incar_dict)
 
         # store entries
         self.entries = incar
@@ -99,7 +103,7 @@ class Incar(object):
 
         """
 
-        incar = utils.readlines_from_file(self.file_path, self.file_handler)
+        incar = utils.readlines_from_file(self._file_path, self._file_handler)
         return incar
 
     def _from_string(self):
@@ -108,7 +112,7 @@ class Incar(object):
 
         """
 
-        incar = self.incar_string.splitlines()
+        incar = self._incar_string.splitlines()
         return incar
 
     def _from_list(self, incar):
@@ -154,16 +158,14 @@ class Incar(object):
                     # then split on = and analyze each entry
                     final_split = ntry.split("=")
                     if len(final_split) > 2:
-                        self._logger.error("Detected two equal signs for an entry in "
-                                          "the INCAR file. The following line contains "
-                                          "the problem:\n\n" +
-                                          ntry + "\n\nPlease correct. Exiting.")
-                        sys.exit(1)
+                        self._logger.error(self.ERROR_MESSAGES[self.ERROR_TWO_EQUALS] +
+                                           " The following line contains "
+                                           "the problem:\n\n" +
+                                           ntry + "\n\nPlease correct. Exiting.")
+                        sys.exit(self.ERROR_TWO_EQUALS)
                     if len(final_split) == 1:
-                        self._logger.error("Detected a comment line that does not start "
-                                          "with a #. Please correct and be consistent. "
-                                          "Exiting.")
-                        sys.exit(1)
+                        self._logger.error(self.ERROR_MESSAGES[self.ERROR_INVALID_COMMENT_SIGN])
+                        sys.exit(self.ERROR_INVALID_COMMENT_SIGN)
                     tag = final_split[0]
                     value = final_split[1]
                     # create new instance of entry
@@ -205,9 +207,9 @@ class Incar(object):
             if isinstance(value, str):
                 comment = value.split('#')
                 if len(comment) > 2:
-                    self._logger.info("Multiple comment tags detected for tag " +
-                                     str(tag) + ". Exiting.")
-                    sys.exit(1)
+                    self._logger.info(self.ERROR_MESSAGES[self.ERROR_MULTIPLE_COMMENTS] +
+                                      " The tag " + str(tag) + " is affected.")
+                    sys.exit(self.ERROR_MULTIPLE_COMMENTS)
                 if len(comment) == 1:
                     comment = None
             # create new instance of entry
@@ -281,16 +283,15 @@ class Incar(object):
         """
         # If we do not want to validate (e.g. if you supply a set which contains
         # unsupported keys, return now).
-        if not self.validate_tags:
+        if not self._validate_tags:
             return
         
         allowed_keys = constants.incar_tags.keys()
         for key, value in self.entries.items():
             if key not in allowed_keys:
-                self._logger.error("The supplied tag {} is not recognized as an "
-                                   "officially supported INCAR tag. Please consult "
-                                   "the manual. Exiting.".format(key.upper()))
-                sys.exit(1)
+                self._logger.error(self.ERROR_MESSAGES[self.ERROR_UNSUPPORTED_TAG] +
+                                   " The tag in question is {}".format(key.upper()))
+                sys.exit(self.ERROR_UNSUPPORTED_TAG)
 
         return
 
@@ -415,9 +416,9 @@ class Incar(object):
 
         """
 
-        incar = utils.file_handler(file_path, status='w')
+        incar = utils.file_handler(file_path, status='w', logger=self._logger)
         self._write(incar = incar)
-        utils.file_handler(file_handler=incar)
+        utils.file_handler(file_handler=incar, logger=self._logger)
 
     def _write(self, incar, comments=False):
         """Write the content of the current Incar instance to
@@ -571,11 +572,9 @@ class IncarItem(object):
 
             # check if all values are the same type (they should be)
             if not all(x == content_type[0] for x in content_type):
-                self._logger.error("All values of the tag " + clean_tag.upper() +
-                                  " are not of the same type. Most likely "
-                                  "you forgot to add # as a comment tag. "
-                                  "Exiting.")
-                sys.exit(1)
+                self._logger.error(self.ERROR_MESSAGES[self.ERROR_VALUES_NOT_SAME_TYPE] +
+                                   " The tag in question is: " + clean_tag.upper())
+                sys.exit(self.ERROR_VALUES_NOT_SAME_TYPE)
 
         else:
             # if the user wants to assign an element as a list, int,
@@ -583,10 +582,9 @@ class IncarItem(object):
 
             if not (isinstance(value, int) or isinstance(value, float)
                     or isinstance(value, bool) or (type(value) is list)):
-                self._logger.error("The type: " + str(type(value)) + " of the "
-                                  "supplied value for the INCAR tag is not "
-                                  "recognized. Exiting.")
-                sys.exit(1)
+                self._logger.error(self.ERROR_MESSAGES[self.ERROR_INVALID_TYPE] +
+                                                       " The tag in question is: " + clean_tag.upper())
+                sys.exit(self.ERROR_INVALID_TYPE)
             clean_value = value
 
         # finally clean comment by removing any redundant spaces
