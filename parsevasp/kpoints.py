@@ -23,7 +23,7 @@ class Kpoints(BaseParser):
     ERROR_TOO_LARGE_POINT_INDEX = 211
     ERROR_INVALID_CENTERING = 212
     ERROR_INVALID_MODE = 213
-    ERROR_MESSAGES = BaseParser.ERROR_MESSAGES.update({
+    BaseParser.ERROR_MESSAGES.update({
         ERROR_KPOINTS_NOT_DIRECT: "Please supply the KPOINTS in direct coordinates.",
         ERROR_TETRA_FIVE: "The connection line for the tetrahedra info "
         "in the KPOINTS file does not contain five entries.",
@@ -42,7 +42,7 @@ class Kpoints(BaseParser):
         ERROR_INVALID_CENTERING: "The supplied 'centering' have to be either 'Gamma' or 'Monkhorst-Pack'.",
         ERROR_INVALID_MODE: "The supplied 'mode' have to be either explicit, automatic or line-mode."
     })
-
+    ERROR_MESSAGES = BaseParser.ERROR_MESSAGES
     
     def __init__(self, kpoints_string=None, kpoints_dict=None,
                  file_path=None, file_handler=None, logger=None, prec=None):

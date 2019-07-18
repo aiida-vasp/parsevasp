@@ -20,7 +20,7 @@ class Poscar(BaseParser):
     ERROR_INVALID_ENTRY = 305
     ERROR_NO_DIRECT = 306
     ERROR_NEGATIVE_SCALING = 307
-    ERROR_MESSAGES = BaseParser.ERROR_MESSAGES.update({
+    BaseParser.ERROR_MESSAGES.update({
         ERROR_NEGATIVE_SCALING: "Currently negative scaling values in POSCAR is not supported.",
         ERROR_VASPFOUR: "VASP 4 POSCAR is not supported. User, please modernize. ",
         ERROR_NO_VEL_OR_PRED: "A velocity or predictor-corrector coordinate was not detected.",
@@ -30,7 +30,7 @@ class Poscar(BaseParser):
         ERROR_INVALID_ENTRY: "Only 'comment', 'unitcell' or 'sites' is allowed as input for entry.",
         ERROR_NO_DIRECT: "Coordinate should be direct. Did you hack this?"
     })
-
+    ERROR_MESSAGES = BaseParser.ERROR_MESSAGES
     
     def __init__(self, poscar_string=None, poscar_dict=None,
                  file_path=None, file_handler=None, logger=None, prec=None, conserve_order=False):
