@@ -18,7 +18,7 @@ class Incar(BaseParser):
     ERROR_MULTIPLE_COMMENTS = 103
     ERROR_VALUES_NOT_SAME_TYPE = 104
     ERROR_INVALID_TYPE = 105
-    ERROR_MESSAGES = BaseParser.ERROR_MESSAGES.update({
+    BaseParser.ERROR_MESSAGES.update({
         ERROR_TWO_EQUALS: "Detected two equal signs for an entry in the INCAR file.",
         ERROR_INVALID_COMMENT_SIGN: "Detected a comment line that does not start "
         "with a #. Please correct and be consistent.",
@@ -32,6 +32,7 @@ class Incar(BaseParser):
         ERROR_INVALID_TYPE: "The type one of the supplied values for the INCAR tag "
         "is not recognized."
     })
+    ERROR_MESSAGES = BaseParser.ERROR_MESSAGES
     
     def __init__(self, incar_string=None, incar_dict=None,
                  file_path=None, file_handler=None, logger=None, prec=None, validate_tags=True):
