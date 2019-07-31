@@ -31,7 +31,7 @@ class VersionUpdater(object):
     Updates the version information in
 
     * setup.json
-    * aiida_vasp/__init__.py
+    * parsevasp/__init__.py
 
     to the current version number.
 
@@ -75,13 +75,12 @@ class VersionUpdater(object):
     def tag_version(self):
         """Get the current version number from ``git describe``, fall back to setup.json."""
         try:
-            describe_byte_string = subprocess.check_output(['git', 'describe', '--tags', '--match', 'v*.*.*'])
-            version_string = re.findall(self.version_pat, describe_byte_string)[0]
+            describe_byte_string = subprocess.check_output(['git', 'describe', '--tags', '--match', '*.*.*'])
+            version_string = re.findall(self.version_pat, describe_byte_string.decode())[0]
         except subprocess.CalledProcessError:
             with open(self.setup_json.strpath, 'r') as setup_fo:
                 setup = json.load(setup_fo)
                 version_string = setup['version']
-
         return version.parse(version_string)
 
     def get_version(self):
