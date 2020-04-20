@@ -20,10 +20,10 @@ class Outcar(BaseParser):
         """
 
         super(Outcar, self).__init__(file_path=file_path, file_handler=file_handler, logger=logger)
-        
+
         self._conserve_order = conserve_order
 
-        # check that at least one is suplpied
+        # check that at least one is supplied
         if self._file_path is None and self._file_handler is None:
             self._logger.error(self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
             sys.exit(self.ERROR_USE_ONE_ARGUMENT)
@@ -47,7 +47,8 @@ class Outcar(BaseParser):
                                    'num_space_group_operations': {'static': [], 'dynamic': []},
                                    'site_symmetry_at_origin': {'static': [], 'dynamic': []},
                                    'primitive_translations': [],
-                                   'point_group': {'static': [], 'dynamic': []}}
+                                   'point_group': {'static': [], 'dynamic': []}},
+                      'magnetization': {'site_moment': {}, 'cell_magnetization': {}}
                       }
 
 
@@ -100,12 +101,14 @@ class Outcar(BaseParser):
         Notes
         -----
         No checking for consistency is done here. We do this at a later step
-        in order to be able to keep the input methods as clean as posible.
+        in order to be able to keep the input methods as clean as possible.
 
         """
 
 
         config = ''
+        mag_found = False
+        s_orb = {0:'s', 1:'p', 2:'d', 3:'f'}
         for index, line in enumerate(outcar):
 
             # first, fetch the symmetry
@@ -155,6 +158,23 @@ class Outcar(BaseParser):
                 for idx in range(3, 9):
                     tensor.append([float(item) for item in outcar[index+idx].strip().split()[1:]])
                 self._data['elastic_moduli']['total'] = np.asarray(tensor)
+            if line.strip().startswith('magnetization'):
+                _counter = 0
+                while not mag_found:
+                    if not outcar[index+4+_counter].strip().startswith('-') and not outcar[index+4+_counter].strip().startswith('tot'):
+                        mag_line = outcar[index+4+_counter].split()
+                        self._data['magnetization']['site_moment'][mag_line[0]] = dict()
+                        for _count, orb in enumerate(mag_line[1:-1]):
+                            self._data['magnetization']['site_moment'][mag_line[0]][s_orb[_count]] = float(orb)
+                        self._data['magnetization']['site_moment'][mag_line[0]]['tot'] = float(mag_line[-1])
+                    if outcar[index+4+_counter].strip().startswith('tot'):
+                        mag_line = outcar[index+4+_counter].split()
+                        self._data['magnetization']['cell_magnetization'] = dict()
+                        for _count, orb in enumerate(mag_line[1:-1]):
+                            self._data['magnetization']['cell_magnetization'][s_orb[_count]] = float(orb )
+                        self._data['magnetization']['cell_magnetization']['tot'] = float(mag_line[-1])
+                        mag_found = True
+                    _counter = _counter + 1
 
 
     def get_symmetry(self):
@@ -190,3 +210,20 @@ class Outcar(BaseParser):
 
         elastic = self._data['elastic_moduli']
         return elastic
+
+    def get_magnetization(self):
+        """Return the magnetization of the cell.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        magnetic : dict
+            A dictionary containing the magnetization of the cell.
+
+        """
+
+        magnetic = self._data['magnetization']
+        return magnetic
