@@ -158,22 +158,32 @@ def test_outcar_magnetization(outcar_magnetization_parser):
 
     magnetization = outcar_magnetization_parser.get_magnetization()
     test = {
-        'site_moment':{
-            '1': {'s': -0.014, 'p': -0.051, 'd': 1.687, 'tot': 1.621},
-            '2': {'s': -0.015, 'p': -0.052, 'd': 1.686, 'tot': 1.619},
-            '3': {'s': -0.014, 'p': -0.053, 'd': 1.708, 'tot': 1.64},
-            '4': {'s': -0.014, 'p': -0.053, 'd': 1.708, 'tot': 1.64}
+        'sphere': {
+            'm_x': {
+                'site_moment': {
+                    '1': {'s': -0.014, 'p': -0.051, 'd': 1.687, 'tot': 1.621},
+                    '2': {'s': -0.015, 'p': -0.052, 'd': 1.686, 'tot': 1.619},
+                    '3': {'s': -0.014, 'p': -0.053, 'd': 1.708, 'tot': 1.64},
+                    '4': {'s': -0.014, 'p': -0.053, 'd': 1.708, 'tot': 1.64}
+                },
+                'total_magnetization': {
+                    's': -0.057, 'p': -0.21, 'd': 6.788, 'tot': 6.521
+                }
             },
-        'cell_magnetization': {
-            's': -0.057, 'p': -0.21, 'd': 6.788, 'tot': 6.521}
+            'm_y': {'site_moment': {}, 'total_magnetization': {}},
+            'm_z': {'site_moment': {}, 'total_magnetization': {}}},
+        'full cell': {}
     }
 
-    for _key, _val in test['site_moment'].items():
-        _test = np.asarray(list(_val.values()))
-        _mag = np.asarray(list(magnetization['site_moment'][_key].values()))
-        np.testing.assert_allclose(_mag, _test)
 
-    _test = np.asarray(list(test['cell_magnetization'].values()))
-    _mag = np.asarray(list(magnetization['cell_magnetization'].values()))
-    np.testing.assert_allclose(_mag, _test)
+    for _proj in ['m_x', 'm_y', 'm_z']:
+
+        for _key, _val in test['sphere'][_proj]['site_moment'].items():
+            _test = np.asarray(list(_val.values()))
+            _mag = np.asarray(list(magnetization['sphere'][_proj]['site_moment'][_key].values()))
+            np.testing.assert_allclose(_mag, _test)
+
+        _test = np.asarray(list(test['sphere'][_proj]['total_magnetization'].values()))
+        _mag = np.asarray(list(magnetization['sphere'][_proj]['total_magnetization'].values()))
+        np.testing.assert_allclose(_mag, _test)
 
