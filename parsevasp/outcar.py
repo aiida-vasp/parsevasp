@@ -50,9 +50,9 @@ class Outcar(BaseParser):
                                    'point_group': {'static': [], 'dynamic': []}},
                       'magnetization': {
                           'sphere': {
-                              'm_x':{'site_moment': {}, 'total_magnetization': {}},
-                              'm_y':{'site_moment': {}, 'total_magnetization': {}},
-                              'm_z':{'site_moment': {}, 'total_magnetization': {}},
+                              'x':{'site_moment': {}, 'total_magnetization': {}},
+                              'y':{'site_moment': {}, 'total_magnetization': {}},
+                              'z':{'site_moment': {}, 'total_magnetization': {}},
                               },
                           'full_cell': {},
                           }
@@ -171,16 +171,16 @@ class Outcar(BaseParser):
                     while not mag_found:
                         if not outcar[index+4+_counter].strip().startswith('-') and not outcar[index+4+_counter].strip().startswith('tot'):
                             mag_line = outcar[index+4+_counter].split()
-                            self._data['magnetization']['sphere']['m_{}'.format(_proj)]['site_moment'][mag_line[0]] = dict()
+                            self._data['magnetization']['sphere']['{}'.format(_proj)]['site_moment'][int(mag_line[0])] = dict()
                             for _count, orb in enumerate(mag_line[1:-1]):
-                                self._data['magnetization']['sphere']['m_{}'.format(_proj)]['site_moment'][mag_line[0]][s_orb[_count]] = float(orb)
-                            self._data['magnetization']['sphere']['m_{}'.format(_proj)]['site_moment'][mag_line[0]]['tot'] = float(mag_line[-1])
+                                self._data['magnetization']['sphere']['{}'.format(_proj)]['site_moment'][int(mag_line[0])][s_orb[_count]] = float(orb)
+                            self._data['magnetization']['sphere']['{}'.format(_proj)]['site_moment'][int(mag_line[0])]['tot'] = float(mag_line[-1])
                         if outcar[index+4+_counter].strip().startswith('tot'):
                             mag_line = outcar[index+4+_counter].split()
-                            self._data['magnetization']['sphere']['m_{}'.format(_proj)]['total_magnetization'] = dict()
+                            self._data['magnetization']['sphere']['{}'.format(_proj)]['total_magnetization'] = dict()
                             for _count, orb in enumerate(mag_line[1:-1]):
-                                self._data['magnetization']['sphere']['m_{}'.format(_proj)]['total_magnetization'][s_orb[_count]] = float(orb )
-                            self._data['magnetization']['sphere']['m_{}'.format(_proj)]['total_magnetization']['tot'] = float(mag_line[-1])
+                                self._data['magnetization']['sphere']['{}'.format(_proj)]['total_magnetization'][s_orb[_count]] = float(orb )
+                            self._data['magnetization']['sphere']['{}'.format(_proj)]['total_magnetization']['tot'] = float(mag_line[-1])
                             mag_found = True
                         _counter = _counter + 1
             if line.strip().startswith('number of electron'):
