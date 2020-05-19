@@ -159,24 +159,24 @@ def test_outcar_magnetization(outcar_magnetization_parser):
     magnetization = outcar_magnetization_parser.get_magnetization()
     test = {
         'sphere': {
-            'm_x': {
+            'x': {
                 'site_moment': {
-                    '1': {'s': -0.014, 'p': -0.051, 'd': 1.687, 'tot': 1.621},
-                    '2': {'s': -0.015, 'p': -0.052, 'd': 1.686, 'tot': 1.619},
-                    '3': {'s': -0.014, 'p': -0.053, 'd': 1.708, 'tot': 1.64},
-                    '4': {'s': -0.014, 'p': -0.053, 'd': 1.708, 'tot': 1.64}
+                    1: {'s': -0.014, 'p': -0.051, 'd': 1.687, 'tot': 1.621},
+                    2: {'s': -0.015, 'p': -0.052, 'd': 1.686, 'tot': 1.619},
+                    3: {'s': -0.014, 'p': -0.053, 'd': 1.708, 'tot': 1.64},
+                    4: {'s': -0.014, 'p': -0.053, 'd': 1.708, 'tot': 1.64}
                 },
                 'total_magnetization': {
                     's': -0.057, 'p': -0.21, 'd': 6.788, 'tot': 6.521
                 }
             },
-            'm_y': {'site_moment': {}, 'total_magnetization': {}},
-            'm_z': {'site_moment': {}, 'total_magnetization': {}}},
+            'y': {'site_moment': {}, 'total_magnetization': {}},
+            'z': {'site_moment': {}, 'total_magnetization': {}}},
         'full cell': {}
     }
 
 
-    for _proj in ['m_x', 'm_y', 'm_z']:
+    for _proj in ['x', 'y', 'z']:
 
         for _key, _val in test['sphere'][_proj]['site_moment'].items():
             _test = np.asarray(list(_val.values()))
