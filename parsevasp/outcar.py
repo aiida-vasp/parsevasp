@@ -185,7 +185,8 @@ class Outcar(BaseParser):
                                 mag_found = True
                         else:
                             self._data['magnetization']['sphere']['{}'.format(_proj)]['total_magnetization'] = dict()
-                            self._data['magnetization']['sphere']['{}'.format(_proj)]['total_magnetization'] = self._data['magnetization']['sphere']['{}'.format(_proj)]['site_moment']
+                            self._data['magnetization']['sphere']['{}'.format(_proj)]['total_magnetization'] =\
+                                self._data['magnetization']['sphere']['{}'.format(_proj)]['site_moment'][list(self._data['magnetization']['sphere']['{}'.format(_proj)]['site_moment'].keys())[0]]
                             mag_found = True
                         _counter = _counter + 1
             if line.strip().startswith('number of electron'):
