@@ -32,7 +32,7 @@ def outcar_parser_file_objects(request, tmpdir_factory):
     return outcar
 
 @pytest.fixture(scope = 'module', params=[0])
-def outcar_magnetization_parser(request, tmpdir_factory):
+def outcar_parser_magnetization(request, tmpdir_factory):
     """Load OUTCAR file.
 
     """
@@ -44,6 +44,18 @@ def outcar_magnetization_parser(request, tmpdir_factory):
     
     return outcar
 
+@pytest.fixture(scope = 'module', params=[0])
+def outcar_parser_magnetization_single(request, tmpdir_factory):
+    """Load OUTCAR file.
+
+    """
+    testdir = os.path.dirname(__file__)
+    outcarfile = testdir + "/OUTCAR_MAG_SINGLE"
+    tmpfile = str(tmpdir_factory.mktemp('data').join('OUTCAR_MAG_SINGLE'))
+    outcar_truncate(request.param, outcarfile, tmpfile)
+    outcar = Outcar(file_path = tmpfile)
+    
+    return outcar
 
 def outcar_truncate(index, original, tmp):
     """Truncate the OUTCAR file.
@@ -152,31 +164,31 @@ def test_outcar_elastic_file_object(outcar_parser_file_objects):
     np.testing.assert_allclose(elastic['total'], test)
 
 
-def test_outcar_magnetization(outcar_magnetization_parser):
+def test_outcar_magnetization(outcar_parser_magnetization):
     """Check if outcar_magnetization_parser returns the correct magnetization
     """
 
-    magnetization = outcar_magnetization_parser.get_magnetization()
+    magnetization = outcar_parser_magnetization.get_magnetization()
     test = {
         'sphere': {
-            'm_x': {
+            'x': {
                 'site_moment': {
-                    '1': {'s': -0.014, 'p': -0.051, 'd': 1.687, 'tot': 1.621},
-                    '2': {'s': -0.015, 'p': -0.052, 'd': 1.686, 'tot': 1.619},
-                    '3': {'s': -0.014, 'p': -0.053, 'd': 1.708, 'tot': 1.64},
-                    '4': {'s': -0.014, 'p': -0.053, 'd': 1.708, 'tot': 1.64}
+                    1: {'s': -0.014, 'p': -0.051, 'd': 1.687, 'tot': 1.621},
+                    2: {'s': -0.015, 'p': -0.052, 'd': 1.686, 'tot': 1.619},
+                    3: {'s': -0.014, 'p': -0.053, 'd': 1.708, 'tot': 1.64},
+                    4: {'s': -0.014, 'p': -0.053, 'd': 1.708, 'tot': 1.64}
                 },
                 'total_magnetization': {
                     's': -0.057, 'p': -0.21, 'd': 6.788, 'tot': 6.521
                 }
             },
-            'm_y': {'site_moment': {}, 'total_magnetization': {}},
-            'm_z': {'site_moment': {}, 'total_magnetization': {}}},
-        'full cell': {}
+            'y': {'site_moment': {}, 'total_magnetization': {}},
+            'z': {'site_moment': {}, 'total_magnetization': {}}},
+        'full_cell': np.asarray([6.4424922])
     }
 
 
-    for _proj in ['m_x', 'm_y', 'm_z']:
+    for _proj in ['x', 'y', 'z']:
 
         for _key, _val in test['sphere'][_proj]['site_moment'].items():
             _test = np.asarray(list(_val.values()))
@@ -186,4 +198,45 @@ def test_outcar_magnetization(outcar_magnetization_parser):
         _test = np.asarray(list(test['sphere'][_proj]['total_magnetization'].values()))
         _mag = np.asarray(list(magnetization['sphere'][_proj]['total_magnetization'].values()))
         np.testing.assert_allclose(_mag, _test)
+    _mag = np.asarray(list(magnetization['full_cell']))
+    _test = np.asarray(list(test['full_cell']))
+    np.testing.assert_allclose(_mag, _test)
 
+
+def test_outcar_magnetization_single(outcar_parser_magnetization_single):
+    """Check if outcar_magnetization_parser returns the correct magnetization
+    for a single atom in the unit cell
+    """
+
+    magnetization = outcar_parser_magnetization_single.get_magnetization()
+
+    test = {
+        'sphere': {
+            'x': {
+                'site_moment': {
+                    1: {'s': -0.012, 'p': -0.043, 'd': 2.49, 'tot': 2.434},
+                },
+                'total_magnetization': {
+                    's': -0.012, 'p': -0.043,  'd': 2.49, 'tot': 2.434
+                }
+            },
+            'y': {'site_moment': {}, 'total_magnetization': {}},
+            'z': {'site_moment': {}, 'total_magnetization': {}}
+        },
+        'full_cell': np.asarray([2.4077611])
+    }
+
+
+    for _proj in ['x', 'y', 'z']:
+
+        for _key, _val in test['sphere'][_proj]['site_moment'].items():
+            _test = np.asarray(list(_val.values()))
+            _mag = np.asarray(list(magnetization['sphere'][_proj]['site_moment'][_key].values()))
+            np.testing.assert_allclose(_mag, _test)
+
+        _test = np.asarray(list(test['sphere'][_proj]['total_magnetization'].values()))
+        _mag = np.asarray(list(magnetization['sphere'][_proj]['total_magnetization'].values()))
+        np.testing.assert_allclose(_mag, _test)
+    _mag = np.asarray(list(magnetization['full_cell']))
+    _test = np.asarray(list(test['full_cell']))
+    np.testing.assert_allclose(_mag, _test)
