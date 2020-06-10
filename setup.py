@@ -10,7 +10,7 @@ from setuptools import setup, find_packages
 
 SETUP_JSON_PATH = os.path.join(os.path.dirname(__file__), 'setup.json')
 README_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                           'README.md')
+                           'README.rst')
 
 with open(README_PATH, 'r') as readme:
     LONG_DESCRIPTION = readme.read()
