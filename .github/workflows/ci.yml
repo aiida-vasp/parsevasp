@@ -3,30 +3,30 @@ name: parsevasp
 on: [push, pull_request]
 
 jobs:
-  pre-commit:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    strategy:
-      matrix:
-        python: ['3.8']
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python }}
-      - name: Upgrade pip
-        run: |
-          pip install --upgrade pip
-          pip --version
-      - name: Install parsevasp
-        run:
-          pip install -e .[dev]
-          pip freeze
-      - name: Run pre-commit
-        run: pre-commit run --all-files || ( git diff; git status; exit 1; )
+  # pre-commit:
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 30
+  #   strategy:
+  #     matrix:
+  #       python: ['3.8']
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - name: Set up Python
+  #       uses: actions/setup-python@v2
+  #       with:
+  #         python-version: ${{ matrix.python }}
+  #     - name: Upgrade pip
+  #       run: |
+  #         pip install --upgrade pip
+  #         pip --version
+  #     - name: Install parsevasp
+  #       run:
+  #         pip install -e .[dev]
+  #         pip freeze
+  #     - name: Run pre-commit
+  #       run: pre-commit run --all-files || ( git diff; git status; exit 1; )
   tests:
-    needs: [pre-commit]
+    #needs: [pre-commit]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
