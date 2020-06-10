@@ -35,9 +35,8 @@ except ImportError:
                     # normal ElementTree
                     import elementtree.ElementTree as etree
                 except ImportError:
-                    logging.error(
-                        "Failed to import ElementTree.")
-                    sys.exit("Failed to import ElementTree.")
+                    logging.error('Failed to import ElementTree.')
+                    sys.exit('Failed to import ElementTree.')
 
 
 class Xml(BaseParser):
@@ -53,24 +52,37 @@ class Xml(BaseParser):
     ERROR_NO_SIZE = 508
     ERROR_OVERFLOW = 509
     BaseParser.ERROR_MESSAGES.update({
-        ERROR_NO_SPECIES: "Please extract the species first.",
-        ERROR_MULTIPLE_ENTRIES: "Multiple entries of were located.",
-        ERROR_NO_ISPIN: "Please extract ISPIN first.",
-        ERROR_NO_NBANDS: "Please extract NBANDS first.",
-        ERROR_NO_KPOINTS: "Please extract the kpoints first.",
-        ERROR_MISMATCH_KPOINTS_NBANDS: "The number of kpoints and bands for the entries does not match the number of "
-        "located kpoints and NBANDS.",
-        ERROR_UNKNOWN_ELEMENT: "There is an atomic element present in the XML file that is unknown.",
-        ERROR_UNSUPPORTED_STATUS: "The supplied status is not supported.",
-        ERROR_NO_SIZE: "Can not calculate size.",
-        ERROR_OVERFLOW: "Overflow detected in the XML file."
+        ERROR_NO_SPECIES:
+        'Please extract the species first.',
+        ERROR_MULTIPLE_ENTRIES:
+        'Multiple entries of were located.',
+        ERROR_NO_ISPIN:
+        'Please extract ISPIN first.',
+        ERROR_NO_NBANDS:
+        'Please extract NBANDS first.',
+        ERROR_NO_KPOINTS:
+        'Please extract the kpoints first.',
+        ERROR_MISMATCH_KPOINTS_NBANDS:
+        'The number of kpoints and bands for the entries does not match the number of '
+        'located kpoints and NBANDS.',
+        ERROR_UNKNOWN_ELEMENT:
+        'There is an atomic element present in the XML file that is unknown.',
+        ERROR_UNSUPPORTED_STATUS:
+        'The supplied status is not supported.',
+        ERROR_NO_SIZE:
+        'Can not calculate size.',
+        ERROR_OVERFLOW:
+        'Overflow detected in the XML file.'
     })
     ERROR_MESSAGES = BaseParser.ERROR_MESSAGES
-    
-    def __init__(self, file_path=None, file_handler=None,
+
+    def __init__(self,
+                 file_path=None,
+                 file_handler=None,
                  k_before_band=False,
                  extract_all=True,
-                 logger=None, event=False):
+                 logger=None,
+                 event=False):
         """Initialize the XmlParser by first trying the lxml and
         fall back to the standard ElementTree if that is not present.
 
@@ -89,15 +101,18 @@ class Xml(BaseParser):
         lxml should be used and is required for large files
         """
 
-        super(Xml, self).__init__(file_path=file_path, file_handler=file_handler, logger=logger)
-        
+        super(Xml, self).__init__(file_path=file_path,
+                                  file_handler=file_handler,
+                                  logger=logger)
+
         self._sizecutoff = 500
         self._event = event
 
         if self._file_path is None and self._file_handler is None:
-            self._logger.error(self.ERROR_MESSAGES[self.ERROR_ONLY_ONE_ARGUMENT])
+            self._logger.error(
+                self.ERROR_MESSAGES[self.ERROR_ONLY_ONE_ARGUMENT])
             sys.exit(self.ERROR_ONLY_ONE_ARGUMENT)
-            
+
         # extract data from all calculations (e.g. ionic steps)
         self._extract_all = extract_all
 
@@ -106,40 +121,46 @@ class Xml(BaseParser):
         self._k_before_band = k_before_band
 
         # dictionaries that contain the output of the parsing
-        self._parameters = {"symprec": None,
-                            "ismear": None,
-                            "sigma": None,
-                            "ispin": None,
-                            "nbands": None,
-                            "nelect": None,
-                            "system": None}
-        self._lattice = {"unitcell": None,
-                         "species": None,
-                         "positions": None,
-                         "kpoints": None,
-                         "kpointsw": None,
-                         "kpointdiv": None}
-        self._data = {"eigenvalues": None,
-                      "eigenvalues_specific": None,
-                      "eigenvelocities": None,
-                      "kpoints": None,
-                      "kpointsw": None,
-                      "occupancies": None,
-                      "dos": None,
-                      "dos_specific": None,
-                      "totens": None,
-                      "forces": None,
-                      "stress": None,
-                      "dielectrics": None,
-                      "projectors": None,
-                      "hessian": None,
-                      "dynmat": None,
-                      "born": None}
+        self._parameters = {
+            'symprec': None,
+            'ismear': None,
+            'sigma': None,
+            'ispin': None,
+            'nbands': None,
+            'nelect': None,
+            'system': None
+        }
+        self._lattice = {
+            'unitcell': None,
+            'species': None,
+            'positions': None,
+            'kpoints': None,
+            'kpointsw': None,
+            'kpointdiv': None
+        }
+        self._data = {
+            'eigenvalues': None,
+            'eigenvalues_specific': None,
+            'eigenvelocities': None,
+            'kpoints': None,
+            'kpointsw': None,
+            'occupancies': None,
+            'dos': None,
+            'dos_specific': None,
+            'totens': None,
+            'forces': None,
+            'stress': None,
+            'dielectrics': None,
+            'projectors': None,
+            'hessian': None,
+            'dynmat': None,
+            'born': None
+        }
 
         if lxml:
-            self._logger.info("We are utilizing lxml!")
+            self._logger.info('We are utilizing lxml!')
         else:
-            self._logger.info("We are not uitilizing lxml!")
+            self._logger.info('We are not uitilizing lxml!')
 
         # parse parse parse
         self._parse()
@@ -181,7 +202,7 @@ class Xml(BaseParser):
 
         """
 
-        self._logger.debug("Running parsew.")
+        self._logger.debug('Running parsew.')
 
         # now open the complete file, we have already checked its presence when we checked the recover.
         if self._file_handler is None:
@@ -196,7 +217,7 @@ class Xml(BaseParser):
 
         if lxml and xml_recover:
             if xml_recover:
-                self._logger.debug("Running LXML in recovery mode.")
+                self._logger.debug('Running LXML in recovery mode.')
             parser = etree.XMLParser(recover=True)
             vaspxml = etree.parse(filer, parser=parser)
         else:
@@ -206,31 +227,33 @@ class Xml(BaseParser):
         all = self._extract_all
 
         # let us start to parse the content
-        self._parameters["symprec"] = self._fetch_symprecw(vaspxml)
-        self._parameters["sigma"] = self._fetch_sigmaw(vaspxml)
-        self._parameters["ismear"] = self._fetch_ismearw(vaspxml)
-        self._parameters["ispin"] = self._fetch_ispinw(vaspxml)
-        self._parameters["nbands"] = self._fetch_nbandsw(vaspxml)
-        self._parameters["nelect"] = self._fetch_nelectw(vaspxml)
-        self._parameters["system"] = self._fetch_systemw(vaspxml)
-        self._lattice["species"] = self._fetch_speciesw(vaspxml)
-        self._lattice["unitcell"], self._lattice["positions"], \
-            self._data["forces"], self._data["stress"] = \
+        self._parameters['symprec'] = self._fetch_symprecw(vaspxml)
+        self._parameters['sigma'] = self._fetch_sigmaw(vaspxml)
+        self._parameters['ismear'] = self._fetch_ismearw(vaspxml)
+        self._parameters['ispin'] = self._fetch_ispinw(vaspxml)
+        self._parameters['nbands'] = self._fetch_nbandsw(vaspxml)
+        self._parameters['nelect'] = self._fetch_nelectw(vaspxml)
+        self._parameters['system'] = self._fetch_systemw(vaspxml)
+        self._lattice['species'] = self._fetch_speciesw(vaspxml)
+        self._lattice['unitcell'], self._lattice['positions'], \
+            self._data['forces'], self._data['stress'] = \
             self._fetch_upfsw(vaspxml, all=all)
-        self._lattice["kpoints"] = self._fetch_kpointsw(vaspxml)
-        self._lattice["kpointsw"] = self._fetch_kpointsww(vaspxml)
-        self._lattice["kpointdiv"] = self._fetch_kpointdivw(vaspxml)
-        self._data["eigenvalues"], self._data[
-            "occupancies"] = self._fetch_eigenvaluesw(vaspxml)
-        self._data["eigenvalues_specific"] = self._fetch_eigenvalues_specificw(vaspxml)
-        self._data["eigenvelocities"] = self._fetch_eigenvelocitiesw(vaspxml)
-        self._data["dos"], self._data["dos_specific"] = self._fetch_dosw(vaspxml)
-        self._data["totens"] = self._fetch_totensw(vaspxml)
-        self._data["dielectrics"] = self._fetch_dielectricsw(vaspxml)
-        self._data["projectors"] = self._fetch_projectorsw(vaspxml)
-        self._data["hessian"] = self._fetch_hessian(vaspxml)
-        self._data["dynmat"] = self._fetch_dynmatw(vaspxml)
-        self._data["born"] = self._fetch_bornw(vaspxml)
+        self._lattice['kpoints'] = self._fetch_kpointsw(vaspxml)
+        self._lattice['kpointsw'] = self._fetch_kpointsww(vaspxml)
+        self._lattice['kpointdiv'] = self._fetch_kpointdivw(vaspxml)
+        self._data['eigenvalues'], self._data[
+            'occupancies'] = self._fetch_eigenvaluesw(vaspxml)
+        self._data['eigenvalues_specific'] = self._fetch_eigenvalues_specificw(
+            vaspxml)
+        self._data['eigenvelocities'] = self._fetch_eigenvelocitiesw(vaspxml)
+        self._data['dos'], self._data['dos_specific'] = self._fetch_dosw(
+            vaspxml)
+        self._data['totens'] = self._fetch_totensw(vaspxml)
+        self._data['dielectrics'] = self._fetch_dielectricsw(vaspxml)
+        self._data['projectors'] = self._fetch_projectorsw(vaspxml)
+        self._data['hessian'] = self._fetch_hessian(vaspxml)
+        self._data['dynmat'] = self._fetch_dynmatw(vaspxml)
+        self._data['born'] = self._fetch_bornw(vaspxml)
 
     def _parsee(self):
         """Performs parsing in an event driven fashion on the XML file.
@@ -239,7 +262,7 @@ class Xml(BaseParser):
         """
 
         # set logger
-        self._logger.debug("Running parsee.")
+        self._logger.debug('Running parsee.')
 
         # helper list
         data = []
@@ -304,86 +327,86 @@ class Xml(BaseParser):
 
         # do we want to extract data from all calculations (e.g. ionic steps)
         all = self._extract_all
-        
+
         if self._file_handler is None:
             filer = self._file_path
         else:
             filer = self._file_handler
-        
+
         # index that control the calculation step (e.g. ionic step)
         calc = 1
-        for event, element in etree.iterparse(filer,
-                                              events=("start", "end")):
+        for event, element in etree.iterparse(filer, events=('start', 'end')):
             # set extraction points (what to read and when to read it)
             # here we also set the relevant data elements when the tags
             # close when they contain more than one element
-            if event == "start" and element.tag == "parameters":
+            if event == 'start' and element.tag == 'parameters':
                 extract_parameters = True
-            if event == "end" and element.tag == "parameters":
+            if event == 'end' and element.tag == 'parameters':
                 extract_parameters = False
-            if event == "start" and element.tag == "calculation":
+            if event == 'start' and element.tag == 'calculation':
                 extract_calculation = True
-            if event == "end" and element.tag == "calculation":
+            if event == 'end' and element.tag == 'calculation':
                 data3 = self._convert_array1D_f(data3)
-                totens[calc] = {"energy_no_entropy":
-                                [data3[data3.shape[0] - 1], data3]}
+                totens[calc] = {
+                    'energy_no_entropy': [data3[data3.shape[0] - 1], data3]
+                }
                 data3 = []
                 # update index for the calculation
                 calc = calc + 1
                 extract_calculation = False
-            if event == "start" and element.tag == "array" \
-               and element.attrib.get("name") == "atoms":
+            if event == 'start' and element.tag == 'array' \
+               and element.attrib.get('name') == 'atoms':
                 extract_species = True
-            if event == "end" and element.tag == "array" \
-               and element.attrib.get("name") == "atoms":
+            if event == 'end' and element.tag == 'array' \
+               and element.attrib.get('name') == 'atoms':
                 # only need every other element (element, not atomtype)
-                self._lattice["species"] = self._convert_species(data[::2])
+                self._lattice['species'] = self._convert_species(data[::2])
                 data = []
                 extract_species = False
-            if event == "start" and element.tag == "kpoints" and not extract_calculation:
+            if event == 'start' and element.tag == 'kpoints' and not extract_calculation:
                 extract_kpointdata = True
-            if event == "end" and element.tag == "kpoints" and not extract_calculation:
+            if event == 'end' and element.tag == 'kpoints' and not extract_calculation:
                 extract_kpointdata = False
-            if event == "start" and element.tag == "projected":
+            if event == 'start' and element.tag == 'projected':
                 extract_projected = True
-            if event == "end" and element.tag == "projected":
+            if event == 'end' and element.tag == 'projected':
                 extract_projected = False
 
             # now fetch the data
             if extract_parameters:
                 try:
-                    if event == "start" and element.attrib["name"] == "SYMPREC":
-                        self._parameters["symprec"] = self._convert_f(element)
+                    if event == 'start' and element.attrib['name'] == 'SYMPREC':
+                        self._parameters['symprec'] = self._convert_f(element)
                 except KeyError:
                     pass
                 try:
-                    if event == "start" and element.attrib["name"] == "ISPIN":
-                        self._parameters["ispin"] = self._convert_i(element)
+                    if event == 'start' and element.attrib['name'] == 'ISPIN':
+                        self._parameters['ispin'] = self._convert_i(element)
                 except KeyError:
                     pass
                 try:
-                    if event == "start" and element.attrib["name"] == "ISMEAR":
-                        self._parameters["ismear"] = self._convert_i(element)
+                    if event == 'start' and element.attrib['name'] == 'ISMEAR':
+                        self._parameters['ismear'] = self._convert_i(element)
                 except KeyError:
                     pass
                 try:
-                    if event == "start" and element.attrib["name"] == "SIGMA":
-                        self._parameters["sigma"] = self._convert_f(element)
+                    if event == 'start' and element.attrib['name'] == 'SIGMA':
+                        self._parameters['sigma'] = self._convert_f(element)
                 except KeyError:
                     pass
                 try:
-                    if event == "start" and element.attrib["name"] == "NBANDS":
-                        self._parameters["nbands"] = self._convert_i(element)
+                    if event == 'start' and element.attrib['name'] == 'NBANDS':
+                        self._parameters['nbands'] = self._convert_i(element)
                 except KeyError:
                     pass
                 try:
-                    if event == "start" and element.attrib["name"] == "NELECT":
-                        self._parameters["nelect"] = self._convert_f(element)
+                    if event == 'start' and element.attrib['name'] == 'NELECT':
+                        self._parameters['nelect'] = self._convert_f(element)
                 except KeyError:
                     pass
                 try:
-                    if event == "start" and element.attrib["name"] == "SYSTEM":
-                        self._parameters["system"] = element.text
+                    if event == 'start' and element.attrib['name'] == 'SYSTEM':
+                        self._parameters['system'] = element.text
                 except KeyError:
                     pass
 
@@ -393,146 +416,156 @@ class Xml(BaseParser):
                 # it later, would be faster, but it is not so easy since
                 # we do not know how many calculations have been performed
                 # or how many scteps there are per calculation
-                if event == "start" and element.tag == "dos" and element.attrib.get("comment") is None:
+                if event == 'start' and element.tag == 'dos' and element.attrib.get(
+                        'comment') is None:
                     extract_dos = True
-                if event == "end" and element.tag == "total" and extract_dos:
+                if event == 'end' and element.tag == 'total' and extract_dos:
                     if data2:
                         # only store energy for one part as
                         # this is the same for both
                         dos_ispin = self._convert_array2D_f(data, 3)
-                        _dos["energy"] = dos_ispin[:, 0]
-                        _dos["total"] = dos_ispin[:, 1]
-                        _dos["integrated"] = dos_ispin[:, 2]
-                        _dos["partial"] = None
+                        _dos['energy'] = dos_ispin[:, 0]
+                        _dos['total'] = dos_ispin[:, 1]
+                        _dos['integrated'] = dos_ispin[:, 2]
+                        _dos['partial'] = None
                         dos_ispin = self._convert_array2D_f(data2, 3)
-                        _dos2["total"] = dos_ispin[:, 1]
-                        _dos2["integrated"] = dos_ispin[:, 2]
-                        _dos2["partial"] = None
+                        _dos2['total'] = dos_ispin[:, 1]
+                        _dos2['integrated'] = dos_ispin[:, 2]
+                        _dos2['partial'] = None
                     else:
                         dos_ispin = self._convert_array2D_f(data, 3)
-                        _dos["energy"] = dos_ispin[:, 0]
-                        _dos["total"] = dos_ispin[:, 1]
-                        _dos["integrated"] = dos_ispin[:, 2]
-                        _dos["partial"] = None
+                        _dos['energy'] = dos_ispin[:, 0]
+                        _dos['total'] = dos_ispin[:, 1]
+                        _dos['integrated'] = dos_ispin[:, 2]
+                        _dos['partial'] = None
                     data = []
                     data2 = []
-                if event == "end" and element.tag == "partial" and extract_dos:
+                if event == 'end' and element.tag == 'partial' and extract_dos:
                     num_atoms = 0
-                    if self._lattice["species"] is not None:
-                        num_atoms = self._lattice["species"].shape[0]
+                    if self._lattice['species'] is not None:
+                        num_atoms = self._lattice['species'].shape[0]
                     else:
-                        self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_SPECIES])
+                        self._logger.error(
+                            self.ERROR_MESSAGES[self.ERROR_NO_SPECIES])
                         sys.exit(self.ERROR_NO_SPECIES)
                     if data2:
                         dos_ispin = self._convert_array2D_f(data, 10)
                         # do not need the energy term (similar to total)
-                        _dos["partial"] = np.asarray(
+                        _dos['partial'] = np.asarray(
                             np.split(dos_ispin[:, 1:10], num_atoms))
                         dos_ispin = self._convert_array2D_f(data2, 10)
                         # do not need the energy term (similar to total)
-                        _dos2["partial"] = np.asarray(
+                        _dos2['partial'] = np.asarray(
                             np.split(dos_ispin[:, 1:10], num_atoms))
                     else:
                         dos_ispin = self._convert_array2D_f(data, 10)
                         # do not need the energy term (similar to total)
-                        _dos["partial"] = np.asarray(
+                        _dos['partial'] = np.asarray(
                             np.split(dos_ispin[:, 1:10], num_atoms))
                     data = []
                     data2 = []
-                if event == "end" and element.tag == "dos" and extract_dos:
+                if event == 'end' and element.tag == 'dos' and extract_dos:
                     # check the Fermi level
                     if len(data4) == 1:
                         fermi_level = self._convert_f(data4[0])
                     elif len(data4) > 1:
-                        self._logger.error(self.ERROR_MESSAGES[self.ERROR_MULTIPLE_ENTRIES] +
-                                           " The tag in question is 'efermi'.")
+                        self._logger.error(
+                            self.ERROR_MESSAGES[self.ERROR_MULTIPLE_ENTRIES] +
+                            " The tag in question is 'efermi'.")
                         sys.exit(self.ERROR_MULTIPLE_ENTRIES)
                     else:
                         fermi_level = None
 
                     if _dos2:
-                        dos["up"] = _dos
-                        dos["down"] = _dos2
-                        dos["total"] = {"fermi_level": fermi_level,
-                                        "energy": _dos["energy"]}
-                        del dos["up"]["energy"]
+                        dos['up'] = _dos
+                        dos['down'] = _dos2
+                        dos['total'] = {
+                            'fermi_level': fermi_level,
+                            'energy': _dos['energy']
+                        }
+                        del dos['up']['energy']
                     else:
-                        _dos["fermi_level"] = fermi_level
-                        dos["total"] = _dos
-                    self._data["dos"] = copy.deepcopy(dos)
+                        _dos['fermi_level'] = fermi_level
+                        dos['total'] = _dos
+                    self._data['dos'] = copy.deepcopy(dos)
                     data = []
                     data2 = []
                     data4 = []
                     _dos = {}
                     _dos2 = {}
                     extract_dos = False
-                if event == "start" and element.tag == "dos" and element.attrib.get("comment") == "interpolated":
+                if event == 'start' and element.tag == 'dos' and element.attrib.get(
+                        'comment') == 'interpolated':
                     extract_dos_specific = True
-                if event == "end" and element.tag == "total" and extract_dos_specific:
+                if event == 'end' and element.tag == 'total' and extract_dos_specific:
                     if data2:
                         # only store energy for one part as
                         # this is the same for both
                         dos_ispin = self._convert_array2D_f(data, 3)
-                        _dos["energy"] = dos_ispin[:, 0]
-                        _dos["total"] = dos_ispin[:, 1]
-                        _dos["integrated"] = dos_ispin[:, 2]
-                        _dos["partial"] = None
+                        _dos['energy'] = dos_ispin[:, 0]
+                        _dos['total'] = dos_ispin[:, 1]
+                        _dos['integrated'] = dos_ispin[:, 2]
+                        _dos['partial'] = None
                         dos_ispin = self._convert_array2D_f(data2, 3)
-                        _dos2["total"] = dos_ispin[:, 1]
-                        _dos2["integrated"] = dos_ispin[:, 2]
-                        _dos2["partial"] = None
+                        _dos2['total'] = dos_ispin[:, 1]
+                        _dos2['integrated'] = dos_ispin[:, 2]
+                        _dos2['partial'] = None
                     else:
                         dos_ispin = self._convert_array2D_f(data, 3)
-                        _dos["energy"] = dos_ispin[:, 0]
-                        _dos["total"] = dos_ispin[:, 1]
-                        _dos["integrated"] = dos_ispin[:, 2]
-                        _dos["partial"] = None
+                        _dos['energy'] = dos_ispin[:, 0]
+                        _dos['total'] = dos_ispin[:, 1]
+                        _dos['integrated'] = dos_ispin[:, 2]
+                        _dos['partial'] = None
                     data = []
                     data2 = []
-                if event == "end" and element.tag == "partial" and extract_dos_specific:
+                if event == 'end' and element.tag == 'partial' and extract_dos_specific:
                     num_atoms = 0
-                    if self._lattice["species"] is not None:
-                        num_atoms = self._lattice["species"].shape[0]
+                    if self._lattice['species'] is not None:
+                        num_atoms = self._lattice['species'].shape[0]
                     else:
-                        self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_SPECIES])
+                        self._logger.error(
+                            self.ERROR_MESSAGES[self.ERROR_NO_SPECIES])
                         sys.exit(self.ERROR_NO_SPECIES)
                     if data2:
                         dos_ispin = self._convert_array2D_f(data, 10)
                         # do not need the energy term (similar to total)
-                        _dos["partial"] = np.asarray(
+                        _dos['partial'] = np.asarray(
                             np.split(dos_ispin[:, 1:10], num_atoms))
                         dos_ispin = self._convert_array2D_f(data2, 10)
                         # do not need the energy term (similar to total)
-                        _dos2["partial"] = np.asarray(
+                        _dos2['partial'] = np.asarray(
                             np.split(dos_ispin[:, 1:10], num_atoms))
                     else:
                         dos_ispin = self._convert_array2D_f(data, 10)
                         # do not need the energy term (similar to total)
-                        _dos["partial"] = np.asarray(
+                        _dos['partial'] = np.asarray(
                             np.split(dos_ispin[:, 1:10], num_atoms))
                     data = []
                     data2 = []
-                if event == "end" and element.tag == "dos" and extract_dos_specific:
+                if event == 'end' and element.tag == 'dos' and extract_dos_specific:
                     # check the Fermi level
                     if len(data4) == 1:
                         fermi_level = self._convert_f(data4[0])
                     elif len(data4) > 1:
-                        self._logger.error(self.ERROR_MESSAGES[self.ERROR_MULTIPLE_ENTRIES] +
-                                           " The tag in question is 'efermi'.")
+                        self._logger.error(
+                            self.ERROR_MESSAGES[self.ERROR_MULTIPLE_ENTRIES] +
+                            " The tag in question is 'efermi'.")
                         sys.exit(self.ERROR_MULTIPLE_ENTRIES)
                     else:
                         fermi_level = None
 
                     if _dos2:
-                        dos["up"] = _dos
-                        dos["down"] = _dos2
-                        dos["total"] = {"fermi_level": fermi_level,
-                                        "energy": _dos["energy"]}
-                        del dos["up"]["energy"]
+                        dos['up'] = _dos
+                        dos['down'] = _dos2
+                        dos['total'] = {
+                            'fermi_level': fermi_level,
+                            'energy': _dos['energy']
+                        }
+                        del dos['up']['energy']
                     else:
-                        _dos["fermi_level"] = fermi_level
-                        dos["total"] = _dos
-                    self._data["dos_specific"] = dos
+                        _dos['fermi_level'] = fermi_level
+                        dos['total'] = _dos
+                    self._data['dos_specific'] = dos
                     data = []
                     data2 = []
                     data4 = []
@@ -540,110 +573,116 @@ class Xml(BaseParser):
                     _dos2 = {}
                     extract_dos_specific = False
 
-                if event == "start" and element.tag == "structure":
+                if event == 'start' and element.tag == 'structure':
                     extract_latticedata = True
-                if event == "end" and element.tag == "structure":
+                if event == 'end' and element.tag == 'structure':
                     extract_latticedata = False
-                if event == "start" and element.tag == "varray" and \
-                   element.attrib["name"] == "forces":
+                if event == 'start' and element.tag == 'varray' and \
+                   element.attrib['name'] == 'forces':
                     extract_forces = True
-                if event == "end" and element.tag == "varray" and \
-                   element.attrib["name"] == "forces":
+                if event == 'end' and element.tag == 'varray' and \
+                   element.attrib['name'] == 'forces':
                     force[attribute] = self._convert_array2D_f(data, 3)
                     data = []
                     extract_forces = False
-                if event == "start" and element.tag == "varray" and \
-                   element.attrib["name"] == "stress":
+                if event == 'start' and element.tag == 'varray' and \
+                   element.attrib['name'] == 'stress':
                     extract_stress = True
-                if event == "end" and element.tag == "varray" and \
-                   element.attrib["name"] == "stress":
+                if event == 'end' and element.tag == 'varray' and \
+                   element.attrib['name'] == 'stress':
                     stress[attribute] = self._convert_array2D_f(data, 3)
                     data = []
                     extract_stress = False
-                if event == "start" and element.tag == "scstep":
+                if event == 'start' and element.tag == 'scstep':
                     extract_scstep = True
-                if event == "end" and element.tag == "scstep":
+                if event == 'end' and element.tag == 'scstep':
                     extract_scstep = False
-                if event == "start" and element.tag == "eigenvalues" and not extract_eigenvelocities and element.attrib.get("comment") != "interpolated" and not extract_eigenvalues_specific:
+                if event == 'start' and element.tag == 'eigenvalues' and not extract_eigenvelocities and element.attrib.get(
+                        'comment'
+                ) != 'interpolated' and not extract_eigenvalues_specific:
                     extract_eigenvalues = True
-                if event == "end" and element.tag == "eigenvalues" and extract_eigenvalues:
-                    num_kpoints = len(self._lattice["kpoints"])
+                if event == 'end' and element.tag == 'eigenvalues' and extract_eigenvalues:
+                    num_kpoints = len(self._lattice['kpoints'])
                     if not data2:
                         eigenvalues, occupancies = self._extract_eigenvalues(
                             data, None, num_kpoints)
                     else:
                         eigenvalues, occupancies = self._extract_eigenvalues(
                             data, data2, num_kpoints)
-                    self._data["eigenvalues"] = eigenvalues
-                    self._data["occupancies"] = occupancies
+                    self._data['eigenvalues'] = eigenvalues
+                    self._data['occupancies'] = occupancies
                     data = []
                     data2 = []
                     extract_eigenvalues = False
-                if event == "start" and element.tag == "eigenvalues" and element.attrib.get("comment") == "interpolated":
+                if event == 'start' and element.tag == 'eigenvalues' and element.attrib.get(
+                        'comment') == 'interpolated':
                     extract_eigenvalues_specific = True
 
-                if event == "end" and element.tag == "eigenvalues" and extract_eigenvalues_specific:
-                    num_kpoints = len(self._data["kpoints"])
+                if event == 'end' and element.tag == 'eigenvalues' and extract_eigenvalues_specific:
+                    num_kpoints = len(self._data['kpoints'])
                     if not data2:
-                        eigenvalues_specific, _ = self._extract_eigenvalues(data, None, num_kpoints)
+                        eigenvalues_specific, _ = self._extract_eigenvalues(
+                            data, None, num_kpoints)
                     else:
-                        eigenvalues_specific, _ = self._extract_eigenvalues(data, data2, num_kpoints)
-                    self._data["eigenvalues_specific"] = eigenvalues_specific
+                        eigenvalues_specific, _ = self._extract_eigenvalues(
+                            data, data2, num_kpoints)
+                    self._data['eigenvalues_specific'] = eigenvalues_specific
                     data = []
                     data2 = []
                     extract_eigenvalues_specific = False
-                if event == "start" and element.tag == "eigenvelocities":
+                if event == 'start' and element.tag == 'eigenvelocities':
                     extract_eigenvelocities = True
-                if event == "end" and element.tag == "eigenvelocities":
-                    num_kpoints = len(self._data["kpoints"])
+                if event == 'end' and element.tag == 'eigenvelocities':
+                    num_kpoints = len(self._data['kpoints'])
                     if not data2:
-                        eigenvelocities = self._extract_eigenvelocities(data, None,
-                                                                        num_kpoints)
+                        eigenvelocities = self._extract_eigenvelocities(
+                            data, None, num_kpoints)
                     else:
-                        eigenvelocities = self._extract_eigenvelocities(data, data2,
-                                                                        num_kpoints)
-                    self._data["eigenvelocities"] = eigenvelocities
+                        eigenvelocities = self._extract_eigenvelocities(
+                            data, data2, num_kpoints)
+                    self._data['eigenvelocities'] = eigenvelocities
                     data = []
                     data2 = []
                     extract_eigenvelocities = False
-                if event == "start" and element.tag == "dielectricfunction":
+                if event == 'start' and element.tag == 'dielectricfunction':
                     extract_dielectrics = True
-                if event == "end" and element.tag == "dielectricfunction":
+                if event == 'end' and element.tag == 'dielectricfunction':
                     _diel = {}
                     diel = np.split(self._convert_array2D_f(data, 7), 2)
-                    _diel["energy"] = diel[0][:, 0]
-                    _diel["imag"] = diel[0][:, 1:7]
-                    _diel["real"] = diel[1][:, 1:7]
-                    self._data["dielectrics"] = _diel
+                    _diel['energy'] = diel[0][:, 0]
+                    _diel['imag'] = diel[0][:, 1:7]
+                    _diel['real'] = diel[1][:, 1:7]
+                    self._data['dielectrics'] = _diel
                     data = []
                     extract_dielectrics = False
-                if event == "start" and element.tag == "dynmat":
+                if event == 'start' and element.tag == 'dynmat':
                     extract_dynmat = True
-                if event == "end" and element.tag == "dynmat":
-                    self._data["dynmat"] = dynmat
+                if event == 'end' and element.tag == 'dynmat':
+                    self._data['dynmat'] = dynmat
                     extract_dynmat = False
-                if event == "start" and element.tag == "array":
+                if event == 'start' and element.tag == 'array':
                     # a bit of special threatment here as there is
                     # an array element without attributes, so we get
                     # KeyErrors
                     try:
-                        if element.attrib["name"] == "born_charges":
+                        if element.attrib['name'] == 'born_charges':
                             extract_born = True
                     except KeyError:
                         pass
-                if event == "end" and element.tag == "array":
+                if event == 'end' and element.tag == 'array':
                     # again a bit special
                     try:
-                        if element.attrib["name"] == "born_charges":
+                        if element.attrib['name'] == 'born_charges':
                             num_atoms = 0
-                            if self._lattice["species"] is not None:
-                                num_atoms = self._lattice["species"].shape[0]
+                            if self._lattice['species'] is not None:
+                                num_atoms = self._lattice['species'].shape[0]
                             else:
-                                self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_SPECIES])
+                                self._logger.error(
+                                    self.ERROR_MESSAGES[self.ERROR_NO_SPECIES])
                                 sys.exit(self.ERROR_NO_SPECIES)
                             data = self._convert_array2D_f(data, 3)
                             data = np.split(data, num_atoms)
-                            self._data["born"] = np.asarray(data)
+                            self._data['born'] = np.asarray(data)
                             data = []
                             extract_born = False
                     except KeyError:
@@ -652,325 +691,326 @@ class Xml(BaseParser):
                 # now extract data
                 if extract_scstep:
                     # energy without entropy
-                    if event == "start" and element.tag == "i" and \
-                       element.attrib["name"] == "e_0_energy":
+                    if event == 'start' and element.tag == 'i' and \
+                       element.attrib['name'] == 'e_0_energy':
                         extract_e0 = True
-                    if event == "end" and element.tag == "i" and \
-                       element.attrib["name"] == "e_0_energy":
+                    if event == 'end' and element.tag == 'i' and \
+                       element.attrib['name'] == 'e_0_energy':
                         extract_e0 = False
                     if extract_e0:
                         data3.append(element)
                 if extract_latticedata:
-                    if event == "start" and element.tag == "varray" \
-                       and element.attrib.get("name") == "basis":
+                    if event == 'start' and element.tag == 'varray' \
+                       and element.attrib.get('name') == 'basis':
                         extract_unitcell = True
-                    if event == "end" and element.tag == "varray" \
-                       and element.attrib.get("name") == "basis":
+                    if event == 'end' and element.tag == 'varray' \
+                       and element.attrib.get('name') == 'basis':
                         cell[attribute] = self._convert_array2D_f(data, 3)
                         data = []
                         extract_unitcell = False
 
-                    if event == "start" and element.tag == "varray" \
-                       and element.attrib.get("name") == "positions":
+                    if event == 'start' and element.tag == 'varray' \
+                       and element.attrib.get('name') == 'positions':
                         extract_positions = True
-                    if event == "end" and element.tag == "varray" \
-                       and element.attrib.get("name") == "positions":
+                    if event == 'end' and element.tag == 'varray' \
+                       and element.attrib.get('name') == 'positions':
                         pos[attribute] = self._convert_array2D_f(data, 3)
                         data = []
                         extract_positions = False
 
                     if extract_unitcell:
-                        if event == "start" and element.tag == "v":
+                        if event == 'start' and element.tag == 'v':
                             data.append(element)
                     if extract_positions:
-                        if event == "start" and element.tag == "v":
+                        if event == 'start' and element.tag == 'v':
                             data.append(element)
 
                 if extract_forces:
-                    if event == "start" and element.tag == "v":
+                    if event == 'start' and element.tag == 'v':
                         data.append(element)
 
                 if extract_stress:
-                    if event == "start" and element.tag == "v":
+                    if event == 'start' and element.tag == 'v':
                         data.append(element)
 
                 if extract_eigenvalues:
-                    if event == "start" and element.tag == "set" \
-                       and element.attrib.get("comment") == "spin 1":
+                    if event == 'start' and element.tag == 'set' \
+                       and element.attrib.get('comment') == 'spin 1':
                         extract_eigenvalues_spin1 = True
-                    if event == "end" and element.tag == "set" \
-                       and element.attrib.get("comment") == "spin 1":
+                    if event == 'end' and element.tag == 'set' \
+                       and element.attrib.get('comment') == 'spin 1':
                         extract_eigenvalues_spin1 = False
-                    if event == "start" and element.tag == "set" \
-                       and element.attrib.get("comment") == "spin 2":
+                    if event == 'start' and element.tag == 'set' \
+                       and element.attrib.get('comment') == 'spin 2':
                         extract_eigenvalues_spin2 = True
-                    if event == "end" and element.tag == "set" \
-                       and element.attrib.get("comment") == "spin 2":
+                    if event == 'end' and element.tag == 'set' \
+                       and element.attrib.get('comment') == 'spin 2':
                         extract_eigenvalues_spin2 = False
                     if extract_eigenvalues_spin1:
-                        if event == "start" and element.tag == "r":
+                        if event == 'start' and element.tag == 'r':
                             data.append(element)
                     if extract_eigenvalues_spin2:
-                        if event == "start" and element.tag == "r":
+                        if event == 'start' and element.tag == 'r':
                             data2.append(element)
 
                 if extract_eigenvalues_specific:
-                    if event == "start" and element.tag == "varray" \
-                       and element.attrib.get("name") == "kpointlist":
+                    if event == 'start' and element.tag == 'varray' \
+                       and element.attrib.get('name') == 'kpointlist':
                         extract_kpoints_specific = True
-                    if event == "end" and element.tag == "varray" \
-                       and element.attrib.get("name") == "kpointlist":
-                        self._data["kpoints"] = self._convert_array2D_f(data, 3)
+                    if event == 'end' and element.tag == 'varray' \
+                       and element.attrib.get('name') == 'kpointlist':
+                        self._data['kpoints'] = self._convert_array2D_f(
+                            data, 3)
                         data = []
                         extract_kpoints_specific = False
-                    if event == "start" and element.tag == "varray" \
-                       and element.attrib.get("name") == "weights":
+                    if event == 'start' and element.tag == 'varray' \
+                       and element.attrib.get('name') == 'weights':
                         extract_kpointsw_specific = True
-                    if event == "end" and element.tag == "varray" \
-                       and element.attrib.get("name") == "weights":
-                        self._data["kpointsw"] = self._convert_array1D_f(data)
+                    if event == 'end' and element.tag == 'varray' \
+                       and element.attrib.get('name') == 'weights':
+                        self._data['kpointsw'] = self._convert_array1D_f(data)
                         data = []
                         extract_kpointsw_specific = False
-                    if event == "start" and element.tag == "set" \
-                       and element.attrib.get("comment") == "spin 1":
+                    if event == 'start' and element.tag == 'set' \
+                       and element.attrib.get('comment') == 'spin 1':
                         extract_eigenvalues_spin1 = True
-                    if event == "end" and element.tag == "set" \
-                       and element.attrib.get("comment") == "spin 1":
+                    if event == 'end' and element.tag == 'set' \
+                       and element.attrib.get('comment') == 'spin 1':
                         extract_eigenvalues_spin1 = False
-                    if event == "start" and element.tag == "set" \
-                       and element.attrib.get("comment") == "spin 2":
+                    if event == 'start' and element.tag == 'set' \
+                       and element.attrib.get('comment') == 'spin 2':
                         extract_eigenvalues_spin2 = True
-                    if event == "end" and element.tag == "set" \
-                       and element.attrib.get("comment") == "spin 2":
+                    if event == 'end' and element.tag == 'set' \
+                       and element.attrib.get('comment') == 'spin 2':
                         extract_eigenvalues_spin2 = False
                     if extract_kpoints_specific:
-                        if event == "start" and element.tag == 'v':
+                        if event == 'start' and element.tag == 'v':
                             data.append(element)
                     if extract_kpointsw_specific:
-                        if event == "start" and element.tag == 'v':
+                        if event == 'start' and element.tag == 'v':
                             data.append(element)
                     if extract_eigenvalues_spin1:
-                        if event == "start" and element.tag == "r":
+                        if event == 'start' and element.tag == 'r':
                             data.append(element)
                     if extract_eigenvalues_spin2:
-                        if event == "start" and element.tag == "r":
+                        if event == 'start' and element.tag == 'r':
                             data2.append(element)
 
                 if extract_eigenvelocities:
-                    if event == "start" and element.tag == "varray" \
-                       and element.attrib.get("name") == "kpointlist":
+                    if event == 'start' and element.tag == 'varray' \
+                       and element.attrib.get('name') == 'kpointlist':
                         extract_kpoints_specific = True
-                    if event == "end" and element.tag == "varray" \
-                       and element.attrib.get("name") == "kpointlist":
-                        self._data["kpoints"] = self._convert_array2D_f(data, 3)
+                    if event == 'end' and element.tag == 'varray' \
+                       and element.attrib.get('name') == 'kpointlist':
+                        self._data['kpoints'] = self._convert_array2D_f(
+                            data, 3)
                         data = []
                         extract_kpoints_specific = False
-                    if event == "start" and element.tag == "varray" \
-                       and element.attrib.get("name") == "weights":
+                    if event == 'start' and element.tag == 'varray' \
+                       and element.attrib.get('name') == 'weights':
                         extract_kpointsw_specific = True
-                    if event == "end" and element.tag == "varray" \
-                       and element.attrib.get("name") == "weights":
-                        self._data["kpointsw"] = self._convert_array1D_f(data)
+                    if event == 'end' and element.tag == 'varray' \
+                       and element.attrib.get('name') == 'weights':
+                        self._data['kpointsw'] = self._convert_array1D_f(data)
                         data = []
                         extract_kpointsw_specific = False
-                    if event == "start" and element.tag == "set" \
-                       and element.attrib.get("comment") == "spin 1":
+                    if event == 'start' and element.tag == 'set' \
+                       and element.attrib.get('comment') == 'spin 1':
                         extract_eigenvelocities_spin1 = True
-                    if event == "end" and element.tag == "set" \
-                       and element.attrib.get("comment") == "spin 1":
+                    if event == 'end' and element.tag == 'set' \
+                       and element.attrib.get('comment') == 'spin 1':
                         extract_eigenvelocities_spin1 = False
-                    if event == "start" and element.tag == "set" \
-                       and element.attrib.get("comment") == "spin 2":
+                    if event == 'start' and element.tag == 'set' \
+                       and element.attrib.get('comment') == 'spin 2':
                         extract_eigenvelocities_spin2 = True
-                    if event == "end" and element.tag == "set" \
-                       and element.attrib.get("comment") == "spin 2":
+                    if event == 'end' and element.tag == 'set' \
+                       and element.attrib.get('comment') == 'spin 2':
                         extract_eigenvelocities_spin2 = False
                     if extract_kpoints_specific:
-                        if event == "start" and element.tag == 'v':
+                        if event == 'start' and element.tag == 'v':
                             data.append(element)
                     if extract_kpointsw_specific:
-                        if event == "start" and element.tag == 'v':
+                        if event == 'start' and element.tag == 'v':
                             data.append(element)
                     if extract_eigenvelocities_spin1:
-                        if event == "start" and element.tag == "r":
+                        if event == 'start' and element.tag == 'r':
                             data.append(element)
                     if extract_eigenvelocities_spin2:
-                        if event == "start" and element.tag == "r":
+                        if event == 'start' and element.tag == 'r':
                             data2.append(element)
 
                 if extract_dielectrics:
-                    if event == "start" and element.tag == "r":
+                    if event == 'start' and element.tag == 'r':
                         data.append(element)
 
                 if extract_projected:
                     # make sure we skip the first entry containing
                     # the eigenvalues (already stored at this point)
-                    if event == "end" and element.tag == "eigenvalues":
+                    if event == 'end' and element.tag == 'eigenvalues':
                         extract_eig_proj = True
-                    if event == "end" and element.tag == "array" and \
+                    if event == 'end' and element.tag == 'array' and \
                        extract_eig_proj:
                         if not data2:
                             projectors = self._extract_projectors(data, None)
                         else:
                             projectors = self._extract_projectors(data, data2)
-                        self._data["projectors"] = projectors
+                        self._data['projectors'] = projectors
                         data = []
                         data2 = []
                         extract_eig_proj = False
 
                     if extract_eig_proj:
-                        if event == "start" and element.tag == "set" \
-                           and element.attrib.get("comment") == "spin1":
+                        if event == 'start' and element.tag == 'set' \
+                           and element.attrib.get('comment') == 'spin1':
                             extract_eig_proj_ispin1 = True
-                        if event == "end" and element.tag == "set" \
-                           and element.attrib.get("comment") == "spin1":
+                        if event == 'end' and element.tag == 'set' \
+                           and element.attrib.get('comment') == 'spin1':
                             extract_eig_proj_ispin1 = False
-                        if event == "start" and element.tag == "set" \
-                           and element.attrib.get("comment") == "spin2":
+                        if event == 'start' and element.tag == 'set' \
+                           and element.attrib.get('comment') == 'spin2':
                             extract_eig_proj_ispin2 = True
-                        if event == "end" and element.tag == "set" \
-                           and element.attrib.get("comment") == "spin2":
+                        if event == 'end' and element.tag == 'set' \
+                           and element.attrib.get('comment') == 'spin2':
                             extract_eig_proj_ispin2 = False
                         if extract_eig_proj_ispin1:
-                            if event == "start" and element.tag == "r":
+                            if event == 'start' and element.tag == 'r':
                                 data.append(element)
                         if extract_eig_proj_ispin2:
-                            if event == "start" and element.tag == "r":
+                            if event == 'start' and element.tag == 'r':
                                 data2.append(element)
 
                 if extract_dynmat:
-                    if event == "start" and element.tag == "varray" \
-                       and element.attrib.get("name") == "hessian":
+                    if event == 'start' and element.tag == 'varray' \
+                       and element.attrib.get('name') == 'hessian':
                         extract_hessian = True
-                    if event == "end" and element.tag == "varray" \
-                       and element.attrib.get("name") == "hessian":
+                    if event == 'end' and element.tag == 'varray' \
+                       and element.attrib.get('name') == 'hessian':
                         num_atoms = 0
-                        if self._lattice["species"] is not None:
-                            num_atoms = self._lattice["species"].shape[0]
+                        if self._lattice['species'] is not None:
+                            num_atoms = self._lattice['species'].shape[0]
                         else:
-                            self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_SPECIES])
+                            self._logger.error(
+                                self.ERROR_MESSAGES[self.ERROR_NO_SPECIES])
                             sys.exit(self.ERROR_NO_SPECIES)
-                        hessian = self._convert_array2D_f(
-                            data, num_atoms * 3)
-                        self._data["hessian"] = hessian
+                        hessian = self._convert_array2D_f(data, num_atoms * 3)
+                        self._data['hessian'] = hessian
                         data = []
                         extract_hessian = False
-                    if event == "start" and element.tag == "varray" \
-                       and element.attrib.get("name") == "eigenvectors":
+                    if event == 'start' and element.tag == 'varray' \
+                       and element.attrib.get('name') == 'eigenvectors':
                         extract_dynmat_eigen = True
-                    if event == "end" and element.tag == "varray" \
-                       and element.attrib.get("name") == "eigenvectors":
+                    if event == 'end' and element.tag == 'varray' \
+                       and element.attrib.get('name') == 'eigenvectors':
                         num_atoms = 0
-                        if self._lattice["species"] is not None:
-                            num_atoms = self._lattice["species"].shape[0]
+                        if self._lattice['species'] is not None:
+                            num_atoms = self._lattice['species'].shape[0]
                         else:
-                            self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_SPECIES])
+                            self._logger.error(
+                                self.ERROR_MESSAGES[self.ERROR_NO_SPECIES])
                             sys.exit(self.ERROR_NO_SPECIES)
-                        eigenvec = self._convert_array2D_f(
-                            data, num_atoms * 3)
-                        dynmat["eigenvectors"] = eigenvec
+                        eigenvec = self._convert_array2D_f(data, num_atoms * 3)
+                        dynmat['eigenvectors'] = eigenvec
                         data = []
                         extract_dynmat_eigen = False
                     if extract_hessian:
-                        if event == "start" and element.tag == "v":
+                        if event == 'start' and element.tag == 'v':
                             data.append(element)
                     if extract_dynmat_eigen:
-                        if event == "start" and element.tag == "v":
+                        if event == 'start' and element.tag == 'v':
                             data.append(element)
                     try:
-                        if event == "start" and \
-                           element.attrib["name"] == "eigenvalues":
-                            dynmat["eigenvalues"] = self._convert_array_f(
+                        if event == 'start' and \
+                           element.attrib['name'] == 'eigenvalues':
+                            dynmat['eigenvalues'] = self._convert_array_f(
                                 element)
                     except KeyError:
                         pass
 
                 if extract_born:
-                    if event == "start" and element.tag == "v":
+                    if event == 'start' and element.tag == 'v':
                         data.append(element)
 
             if extract_species:
-                if event == "start" and element.tag == "c":
+                if event == 'start' and element.tag == 'c':
                     data.append(element)
 
             if extract_kpointdata:
                 try:
-                    if event == "start" and element.tag == "v" and \
-                       element.attrib["name"] == "divisions":
-                        self._lattice[
-                            "kpointdiv"] = self._convert_array_i(element)
+                    if event == 'start' and element.tag == 'v' and \
+                       element.attrib['name'] == 'divisions':
+                        self._lattice['kpointdiv'] = self._convert_array_i(
+                            element)
                 except KeyError:
                     pass
 
-                if event == "start" and element.tag == "varray" \
-                   and element.attrib.get("name") == "kpointlist":
+                if event == 'start' and element.tag == 'varray' \
+                   and element.attrib.get('name') == 'kpointlist':
                     extract_kpoints = True
-                if event == "end" and element.tag == "varray" \
-                   and element.attrib.get("name") == "kpointlist":
-                    self._lattice["kpoints"] = self._convert_array2D_f(data, 3)
+                if event == 'end' and element.tag == 'varray' \
+                   and element.attrib.get('name') == 'kpointlist':
+                    self._lattice['kpoints'] = self._convert_array2D_f(data, 3)
                     data = []
                     extract_kpoints = False
-                if event == "start" and element.tag == "varray" \
-                   and element.attrib.get("name") == "weights":
+                if event == 'start' and element.tag == 'varray' \
+                   and element.attrib.get('name') == 'weights':
                     extract_kpointsw = True
-                if event == "end" and element.tag == "varray" \
-                   and element.attrib.get("name") == "weights":
-                    self._lattice["kpointsw"] = self._convert_array1D_f(data)
+                if event == 'end' and element.tag == 'varray' \
+                   and element.attrib.get('name') == 'weights':
+                    self._lattice['kpointsw'] = self._convert_array1D_f(data)
                     data = []
                     extract_kpointsw = False
                 if extract_kpoints:
-                    if event == "start" and element.tag == "v":
+                    if event == 'start' and element.tag == 'v':
                         data.append(element)
                 if extract_kpointsw:
-                    if event == "start" and element.tag == "v":
+                    if event == 'start' and element.tag == 'v':
                         data.append(element)
 
             if extract_dos:
-                if event == "start" and element.tag == "i" and \
-                   element.attrib.get("name") == "efermi":
+                if event == 'start' and element.tag == 'i' and \
+                   element.attrib.get('name') == 'efermi':
                     data4.append(element)
-                if event == "start" and element.tag == "set" \
-                   and element.attrib.get("comment") == "spin 1":
+                if event == 'start' and element.tag == 'set' \
+                   and element.attrib.get('comment') == 'spin 1':
                     extract_dos_ispin1 = True
-                if event == "end" and element.tag == "set" \
-                   and element.attrib.get("comment") == "spin 1":
+                if event == 'end' and element.tag == 'set' \
+                   and element.attrib.get('comment') == 'spin 1':
                     extract_dos_ispin1 = False
-                if event == "start" and element.tag == "set" \
-                   and element.attrib.get("comment") == "spin 2":
+                if event == 'start' and element.tag == 'set' \
+                   and element.attrib.get('comment') == 'spin 2':
                     extract_dos_ispin2 = True
-                if event == "end" and element.tag == "set" \
-                   and element.attrib.get("comment") == "spin 2":
+                if event == 'end' and element.tag == 'set' \
+                   and element.attrib.get('comment') == 'spin 2':
                     extract_dos_ispin2 = False
                 if extract_dos_ispin1:
-                    if event == "start" and element.tag == "r":
+                    if event == 'start' and element.tag == 'r':
                         data.append(element)
                 if extract_dos_ispin2:
-                    if event == "start" and element.tag == "r":
+                    if event == 'start' and element.tag == 'r':
                         data2.append(element)
 
             if extract_dos_specific:
-                if event == "start" and element.tag == "i" and \
-                   element.attrib.get("name") == "efermi":
+                if event == 'start' and element.tag == 'i' and \
+                   element.attrib.get('name') == 'efermi':
                     data4.append(element)
-                if event == "start" and element.tag == "set" \
-                   and element.attrib.get("comment") == "spin 1":
+                if event == 'start' and element.tag == 'set' \
+                   and element.attrib.get('comment') == 'spin 1':
                     extract_dos_specific_ispin1 = True
-                if event == "end" and element.tag == "set" \
-                   and element.attrib.get("comment") == "spin 1":
+                if event == 'end' and element.tag == 'set' \
+                   and element.attrib.get('comment') == 'spin 1':
                     extract_dos_specific_ispin1 = False
-                if event == "start" and element.tag == "set" \
-                   and element.attrib.get("comment") == "spin 2":
+                if event == 'start' and element.tag == 'set' \
+                   and element.attrib.get('comment') == 'spin 2':
                     extract_dos_specific_ispin2 = True
-                if event == "end" and element.tag == "set" \
-                   and element.attrib.get("comment") == "spin 2":
+                if event == 'end' and element.tag == 'set' \
+                   and element.attrib.get('comment') == 'spin 2':
                     extract_dos_specific_ispin2 = False
                 if extract_dos_specific_ispin1:
-                    if event == "start" and element.tag == "r":
+                    if event == 'start' and element.tag == 'r':
                         data.append(element)
                 if extract_dos_specific_ispin2:
-                    if event == "start" and element.tag == "r":
+                    if event == 'start' and element.tag == 'r':
                         data2.append(element)
-
 
         # now we need to update some elements
         # for static runs, initial is equal to final
@@ -993,20 +1033,15 @@ class Xml(BaseParser):
         if not all:
             # only save initial and final
             if cell:
-                cell = {key: np.asarray(cell[key])
-                        for key in {1, 2}}
+                cell = {key: np.asarray(cell[key]) for key in {1, 2}}
             if pos:
-                pos = {key: np.asarray(pos[key])
-                       for key in {1, 2}}
+                pos = {key: np.asarray(pos[key]) for key in {1, 2}}
             if force:
-                force = {key: force[key]
-                         for key in {1, 2}}
+                force = {key: force[key] for key in {1, 2}}
             if stress:
-                stress = {key: stress[key]
-                          for key in {1, 2}}
+                stress = {key: stress[key] for key in {1, 2}}
             if totens:
-                totens = {key: totens[key]
-                          for key in {1, 2}}
+                totens = {key: totens[key] for key in {1, 2}}
 
         # if any dict is empty, set to zero
         if not cell:
@@ -1021,11 +1056,11 @@ class Xml(BaseParser):
             totens = None
 
         # store
-        self._lattice["unitcell"] = cell
-        self._lattice["positions"] = pos
-        self._data["forces"] = force
-        self._data["stress"] = stress
-        self._data["totens"] = totens
+        self._lattice['unitcell'] = cell
+        self._lattice['positions'] = pos
+        self._data['forces'] = force
+        self._data['stress'] = stress
+        self._data['totens'] = totens
 
         return
 
@@ -1048,8 +1083,9 @@ class Xml(BaseParser):
 
         """
 
-        entry = self._find(xml, './/parameters/separator[@name="symmetry"]/'
-                           'i[@name="SYMPREC"]')
+        entry = self._find(
+            xml, './/parameters/separator[@name="symmetry"]/'
+            'i[@name="SYMPREC"]')
 
         if entry is None:
             return None
@@ -1077,9 +1113,10 @@ class Xml(BaseParser):
 
         """
 
-        entry = self._find(xml, './/parameters/separator[@name="electronic"]/'
-                           'separator[@name="electronic smearing"]/'
-                           'i[@name="SIGMA"]')
+        entry = self._find(
+            xml, './/parameters/separator[@name="electronic"]/'
+            'separator[@name="electronic smearing"]/'
+            'i[@name="SIGMA"]')
 
         if entry is None:
             return None
@@ -1107,9 +1144,10 @@ class Xml(BaseParser):
 
         """
 
-        entry = self._find(xml, './/parameters/separator[@name="electronic"]/'
-                           'separator[@name="electronic spin"]/'
-                           'i[@name="ISPIN"]')
+        entry = self._find(
+            xml, './/parameters/separator[@name="electronic"]/'
+            'separator[@name="electronic spin"]/'
+            'i[@name="ISPIN"]')
         if entry is None:
             return None
 
@@ -1136,9 +1174,10 @@ class Xml(BaseParser):
 
         """
 
-        entry = self._find(xml, './/parameters/separator[@name="electronic"]/'
-                           'separator[@name="electronic smearing"]/'
-                           'i[@name="ISMEAR"]')
+        entry = self._find(
+            xml, './/parameters/separator[@name="electronic"]/'
+            'separator[@name="electronic smearing"]/'
+            'i[@name="ISMEAR"]')
 
         if entry is None:
             return None
@@ -1166,8 +1205,9 @@ class Xml(BaseParser):
 
         """
 
-        entry = self._find(xml, './/parameters/separator[@name="electronic"]/'
-                           'i[@name="NBANDS"]')
+        entry = self._find(
+            xml, './/parameters/separator[@name="electronic"]/'
+            'i[@name="NBANDS"]')
         if entry is None:
             return None
 
@@ -1194,8 +1234,9 @@ class Xml(BaseParser):
 
         """
 
-        entry = self._find(xml, './/parameters/separator[@name="electronic"]/'
-                           'i[@name="NELECT"]')
+        entry = self._find(
+            xml, './/parameters/separator[@name="electronic"]/'
+            'i[@name="NELECT"]')
 
         if entry is None:
             return None
@@ -1223,8 +1264,9 @@ class Xml(BaseParser):
 
         """
 
-        entry = self._find(xml, './/parameters/separator[@name="general"]/'
-                           'i[@name="SYSTEM"]')
+        entry = self._find(
+            xml, './/parameters/separator[@name="general"]/'
+            'i[@name="SYSTEM"]')
 
         if entry is None:
             return None
@@ -1249,14 +1291,15 @@ class Xml(BaseParser):
 
         """
 
-        entry = self._findall(xml, './/calculation/array[@name="born_charges"]/'
-                              'set/v')
+        entry = self._findall(
+            xml, './/calculation/array[@name="born_charges"]/'
+            'set/v')
 
         if entry is None:
             return None
 
         num_atoms = 0
-        species = self._lattice["species"]
+        species = self._lattice['species']
         if species is None:
             # Try to fetch species again, if still none, we cannot parse it
             # and thus we cannot parse the entries in here either.
@@ -1301,7 +1344,7 @@ class Xml(BaseParser):
         force = {}
         stress = {}
         num_atoms = 0
-        species = self._lattice["species"]
+        species = self._lattice['species']
         if species is None:
             # Try to fetch species again, if still none, we cannot parse it
             # and thus we cannot parse the entries in here either.
@@ -1311,26 +1354,32 @@ class Xml(BaseParser):
         num_atoms = species.shape[0]
 
         if not all:
-            entry = self._findall(xml,
-                                  './/structure[@name="finalpos"]/crystal/varray[@name="basis"]/v')
+            entry = self._findall(
+                xml,
+                './/structure[@name="finalpos"]/crystal/varray[@name="basis"]/v'
+            )
             if entry is not None:
                 cell[2] = self._convert_array2D_f(entry, 3)
             else:
                 cell[2] = None
-            entry = self._findall(xml,
-                                  './/structure[@name="initialpos"]/crystal/varray[@name="basis"]/v')
+            entry = self._findall(
+                xml,
+                './/structure[@name="initialpos"]/crystal/varray[@name="basis"]/v'
+            )
             if entry is not None:
                 cell[1] = self._convert_array2D_f(entry, 3)
             else:
                 cell[1] = None
-            entry = self._findall(xml,
-                                  './/structure[@name="finalpos"]/varray[@name="positions"]/v')
+            entry = self._findall(
+                xml,
+                './/structure[@name="finalpos"]/varray[@name="positions"]/v')
             if entry is not None:
                 pos[2] = self._convert_array2D_f(entry, 3)
             else:
                 pos[2] = None
-            entry = self._findall(xml,
-                                  './/structure[@name="initialpos"]/varray[@name="positions"]/v')
+            entry = self._findall(
+                xml,
+                './/structure[@name="initialpos"]/varray[@name="positions"]/v')
             if entry is not None:
                 pos[1] = self._convert_array2D_f(entry, 3)
             else:
@@ -1356,14 +1405,15 @@ class Xml(BaseParser):
                 force[2] = None
         else:
             structures = self._findall(xml, './/calculation/structure')
-            entrycell = self._findall(xml,
-                                      './/calculation/structure/crystal/varray[@name="basis"]/v')
-            entrypos = self._findall(xml,
-                                     './/calculation/structure/varray[@name="positions"]/v')
-            entryforce = self._findall(xml,
-                                       './/calculation/varray[@name="forces"]/v')
-            entrystress = self._findall(xml,
-                                        './/calculation/varray[@name="stress"]/v')
+            entrycell = self._findall(
+                xml,
+                './/calculation/structure/crystal/varray[@name="basis"]/v')
+            entrypos = self._findall(
+                xml, './/calculation/structure/varray[@name="positions"]/v')
+            entryforce = self._findall(
+                xml, './/calculation/varray[@name="forces"]/v')
+            entrystress = self._findall(
+                xml, './/calculation/varray[@name="stress"]/v')
 
             if structures is not None:
                 num_calcs = len(structures)
@@ -1401,7 +1451,8 @@ class Xml(BaseParser):
                 num_entryforce = len(entryforce)
                 force[1] = self._convert_array2D_f(entryforce[0:num_atoms], 3)
                 if num_entryforce > 3:
-                    force[2] = self._convert_array2D_f(entryforce[-num_atoms:], 3)
+                    force[2] = self._convert_array2D_f(entryforce[-num_atoms:],
+                                                       3)
                 else:
                     force[2] = None
             else:
@@ -1419,7 +1470,9 @@ class Xml(BaseParser):
                 stress[1] = None
                 stress[2] = None
 
-            max_entries = max(num_entrystress, max(num_entryforce, max(num_entrycell, num_entrypos)))
+            max_entries = max(
+                num_entrystress,
+                max(num_entryforce, max(num_entrycell, num_entrypos)))
             if max_entries > 6:
                 for calc in range(1, num_calcs):
                     basecell = calc * 3
@@ -1496,13 +1549,14 @@ class Xml(BaseParser):
 
         """
 
-        entry = self._findall(xml, './/calculation/dynmat/'
-                              'varray[@name="hessian"]/v')
+        entry = self._findall(
+            xml, './/calculation/dynmat/'
+            'varray[@name="hessian"]/v')
 
         if entry is None:
             return None
 
-        species = self._lattice["species"]
+        species = self._lattice['species']
         if species is None:
             # Try to fetch species again, if still none, we cannot parse it
             # and thus we cannot parse the entries in here either.
@@ -1536,7 +1590,7 @@ class Xml(BaseParser):
         if entry is None:
             return None
 
-        species = self._lattice["species"]
+        species = self._lattice['species']
         if species is None:
             # Try to fetch species again, if still none, we cannot parse it
             # and thus we cannot parse the entries in here either.
@@ -1547,20 +1601,21 @@ class Xml(BaseParser):
 
         eigenvalues = self._convert_array_f(entry)
 
-        entry = self._find(xml, './/calculation/dynmat/'
-                           'varray[@name="eigenvectors"]')
+        entry = self._find(
+            xml, './/calculation/dynmat/'
+            'varray[@name="eigenvectors"]')
 
         if entry is None:
             return None
 
         eigenvectors = self._convert_array2D_f(entry, num_atoms * 3)
 
-        dynmat = {"eigenvalues": eigenvalues,
-                  "eigenvectors": eigenvectors}
+        dynmat = {'eigenvalues': eigenvalues, 'eigenvectors': eigenvectors}
 
         return dynmat
 
-    def _fetch_kpointsw(self, xml, path='kpoints/varray[@name="kpointlist"]/v'):
+    def _fetch_kpointsw(self, xml,
+                        path='kpoints/varray[@name="kpointlist"]/v'):
         """Fetch the kpoints.
 
         Parameters
@@ -1630,8 +1685,7 @@ class Xml(BaseParser):
 
         """
 
-        entry = self._find(xml,
-                           'kpoints/generation/v[@name="divisions"]')
+        entry = self._find(xml, 'kpoints/generation/v[@name="divisions"]')
 
         if entry is None:
             return None
@@ -1658,21 +1712,21 @@ class Xml(BaseParser):
         """
 
         # spin 1
-        entry_ispin1 = self._findall(xml,
-                                     './/calculation/eigenvalues/array/set/'
-                                     'set[@comment="spin 1"]/set/r')
+        entry_ispin1 = self._findall(
+            xml, './/calculation/eigenvalues/array/set/'
+            'set[@comment="spin 1"]/set/r')
 
         # spin 2
-        entry_ispin2 = self._findall(xml,
-                                     './/calculation/eigenvalues/array/set/'
-                                     'set[@comment="spin 2"]/set/r')
+        entry_ispin2 = self._findall(
+            xml, './/calculation/eigenvalues/array/set/'
+            'set[@comment="spin 2"]/set/r')
 
         # if we do not find spin 1 entries return right away
         if entry_ispin1 is None:
             return None, None
 
-        eigenvalues, occupancies = self._extract_eigenvalues(entry_ispin1,
-                                                             entry_ispin2, len(self._lattice['kpoints']))
+        eigenvalues, occupancies = self._extract_eigenvalues(
+            entry_ispin1, entry_ispin2, len(self._lattice['kpoints']))
 
         return eigenvalues, occupancies
 
@@ -1694,31 +1748,33 @@ class Xml(BaseParser):
         """
 
         # spin 1
-        entry_ispin1 = self._findall(xml,
-                                     './/calculation/eigenvalues/'
-                                     'eigenvalues/array/set/'
-                                     'set[@comment="spin 1"]/set/r')
+        entry_ispin1 = self._findall(
+            xml, './/calculation/eigenvalues/'
+            'eigenvalues/array/set/'
+            'set[@comment="spin 1"]/set/r')
         # spin 2
-        entry_ispin2 = self._findall(xml,
-                                     './/calculation/eigenvalues/'
-                                     'eigenvalues/array/set/'
-                                     'set[@comment="spin 2"]/set/r')
+        entry_ispin2 = self._findall(
+            xml, './/calculation/eigenvalues/'
+            'eigenvalues/array/set/'
+            'set[@comment="spin 2"]/set/r')
         if entry_ispin1 is not None:
             # Also extract the k-point grids
-            self._data['kpoints'] = self._fetch_kpointsw(xml,
-                                                         path='.//calculation/eigenvalues/'
-                                                         'kpoints/varray[@name="kpointlist"]/v')
+            self._data['kpoints'] = self._fetch_kpointsw(
+                xml,
+                path='.//calculation/eigenvalues/'
+                'kpoints/varray[@name="kpointlist"]/v')
 
-            self._data['kpointsw'] = self._fetch_kpointsww(xml,
-                                                           path='//calculation/eigenvalues/'
-                                                           'kpoints/varray[@name="weights"]/v')
+            self._data['kpointsw'] = self._fetch_kpointsww(
+                xml,
+                path='//calculation/eigenvalues/'
+                'kpoints/varray[@name="weights"]/v')
 
         # if we do not find spin 1 entries return right away
         if entry_ispin1 is None:
             return None
 
-        eigenvalues, _ = self._extract_eigenvalues(entry_ispin1,
-                                                   entry_ispin2, len(self._data['kpoints']))
+        eigenvalues, _ = self._extract_eigenvalues(entry_ispin1, entry_ispin2,
+                                                   len(self._data['kpoints']))
 
         return eigenvalues
 
@@ -1743,29 +1799,33 @@ class Xml(BaseParser):
         """
 
         # spin 1
-        entry_ispin1 = self._findall(xml,
-                                     './/calculation/eigenvelocities/'
-                                     'eigenvalues/array/set/'
-                                     'set[@comment="spin 1"]/set/r')
+        entry_ispin1 = self._findall(
+            xml, './/calculation/eigenvelocities/'
+            'eigenvalues/array/set/'
+            'set[@comment="spin 1"]/set/r')
 
         # spin 2
-        entry_ispin2 = self._findall(xml,
-                                     './/calculation/eigenvelocities/'
-                                     'eigenvalues/array/set/'
-                                     'set[@comment="spin 2"]/set/r')
+        entry_ispin2 = self._findall(
+            xml, './/calculation/eigenvelocities/'
+            'eigenvalues/array/set/'
+            'set[@comment="spin 2"]/set/r')
 
         # if we do not find spin 1 entries return right away
         if entry_ispin1 is None:
             return None
 
-        self._data['kpoints'] = self._fetch_kpointsw(xml, path='.//calculation/eigenvelocities/'
-                                       'kpoints/varray[@name="kpointlist"]/v')
+        self._data['kpoints'] = self._fetch_kpointsw(
+            xml,
+            path='.//calculation/eigenvelocities/'
+            'kpoints/varray[@name="kpointlist"]/v')
 
-        self._data['kpointsw'] = self._fetch_kpointsww(xml, path='//calculation/eigenvelocities/'
-                                         'kpoints/varray[@name="weights"]/v')
+        self._data['kpointsw'] = self._fetch_kpointsww(
+            xml,
+            path='//calculation/eigenvelocities/'
+            'kpoints/varray[@name="weights"]/v')
 
-        eigenvelocities = self._extract_eigenvelocities(entry_ispin1,
-                                                        entry_ispin2, len(self._data['kpoints']))
+        eigenvelocities = self._extract_eigenvelocities(
+            entry_ispin1, entry_ispin2, len(self._data['kpoints']))
 
         return eigenvelocities
 
@@ -1786,21 +1846,20 @@ class Xml(BaseParser):
         """
 
         # projectors spin 1
-        entry_ispin1 = self._findall(xml,
-                                     './/calculation/projected/array/set/'
-                                     'set[@comment="spin1"]/set/set/r')
+        entry_ispin1 = self._findall(
+            xml, './/calculation/projected/array/set/'
+            'set[@comment="spin1"]/set/set/r')
 
         # projectors spin 2
-        entry_ispin2 = self._findall(xml,
-                                     './/calculation/projected/array/set/'
-                                     'set[@comment="spin2"]/set/set/r')
+        entry_ispin2 = self._findall(
+            xml, './/calculation/projected/array/set/'
+            'set[@comment="spin2"]/set/set/r')
 
         # if we do not find spin 1 entries return right away
         if entry_ispin1 is None:
             return None
 
-        projectors = self._extract_projectors(entry_ispin1,
-                                              entry_ispin2)
+        projectors = self._extract_projectors(entry_ispin1, entry_ispin2)
         return projectors
 
     def _fetch_totensw(self, xml):
@@ -1829,8 +1888,7 @@ class Xml(BaseParser):
         # and sort from there
         #
 
-        entries = self._findall(xml,
-                                './/calculation')
+        entries = self._findall(xml, './/calculation')
 
         if entries is None:
             return None
@@ -1842,17 +1900,15 @@ class Xml(BaseParser):
         energies = {}
         for index, calc in enumerate(entries):
             # energy without entropy
-            data = self._findall(
-                calc, './/scstep/energy/i[@name="e_0_energy"]')
+            data = self._findall(calc,
+                                 './/scstep/energy/i[@name="e_0_energy"]')
             if data is None:
                 return None
             data = self._convert_array1D_f(data)
             if index == 0:
-                energies[1] = {"energy_no_entropy":
-                               [data[-1], data]}
+                energies[1] = {'energy_no_entropy': [data[-1], data]}
             else:
-                energies[index + 1] = {"energy_no_entropy":
-                                       [data[-1], data]}
+                energies[index + 1] = {'energy_no_entropy': [data[-1], data]}
 
         num_calcs = len(energies)
         if num_calcs == 1:
@@ -1877,8 +1933,7 @@ class Xml(BaseParser):
         """
 
         # fetch the Fermi level
-        entry = self._find(xml,
-                           './/calculation/dos/i[@name="efermi"]')
+        entry = self._find(xml, './/calculation/dos/i[@name="efermi"]')
 
         if entry is not None:
             fermi_level = self._convert_f(entry)
@@ -1886,27 +1941,31 @@ class Xml(BaseParser):
             fermi_level = None
 
         # spin 1
-        entry_total_ispin1 = self._findall(xml,
-                                           './/calculation/dos/total/array/set/set[@comment="spin 1"]/r')
+        entry_total_ispin1 = self._findall(
+            xml, './/calculation/dos/total/array/set/set[@comment="spin 1"]/r')
 
         # spin 2
-        entry_total_ispin2 = self._findall(xml,
-                                           './/calculation/dos/total/array/set/set[@comment="spin 2"]/r')
+        entry_total_ispin2 = self._findall(
+            xml, './/calculation/dos/total/array/set/set[@comment="spin 2"]/r')
 
         # partial spin 1
-        entry_partial_ispin1 = self._findall(xml,
-                                             './/calculation/dos/partial/array/set/set/set[@comment="spin 1"]/r')
+        entry_partial_ispin1 = self._findall(
+            xml,
+            './/calculation/dos/partial/array/set/set/set[@comment="spin 1"]/r'
+        )
 
         # partial spin 2
-        entry_partial_ispin2 = self._findall(xml,
-                                             './/calculation/dos/partial/array/set/set/set[@comment="spin 2"]/r')
+        entry_partial_ispin2 = self._findall(
+            xml,
+            './/calculation/dos/partial/array/set/set/set[@comment="spin 2"]/r'
+        )
 
         # if no entries for spin 1, eject right away
         if entry_total_ispin1 is None:
             return None, None
 
         num_atoms = 0
-        species = self._lattice["species"]
+        species = self._lattice['species']
         if species is None:
             # Try to fetch species again, if still none, we cannot parse it
             # and thus we cannot parse the entries in here either.
@@ -1915,12 +1974,15 @@ class Xml(BaseParser):
                 return None, None
         num_atoms = species.shape[0]
 
-        dos = self._extract_dos(entry_total_ispin1, entry_total_ispin2, entry_partial_ispin1, entry_partial_ispin2, fermi_level, num_atoms)
+        dos = self._extract_dos(entry_total_ispin1, entry_total_ispin2,
+                                entry_partial_ispin1, entry_partial_ispin2,
+                                fermi_level, num_atoms)
 
         # Now extract the density of states for specific k-point grids
         # fetch the Fermi level again as this can be different
-        entry = self._find(xml,
-                           './/calculation/dos[@comment="interpolated"]/i[@name="efermi"]')
+        entry = self._find(
+            xml,
+            './/calculation/dos[@comment="interpolated"]/i[@name="efermi"]')
 
         if entry is not None:
             fermi_level = self._convert_f(entry)
@@ -1928,30 +1990,44 @@ class Xml(BaseParser):
             fermi_level = None
 
         # spin 1
-        entry_total_ispin1 = self._findall(xml,
-                                           './/calculation/dos[@comment="interpolated"]/total/array/set/set[@comment="spin 1"]/r')
+        entry_total_ispin1 = self._findall(
+            xml,
+            './/calculation/dos[@comment="interpolated"]/total/array/set/set[@comment="spin 1"]/r'
+        )
 
         # spin 2
-        entry_total_ispin2 = self._findall(xml,
-                                           './/calculation/dos[@comment="interpolated"]/total/array/set/set[@comment="spin 2"]/r')
+        entry_total_ispin2 = self._findall(
+            xml,
+            './/calculation/dos[@comment="interpolated"]/total/array/set/set[@comment="spin 2"]/r'
+        )
 
         # partial spin 1
-        entry_partial_ispin1 = self._findall(xml,
-                                             './/calculation/dos[@comment="interpolated"]/partial/array/set/set/set[@comment="spin 1"]/r')
+        entry_partial_ispin1 = self._findall(
+            xml,
+            './/calculation/dos[@comment="interpolated"]/partial/array/set/set/set[@comment="spin 1"]/r'
+        )
 
         # partial spin 2
-        entry_partial_ispin2 = self._findall(xml,
-                                             './/calculation/dos[@comment="interpolated"]/partial/array/set/set/set[@comment="spin 2"]/r')
+        entry_partial_ispin2 = self._findall(
+            xml,
+            './/calculation/dos[@comment="interpolated"]/partial/array/set/set/set[@comment="spin 2"]/r'
+        )
 
         # if no entries for spin 1, eject right away
         if entry_total_ispin1 is None:
             return dos, None
 
-        dos_specific = self._extract_dos(entry_total_ispin1, entry_total_ispin2, entry_partial_ispin1, entry_partial_ispin2, fermi_level, num_atoms)
+        dos_specific = self._extract_dos(entry_total_ispin1,
+                                         entry_total_ispin2,
+                                         entry_partial_ispin1,
+                                         entry_partial_ispin2, fermi_level,
+                                         num_atoms)
 
         return dos, dos_specific
 
-    def _extract_dos(self, entry_total_ispin1, entry_total_ispin2, entry_partial_ispin1, entry_partial_ispin2, fermi_level, num_atoms):
+    def _extract_dos(self, entry_total_ispin1, entry_total_ispin2,
+                     entry_partial_ispin1, entry_partial_ispin2, fermi_level,
+                     num_atoms):
         """Extract the density of states.
 
         Parameters
@@ -1982,56 +2058,56 @@ class Xml(BaseParser):
         """
         if entry_total_ispin2:
             dos = {}
-            dos = {"up": None, "down": None}
+            dos = {'up': None, 'down': None}
             dos_ispin = self._convert_array2D_f(entry_total_ispin1, 3)
             _dosup = {}
             _dosdown = {}
             enrgy = dos_ispin[:, 0]
-            _dosup["total"] = dos_ispin[:, 1]
-            _dosup["integrated"] = dos_ispin[:, 2]
+            _dosup['total'] = dos_ispin[:, 1]
+            _dosup['integrated'] = dos_ispin[:, 2]
             # check if partial exists
             if entry_partial_ispin1:
                 dos_ispin = self._convert_array2D_f(entry_partial_ispin1, 10)
                 # do not need the energy term (similar to total)
-                _dosup["partial"] = np.asarray(
+                _dosup['partial'] = np.asarray(
                     np.split(dos_ispin[:, 1:10], num_atoms))
             else:
-                _dosup["partial"] = None
-            dos["up"] = _dosup
+                _dosup['partial'] = None
+            dos['up'] = _dosup
             dos_ispin = self._convert_array2D_f(entry_total_ispin2, 3)
-            _dosdown["total"] = dos_ispin[:, 1]
-            _dosdown["integrated"] = dos_ispin[:, 2]
+            _dosdown['total'] = dos_ispin[:, 1]
+            _dosdown['integrated'] = dos_ispin[:, 2]
             if entry_partial_ispin2:
                 dos_ispin = self._convert_array2D_f(entry_partial_ispin2, 10)
                 # do not need the energy term (similar to total)
-                _dosdown["partial"] = np.asarray(
+                _dosdown['partial'] = np.asarray(
                     np.split(dos_ispin[:, 1:10], num_atoms))
             else:
                 _dosdown['partial'] = None
-            dos["down"] = _dosdown
-            dos["total"] = {"fermi_level": fermi_level, "energy": enrgy}
+            dos['down'] = _dosdown
+            dos['total'] = {'fermi_level': fermi_level, 'energy': enrgy}
         else:
             dos = {}
-            dos = {"total": None}
+            dos = {'total': None}
             dos_ispin = self._convert_array2D_f(entry_total_ispin1, 3)
             _dos = {}
-            _dos["energy"] = dos_ispin[:, 0]
-            _dos["total"] = dos_ispin[:, 1]
-            _dos["integrated"] = dos_ispin[:, 2]
+            _dos['energy'] = dos_ispin[:, 0]
+            _dos['total'] = dos_ispin[:, 1]
+            _dos['integrated'] = dos_ispin[:, 2]
             # check if partial exists
             if entry_partial_ispin1:
                 dos_ispin = self._convert_array2D_f(entry_partial_ispin1, 10)
                 # do not need the energy term (similar to total)
-                _dos["partial"] = np.asarray(
+                _dos['partial'] = np.asarray(
                     np.split(dos_ispin[:, 1:10], num_atoms))
             else:
-                _dos["partial"] = None
-            _dos["fermi_level"] = fermi_level
-            dos["total"] = _dos
+                _dos['partial'] = None
+            _dos['fermi_level'] = fermi_level
+            dos['total'] = _dos
 
         return dos
 
-    def _fetch_dielectricsw(self, xml, method="dft", transfer=None):
+    def _fetch_dielectricsw(self, xml, method='dft', transfer=None):
         """ Fetch the dielectric function from the VASP XML file
 
         Parameters
@@ -2094,50 +2170,50 @@ class Xml(BaseParser):
 
         """
 
-        if method == "dft":
+        if method == 'dft':
             diel = {}
-            if transfer == "density":
+            if transfer == 'density':
                 tag = 'dielectricfunction[@comment="density-density"]'
-            elif transfer == "current":
+            elif transfer == 'current':
                 tag = 'dielectricfunction[@comment="current-current"]'
             else:
                 tag = 'dielectricfunction'
 
             # imaginary part
-            entry = self._findall(xml,
-                                  './/calculation/' + tag + '/imag/array/set/r')
+            entry = self._findall(
+                xml, './/calculation/' + tag + '/imag/array/set/r')
             if entry is None:
-                diel["imag"] = None
-                diel["energy"] = None
+                diel['imag'] = None
+                diel['energy'] = None
             else:
                 data = self._convert_array2D_f(entry, 7)
-                diel["energy"] = data[:, 0]
-                diel["imag"] = data[:, 1:7]
+                diel['energy'] = data[:, 0]
+                diel['imag'] = data[:, 1:7]
 
             # real part
-            entry = self._findall(xml,
-                                  './/calculation/' + tag + '/real/array/set/r')
+            entry = self._findall(
+                xml, './/calculation/' + tag + '/real/array/set/r')
             if entry is None:
-                diel["real"] = None
+                diel['real'] = None
             else:
                 data = self._convert_array2D_f(entry, 7)
-                diel["real"] = data[:, 1:7]
+                diel['real'] = data[:, 1:7]
 
             # epsilon part
             entry = self._findall(xml,
                                   './/calculation/varray[@name="epsilon"]/v')
             if entry is not None:
-                diel["epsilon"] = self._convert_array2D_f(entry, 3)
+                diel['epsilon'] = self._convert_array2D_f(entry, 3)
             else:
-                diel["epsilon"] = None
+                diel['epsilon'] = None
 
             # ionic epsilon part
-            entry = self._findall(xml,
-                                  './/calculation/varray[@name="epsilon_ion"]/v')
+            entry = self._findall(
+                xml, './/calculation/varray[@name="epsilon_ion"]/v')
             if entry is not None:
-                diel["epsilon_ion"] = self._convert_array2D_f(entry, 3)
+                diel['epsilon_ion'] = self._convert_array2D_f(entry, 3)
             else:
-                diel["epsilon_ion"] = None
+                diel['epsilon_ion'] = None
 
             return diel
 
@@ -2237,20 +2313,20 @@ class Xml(BaseParser):
         """
 
         # then check if we have asigned ispin
-        if self._parameters["ispin"] is None:
+        if self._parameters['ispin'] is None:
             self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_ISPIN])
             sys.exit(self.ERROR_NO_ISPIN)
 
         # then check if we have asigned nbands
-        if self._parameters["nbands"] is None:
+        if self._parameters['nbands'] is None:
             self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_NBANDS])
             sys.exit(self.ERROR_NO_NBADS)
 
         # ispin
-        ispin = self._parameters["ispin"]
+        ispin = self._parameters['ispin']
 
         # number of bands
-        num_bands = self._parameters["nbands"]
+        num_bands = self._parameters['nbands']
 
         # set dicts
         eigenvalues = {}
@@ -2259,7 +2335,8 @@ class Xml(BaseParser):
         data = []
 
         if len(spin1) != num_bands * num_kpoints:
-            self._logger.error(self.ERROR_MESSAGES[self.ERROR_MISMATCH_KPOINTS_NBANDS])
+            self._logger.error(
+                self.ERROR_MESSAGES[self.ERROR_MISMATCH_KPOINTS_NBANDS])
             sys.exit(self.ERROR_MISMATCH_KPOINTS_NBANDS)
 
         # check number of elements in first entry of spin1 (we assume all are equal)
@@ -2271,7 +2348,8 @@ class Xml(BaseParser):
         data[0] = np.asarray(np.split(data[0], num_kpoints))
         if spin2 is not None:
             if len(spin2) != num_bands * num_kpoints:
-                self._logger.error(self.ERROR_MESSAGES[self.ERROR_MISMATCH_KPOINTS_NBANDS])
+                self._logger.error(
+                    self.ERROR_MESSAGES[self.ERROR_MISMATCH_KPOINTS_NBANDS])
                 sys.exit(self.ERROR_MISMATCH_KPOINTS_NBANDS)
             if entries > 1:
                 data.append(self._convert_array2D_f(spin2, entries))
@@ -2286,19 +2364,19 @@ class Xml(BaseParser):
             data = np.swapaxes(data, 1, 2)
         if spin2 is not None:
             if entries > 1:
-                eigenvalues["up"] = np.ascontiguousarray(data[0, :, :, 0])
-                eigenvalues["down"] = np.ascontiguousarray(data[1, :, :, 0])
-                occupancies["up"] = np.ascontiguousarray(data[0, :, :, 1])
-                occupancies["down"] = np.ascontiguousarray(data[1, :, :, 1])
+                eigenvalues['up'] = np.ascontiguousarray(data[0, :, :, 0])
+                eigenvalues['down'] = np.ascontiguousarray(data[1, :, :, 0])
+                occupancies['up'] = np.ascontiguousarray(data[0, :, :, 1])
+                occupancies['down'] = np.ascontiguousarray(data[1, :, :, 1])
             else:
-                eigenvalues["up"] = np.ascontiguousarray(data[0, :, :])
-                eigenvalues["down"] = np.ascontiguousarray(data[1, :, :])
+                eigenvalues['up'] = np.ascontiguousarray(data[0, :, :])
+                eigenvalues['down'] = np.ascontiguousarray(data[1, :, :])
         else:
             if entries > 1:
-                eigenvalues["total"] = np.ascontiguousarray(data[0, :, :, 0])
-                occupancies["total"] = np.ascontiguousarray(data[0, :, :, 1])
+                eigenvalues['total'] = np.ascontiguousarray(data[0, :, :, 0])
+                occupancies['total'] = np.ascontiguousarray(data[0, :, :, 1])
             else:
-                eigenvalues["total"] = np.ascontiguousarray(data[0, :, :])
+                eigenvalues['total'] = np.ascontiguousarray(data[0, :, :])
         if entries > 1:
             return eigenvalues, occupancies
         else:
@@ -2328,33 +2406,35 @@ class Xml(BaseParser):
         """
 
         # check if we have asigned ispin
-        if self._parameters["ispin"] is None:
+        if self._parameters['ispin'] is None:
             self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_ISPIN])
             sys.exit(self.ERROR_NO_ISPIN)
 
         # then check if we have asigned nbands
-        if self._parameters["nbands"] is None:
+        if self._parameters['nbands'] is None:
             self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_NBANDS])
             sys.exit(self.ERROR_NO_NBANDS)
 
         # ispin
-        ispin = self._parameters["ispin"]
+        ispin = self._parameters['ispin']
 
         # number of bands
-        num_bands = self._parameters["nbands"]
+        num_bands = self._parameters['nbands']
 
         # set dicts
         eigenvelocities = {}
 
         data = []
         if len(spin1) != num_bands * num_kpoints:
-            self._logger.error(self.ERROR_MESSAGES[self.ERROR_MISMATCH_KPOINTS_NBANDS])
+            self._logger.error(
+                self.ERROR_MESSAGES[self.ERROR_MISMATCH_KPOINTS_NBANDS])
             sys.exit(self.ERROR_MISMATCH_KPOINTS_NBANDS)
         data.append(self._convert_array2D_f(spin1, 4))
         data[0] = np.asarray(np.split(data[0], num_kpoints))
         if spin2 is not None:
             if len(spin2) != num_bands * num_kpoints:
-                self._logger.error(self.ERROR_MESSAGES[self.ERROR_MISMATCH_KPOINTS_NBANDS])
+                self._logger.error(
+                    self.ERROR_MESSAGES[self.ERROR_MISMATCH_KPOINTS_NBANDS])
                 sys.exit(self.ERROR_MISMATCH_KPOINTS_NBANDS)
             data.append(self._convert_array2D_f(spin2, 4))
             data[1] = np.asarray(np.split(data[1], num_kpoints))
@@ -2365,10 +2445,10 @@ class Xml(BaseParser):
         if not self._k_before_band:
             data = np.swapaxes(data, 1, 2)
         if spin2 is not None:
-            eigenvelocities["up"] = np.ascontiguousarray(data[0])
-            eigenvelocities["down"] = np.ascontiguousarray(data[1])
+            eigenvelocities['up'] = np.ascontiguousarray(data[0])
+            eigenvelocities['down'] = np.ascontiguousarray(data[1])
         else:
-            eigenvelocities["total"] = np.ascontiguousarray(data[0])
+            eigenvelocities['total'] = np.ascontiguousarray(data[0])
 
         return eigenvelocities
 
@@ -2394,50 +2474,52 @@ class Xml(BaseParser):
         """
 
         # first check if we have extracted the kpoints
-        if self._lattice["kpoints"] is None:
+        if self._lattice['kpoints'] is None:
             self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_KPOINTS])
             sys.exit(self.ERROR_NO_KPOINTS)
 
         # then check if we have asigned ispin
-        if self._parameters["ispin"] is None:
+        if self._parameters['ispin'] is None:
             self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_ISPIN])
             sys.exit(self.ERROR_NO_ISPIN)
 
         # then check if we have asigned nbands
-        if self._parameters["nbands"] is None:
+        if self._parameters['nbands'] is None:
             self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_NBANDS])
             sys.exit(self.ERROR_NO_NBANDS)
 
         num_atoms = 0
         # also need the number of atoms if the projected values are supplied
-        if self._lattice["species"] is None:
+        if self._lattice['species'] is None:
             self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_NBANDS])
             sys.exit(self.ERROR_NO_NBANDS)
         else:
-            num_atoms = self._lattice["species"].shape[0]
+            num_atoms = self._lattice['species'].shape[0]
 
         # number of kpoints to disect the eigenvalue sets later
-        num_kpoints = self._lattice["kpoints"].shape[0]
+        num_kpoints = self._lattice['kpoints'].shape[0]
 
         # ispin
-        ispin = self._parameters["ispin"]
+        ispin = self._parameters['ispin']
 
         # number of bands
-        num_bands = self._parameters["nbands"]
+        num_bands = self._parameters['nbands']
 
         # set dicts
         projectors = {}
 
         pdata = []
         if len(spin1) != num_bands * num_kpoints * num_atoms:
-            self._logger.error(self.ERROR_MESSAGES[self.ERROR_MISMATCH_KPOINTS_NBANDS])
+            self._logger.error(
+                self.ERROR_MESSAGES[self.ERROR_MISMATCH_KPOINTS_NBANDS])
             sys.exit(self.ERROR_MISMATCH_KPOINTS_NBANDS)
         pdata.append(self._convert_array2D_f(spin1, 9))
         pdata[0] = np.asarray(np.split(pdata[0], num_kpoints))
         pdata[0] = np.asarray(np.split(pdata[0], num_bands, axis=1))
         if spin2 is not None:
             if len(spin2) != num_bands * num_kpoints * num_atoms:
-                self._logger.error(self.ERROR_MESSAGES[self.ERROR_MISMATCH_KPOINTS_NBANDS])
+                self._logger.error(
+                    self.ERROR_MESSAGES[self.ERROR_MISMATCH_KPOINTS_NBANDS])
                 sys.exit(self.ERROR_MISMATCH_KPOINTS_NBANDS)
             pdata.append(self._convert_array2D_f(spin2, 9))
             pdata[1] = np.asarray(np.split(pdata[1], num_kpoints))
@@ -2453,10 +2535,10 @@ class Xml(BaseParser):
             pdata = np.swapaxes(pdata, 2, 3)
 
         if spin2 is not None:
-            projectors["up"] = np.ascontiguousarray(pdata[:, 0, :, :])
-            projectors["down"] = np.ascontiguousarray(pdata[:, 1, :, :])
+            projectors['up'] = np.ascontiguousarray(pdata[:, 0, :, :])
+            projectors['down'] = np.ascontiguousarray(pdata[:, 1, :, :])
         else:
-            projectors["total"] = np.ascontiguousarray(pdata[:, 0, :, :])
+            projectors['total'] = np.ascontiguousarray(pdata[:, 0, :, :])
 
         return projectors
 
@@ -2483,7 +2565,8 @@ class Xml(BaseParser):
                 data = np.fromstring(entry.text, sep=' ', dtype='intc')
             except ValueError as e:
                 if str(e) == 'setting an array element with a sequence.':
-                    self._logger.error(self.ERROR_MESSAGES[self.ERROR_OVERFLOW])
+                    self._logger.error(
+                        self.ERROR_MESSAGES[self.ERROR_OVERFLOW])
                     sys.exit(self.ERROR_OVERFLOW)
 
         return data
@@ -2511,7 +2594,8 @@ class Xml(BaseParser):
                 data = np.fromstring(entry.text, sep=' ', dtype='double')
             except ValueError as e:
                 if str(e) == 'setting an array element with a sequence.':
-                    self._logger.error(self.ERROR_MESSAGES[self.ERROR_OVERFLOW])
+                    self._logger.error(
+                        self.ERROR_MESSAGES[self.ERROR_OVERFLOW])
                     sys.exit(self.ERROR_OVERFLOW)
 
         return data
@@ -2541,7 +2625,8 @@ class Xml(BaseParser):
                 data[index] = np.fromstring(element.text, sep=' ')
             except ValueError as e:
                 if str(e) == 'setting an array element with a sequence.':
-                    self._logger.error(self.ERROR_MESSAGES[self.ERROR_OVERFLOW])
+                    self._logger.error(
+                        self.ERROR_MESSAGES[self.ERROR_OVERFLOW])
                     sys.exit(self.ERROR_OVERFLOW)
 
         return data
@@ -2572,7 +2657,8 @@ class Xml(BaseParser):
                 data[index] = np.fromstring(element.text, sep=' ')
             except ValueError as e:
                 if str(e) == 'setting an array element with a sequence.':
-                    self._logger.error(self.ERROR_MESSAGES[self.ERROR_OVERFLOW])
+                    self._logger.error(
+                        self.ERROR_MESSAGES[self.ERROR_OVERFLOW])
                     sys.exit(self.ERROR_OVERFLOW)
 
         return data
@@ -2599,16 +2685,16 @@ class Xml(BaseParser):
 
         data = None
         if entry is not None:
-            data = np.zeros((len(entry), dim),
-                            dtype='double')
+            data = np.zeros((len(entry), dim), dtype='double')
 
         for index, element in enumerate(entry):
             try:
                 data[index] = np.fromstring(element.text, sep=' ')
             except ValueError as e:
                 if str(e) == 'setting an array element with a sequence.':
-                    self._logger.error(self.ERROR_MESSAGES[self.ERROR_OVERFLOW])
-                    sys.exit(self.ERROR_OVERFLOW)                
+                    self._logger.error(
+                        self.ERROR_MESSAGES[self.ERROR_OVERFLOW])
+                    sys.exit(self.ERROR_OVERFLOW)
 
         return data
 
@@ -2633,7 +2719,7 @@ class Xml(BaseParser):
                 self._logger.error(self.ERROR_MESSAGES[self.ERROR_OVERFLOW])
                 sys.exit(self.ERROR_OVERFLOW)
             data = float(entry.text)
-        
+
         return data
 
     def _convert_i(self, entry):
@@ -2683,115 +2769,115 @@ class Xml(BaseParser):
             species = np.zeros(len(entry), dtype='intc')
         for index, spec in enumerate(entry):
             try:
-                species[index] = constants.elements[
-                    entry[index].text.split()[0].lower()]
+                species[index] = constants.elements[entry[index].text.split()
+                                                    [0].lower()]
             except KeyError:
-                self._logger.warning(self.ERROR_MESSAGES[self.ERROR_UNKNOWN_ELEMENT])
+                self._logger.warning(
+                    self.ERROR_MESSAGES[self.ERROR_UNKNOWN_ELEMENT])
                 sys.exit(self.ERROR_UNKNOWN_ELEMENT)
 
         return species
 
     def get_forces(self, status):
 
-        forces = self._data["forces"]
+        forces = self._data['forces']
         if forces is None:
             return None
         self._check_calc_status(status)
-        if status == "initial":
+        if status == 'initial':
             return forces[1]
-        elif status == "final":
-            largest_key = max(self._data["forces"].keys())
+        elif status == 'final':
+            largest_key = max(self._data['forces'].keys())
             return forces[largest_key]
-        elif status == "all":
+        elif status == 'all':
             return forces
 
     def get_stress(self, status):
 
-        stress = self._data["stress"]
+        stress = self._data['stress']
         if stress is None:
             return None
         self._check_calc_status(status)
-        if status == "initial":
+        if status == 'initial':
             return stress[1]
-        elif status == "final":
-            largest_key = max(self._data["stress"].keys())
+        elif status == 'final':
+            largest_key = max(self._data['stress'].keys())
             return stress[largest_key]
-        elif status == "all":
+        elif status == 'all':
             return stress
 
     def get_hessian(self):
 
-        hessian = self._data["hessian"]
+        hessian = self._data['hessian']
         return hessian
 
     def get_dynmat(self):
 
-        dynmat = self._data["dynmat"]
+        dynmat = self._data['dynmat']
         return dynmat
 
     def get_dielectrics(self):
 
-        dielectrics = self._data["dielectrics"]
+        dielectrics = self._data['dielectrics']
         return dielectrics
 
     def get_epsilon(self):
 
-        epsilon = self._data["dielectrics"]["epsilon"]
+        epsilon = self._data['dielectrics']['epsilon']
         return epsilon
 
     def get_epsilon_ion(self):
 
-        epsilon_ion = self._data["dielectrics"]["epsilon_ion"]
+        epsilon_ion = self._data['dielectrics']['epsilon_ion']
         return epsilon_ion
 
     def get_fermi_level(self):
 
-        fermi_level = self._data["dos"]["total"]["fermi_level"]
+        fermi_level = self._data['dos']['total']['fermi_level']
         return fermi_level
 
     def get_fermi_level_specific(self):
 
-        fermi_level_specific = self._data["dos_specific"]["total"]["fermi_level"]
+        fermi_level_specific = self._data['dos_specific']['total'][
+            'fermi_level']
         return fermi_level_specific
 
     def get_born(self):
 
-        born = self._data["born"]
+        born = self._data['born']
         return born
 
     def get_unitcell(self, status):
 
-        unitcell = self._lattice["unitcell"]
+        unitcell = self._lattice['unitcell']
         if unitcell is None:
             return None
         self._check_calc_status(status)
-        if status == "initial":
+        if status == 'initial':
             return unitcell[1]
-        elif status == "final":
-            largest_key = max(
-                self._lattice["unitcell"].keys())
+        elif status == 'final':
+            largest_key = max(self._lattice['unitcell'].keys())
             return unitcell[largest_key]
-        elif status == "all":
+        elif status == 'all':
             return unitcell
 
     def get_positions(self, status):
 
-        positions = self._lattice["positions"]
+        positions = self._lattice['positions']
         if positions is None:
             return None
         self._check_calc_status(status)
-        if status == "initial":
+        if status == 'initial':
             return positions[1]
-        elif status == "final":
-            largest_key = max(
-                self._lattice["positions"].keys())
+        elif status == 'final':
+            largest_key = max(self._lattice['positions'].keys())
             return positions[largest_key]
-        elif status == "all":
+        elif status == 'all':
             return positions
 
     def get_species(self):
 
-        species = self._lattice["species"]
+        species = self._lattice['species']
         return species
 
     def get_lattice(self, status):
@@ -2799,51 +2885,50 @@ class Xml(BaseParser):
         species = self.get_species()
         unitcell = self.get_unitcell(status)
         positions = self.get_positions(status)
-        return {"unitcell": unitcell, "positions": positions,
-                "species": species}
+        return {
+            'unitcell': unitcell,
+            'positions': positions,
+            'species': species
+        }
 
     def get_kpoints(self):
 
-        kpoints = self._lattice["kpoints"]
+        kpoints = self._lattice['kpoints']
         return kpoints
 
     def get_kpointsw(self):
 
-        kpointsw = self._lattice["kpointsw"]
+        kpointsw = self._lattice['kpointsw']
         return kpointsw
 
     def get_energies(self, status, etype=None, nosc=True):
 
         if etype is None:
-            etype = "energy_no_entropy"
-        if etype == "energy_no_entropy":
+            etype = 'energy_no_entropy'
+        if etype == 'energy_no_entropy':
             return self._get_energies_no_entropy(status, nosc)
         else:
             raise NotImplementedError
 
     def _get_energies_no_entropy(self, status, nosc):
 
-        enrgies = self._data["totens"]
+        enrgies = self._data['totens']
         if enrgies is None:
             return None
         self._check_calc_status(status)
         energies = []
-        if status == "initial":
+        if status == 'initial':
             if nosc:
-                energies.append(enrgies[1][
-                                "energy_no_entropy"][0])
+                energies.append(enrgies[1]['energy_no_entropy'][0])
             else:
-                energies.append(enrgies[1]
-                                ["energy_no_entropy"])
-        elif status == "final":
+                energies.append(enrgies[1]['energy_no_entropy'])
+        elif status == 'final':
             largest_key = max(enrgies.keys())
             if nosc:
-                energies.append(enrgies[largest_key][
-                                "energy_no_entropy"][0])
+                energies.append(enrgies[largest_key]['energy_no_entropy'][0])
             else:
-                energies.append(enrgies[largest_key]
-                                ["energy_no_entropy"])
-        elif status == "all":
+                energies.append(enrgies[largest_key]['energy_no_entropy'])
+        elif status == 'all':
             # here we need to pull out energy_no_entropy of all the calc
             # steps...right now I did not find a smart way to do this, would
             # like to avoid explicit loops...but here it is anyway
@@ -2851,61 +2936,63 @@ class Xml(BaseParser):
             _energies = sorted(enrgies.items())
             for index, element in _energies:
                 if nosc:
-                    energies.append(element["energy_no_entropy"][0])
+                    energies.append(element['energy_no_entropy'][0])
                 else:
-                    energies.append(element["energy_no_entropy"][1])
+                    energies.append(element['energy_no_entropy'][1])
         return energies
 
     def get_dos(self):
 
-        dos = self._data["dos"]
+        dos = self._data['dos']
         return dos
 
     def get_dos_specific(self):
 
-        dos_specific = self._data["dos_specific"]
+        dos_specific = self._data['dos_specific']
         return dos_specific
 
     def get_eigenvalues(self):
 
-        eigenvalues = self._data["eigenvalues"]
+        eigenvalues = self._data['eigenvalues']
         return eigenvalues
 
     def get_eigenvalues_specific(self):
 
-        eigenvalues_specific = self._data["eigenvalues_specific"]
+        eigenvalues_specific = self._data['eigenvalues_specific']
         return eigenvalues_specific
 
     def get_eigenvelocities(self):
 
-        eigenvelocities = self._data["eigenvelocities"]
+        eigenvelocities = self._data['eigenvelocities']
         return eigenvelocities
 
     def get_kpoints_specific(self):
 
-        kpoints_specific = self._data["kpoints"]
+        kpoints_specific = self._data['kpoints']
         return kpoints_specific
 
     def get_kpointsw_specific(self):
 
-        kpointsw_specific = self._data["kpointsw"]
+        kpointsw_specific = self._data['kpointsw']
         return kpointsw_specific
 
     def get_occupancies(self):
 
-        occupancies = self._data["occupancies"]
+        occupancies = self._data['occupancies']
         return occupancies
 
     def get_projectors(self):
 
-        projectors = self._data["projectors"]
+        projectors = self._data['projectors']
         return projectors
 
     def get_dict(self):
 
-        dictionary = {'parameters': self._parameters,
-                      'lattice': self._lattice,
-                      'data': self._data}
+        dictionary = {
+            'parameters': self._parameters,
+            'lattice': self._lattice,
+            'data': self._data
+        }
 
         return dictionary
 
@@ -2915,11 +3002,12 @@ class Xml(BaseParser):
         return parameters
 
     def _check_calc_status(self, status):
-        allowed_entries = ["initial", "final", "all"]
+        allowed_entries = ['initial', 'final', 'all']
         if status not in allowed_entries:
-            self._logger.error(self.ERROR_MESSAGES[self.ERROR_UNSUPPORTED_STATUS] + 
-                               " Please use any of the following values "
-                               + str(allowed_entries))
+            self._logger.error(
+                self.ERROR_MESSAGES[self.ERROR_UNSUPPORTED_STATUS] +
+                ' Please use any of the following values ' +
+                str(allowed_entries))
             sys.exit(self.ERROR_UNSUPPORTED_STATUS)
 
     def _find(self, xml, locator):
@@ -2982,7 +3070,8 @@ class Xml(BaseParser):
         """
 
         if self._file_path is None and self._file_handler is None:
-            self._logger.error(self.ERROR_MESSAGES[self.ERROR_ONLY_ONE_ARGUMENT])
+            self._logger.error(
+                self.ERROR_MESSAGES[self.ERROR_ONLY_ONE_ARGUMENT])
             return None
         if self._file_handler is None:
             # check if file exists
@@ -3014,9 +3103,9 @@ class Xml(BaseParser):
             handler = open(self._file_path)
             with handler as source:
                 mapping = mmap.mmap(source.fileno(), 0, prot=mmap.PROT_READ)
-        
+
         last_line = mapping[mapping.rfind(b'\n', 0, -1) + 1:]
-        if last_line == "</modeling>\n":
+        if last_line == '</modeling>\n':
             return False
         else:
             return True

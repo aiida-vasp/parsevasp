@@ -1,7 +1,7 @@
 #LVEL = .TRUE.
 ALGO   = V #TEST
 PREC = A
-#KINTER = 1 
+#KINTER = 1
 ISMEAR = -5
 NEDOS = 100000
 EMIN = 5.5

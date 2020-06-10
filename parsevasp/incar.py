@@ -4,11 +4,12 @@ import logging
 from io import StringIO
 
 from six import iteritems
-from past.builtins import basestring 
+from past.builtins import basestring
 
 from parsevasp import utils
 from parsevasp import constants
 from parsevasp.base import BaseParser
+
 
 class Incar(BaseParser):
 
@@ -19,23 +20,35 @@ class Incar(BaseParser):
     ERROR_VALUES_NOT_SAME_TYPE = 104
     ERROR_INVALID_TYPE = 105
     BaseParser.ERROR_MESSAGES.update({
-        ERROR_TWO_EQUALS: "Detected two equal signs for an entry in the INCAR file.",
-        ERROR_INVALID_COMMENT_SIGN: "Detected a comment line that does not start "
-        "with a #. Please correct and be consistent.",
-        ERROR_MULTIPLE_COMMENTS: "Multiple comment tags detected.",
-        ERROR_UNSUPPORTED_TAG: "The supplied INCAR tag is not "
-        "officially supported. Please consult the VASP manual or "
-        "set the validate_tags attribute for the Incar class initializer to "
-        "False if you want to disable tag checking.",
-        ERROR_VALUES_NOT_SAME_TYPE: "All values of an INCAR tag are not of the same type. "
-        "Maybe you forgot to add # as a comment tag?",
-        ERROR_INVALID_TYPE: "The type one of the supplied values for the INCAR tag "
-        "is not recognized."
+        ERROR_TWO_EQUALS:
+        'Detected two equal signs for an entry in the INCAR file.',
+        ERROR_INVALID_COMMENT_SIGN:
+        'Detected a comment line that does not start '
+        'with a #. Please correct and be consistent.',
+        ERROR_MULTIPLE_COMMENTS:
+        'Multiple comment tags detected.',
+        ERROR_UNSUPPORTED_TAG:
+        'The supplied INCAR tag is not '
+        'officially supported. Please consult the VASP manual or '
+        'set the validate_tags attribute for the Incar class initializer to '
+        'False if you want to disable tag checking.',
+        ERROR_VALUES_NOT_SAME_TYPE:
+        'All values of an INCAR tag are not of the same type. '
+        'Maybe you forgot to add # as a comment tag?',
+        ERROR_INVALID_TYPE:
+        'The type one of the supplied values for the INCAR tag '
+        'is not recognized.'
     })
     ERROR_MESSAGES = BaseParser.ERROR_MESSAGES
-    
-    def __init__(self, incar_string=None, incar_dict=None,
-                 file_path=None, file_handler=None, logger=None, prec=None, validate_tags=True):
+
+    def __init__(self,
+                 incar_string=None,
+                 incar_dict=None,
+                 file_path=None,
+                 file_handler=None,
+                 logger=None,
+                 prec=None,
+                 validate_tags=True):  # pylint: disable=too-many-arguments
         """Initialize an INCAR object and set content as a dictionary.
 
         Parameters
@@ -53,8 +66,10 @@ class Incar(BaseParser):
 
         """
 
-        super(Incar, self).__init__(file_path=file_path, file_handler=file_handler, logger=logger)
-        
+        super(Incar, self).__init__(file_path=file_path,
+                                    file_handler=file_handler,
+                                    logger=logger)
+
         self._incar_dict = incar_dict
         self._incar_string = incar_string
         self._validate_tags = validate_tags
@@ -69,14 +84,16 @@ class Incar(BaseParser):
         # check that only one argument is supplied
         if (self._incar_string is not None and self._incar_dict is not None) \
            or (self._incar_string is not None and self._file_path is not None) \
-           or (self._incar_dict is not None and self._file_path is not None) and self._file_handler is not None:
-            self._logger.error(self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
+           or (self._incar_dict is not None and self._file_path is not None) and self._file_handler is not None: # pylint: disable=too-many-boolean-expressions
+            self._logger.error(
+                self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
             sys.exit(self.ERROR_USE_ONE_ARGUMENT)
 
         # check that at least one is supplied
         if (self._incar_string is None and self._incar_dict is None
                 and self._file_path is None and self._file_handler is None):
-            self._logger.error(self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
+            self._logger.error(
+                self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
             sys.exit(self.ERROR_USE_ONE_ARGUMENT)
 
         if self._file_path is not None or self._file_handler is not None:
@@ -94,7 +111,7 @@ class Incar(BaseParser):
 
         # store entries
         self.entries = incar
-            
+
         # validate dictionary
         self.validate()
 
@@ -155,27 +172,31 @@ class Incar(BaseParser):
                 for ntry in splitted:
                     if ntry == '\n':
                         # skip if the user used ; at the end of a line
-                        continue;
+                        continue
                     # then split on = and analyze each entry
-                    final_split = ntry.split("=")
+                    final_split = ntry.split('=')
                     if len(final_split) > 2:
-                        self._logger.error(self.ERROR_MESSAGES[self.ERROR_TWO_EQUALS] +
-                                           " The following line contains "
-                                           "the problem:\n\n" +
-                                           ntry + "\n\nPlease correct. Exiting.")
+                        self._logger.error(
+                            '{} The following line contains the problem:\n\n {}'
+                            '\n\nPlease correct. Exiting.'.format(
+                                self.ERROR_MESSAGES[self.ERROR_TWO_EQUALS],
+                                ntry))
                         sys.exit(self.ERROR_TWO_EQUALS)
                     if len(final_split) == 1:
-                        self._logger.error(self.ERROR_MESSAGES[self.ERROR_INVALID_COMMENT_SIGN])
+                        self._logger.error(self.ERROR_MESSAGES[
+                            self.ERROR_INVALID_COMMENT_SIGN])
                         sys.exit(self.ERROR_INVALID_COMMENT_SIGN)
                     tag = final_split[0]
                     value = final_split[1]
                     # create new instance of entry
-                    entry = IncarItem(tag, value, comment, logger = self._logger)
+                    entry = IncarItem(tag, value, comment, logger=self._logger)
                     clean_tag = entry.get_tag()
                     if clean_tag in incar_dict:
-                        self._logger.info("Tag " + entry.get_tag() + " already "
-                                         "found in the INCAR dictionary, "
-                                         "overwriting it.")
+                        self._logger.info('Tag {}'
+                                          ' already '
+                                          'found in the INCAR dictionary, '
+                                          'overwriting it.'.format(
+                                              entry.get_tag()))
                     incar_dict[clean_tag] = entry
 
         return incar_dict
@@ -208,26 +229,28 @@ class Incar(BaseParser):
             if isinstance(value, str):
                 comment = value.split('#')
                 if len(comment) > 2:
-                    self._logger.info(self.ERROR_MESSAGES[self.ERROR_MULTIPLE_COMMENTS] +
-                                      " The tag " + str(tag) + " is affected.")
+                    self._logger.info('{} The tag {} is affected.'.format(
+                        self.ERROR_MESSAGES[self.ERROR_MULTIPLE_COMMENTS],
+                        str(tag)))
                     sys.exit(self.ERROR_MULTIPLE_COMMENTS)
                 if len(comment) == 1:
                     comment = None
             # create new instance of entry
             if comment is not None:
                 if len(comment) == 2:
-                    entry = IncarItem(tag, comment[0], comment[1],
-                                      logger = self._logger)
+                    entry = IncarItem(tag,
+                                      comment[0],
+                                      comment[1],
+                                      logger=self._logger)
                 else:
-                    entry = IncarItem(tag, value, comment,
-                                      logger = self._logger)
+                    entry = IncarItem(tag, value, comment, logger=self._logger)
             else:
-                entry = IncarItem(tag, value, comment, logger = self._logger)
+                entry = IncarItem(tag, value, comment, logger=self._logger)
             clean_tag = entry.get_tag()
             if clean_tag in incar_dict:
-                self._logger.info("Tag " + entry.get_tag() + " already "
-                                 "found in the INCAR dictionary, "
-                                 "overwriting it.")
+                self._logger.info('Tag {} already '
+                                  'found in the INCAR dictionary, '
+                                  'overwriting it.'.format(entry.get_tag()))
             incar_dict[clean_tag] = entry
 
         return incar_dict
@@ -258,16 +281,15 @@ class Incar(BaseParser):
         # 1.0 - float
         # [1.0, 2.0, 3.0] - list of floats
 
-
         if type(value) is list:
             # list of values (we know all are either string, int or float)
             string = ' '.join(map(str, value))
         else:
             if isinstance(value, bool):
                 if value:
-                    return ".TRUE."
+                    return '.TRUE.'
                 else:
-                    return ".FALSE."
+                    return '.FALSE.'
             string = str(value)
 
         return string
@@ -286,12 +308,13 @@ class Incar(BaseParser):
         # unsupported keys, return now).
         if not self._validate_tags:
             return
-        
+
         allowed_keys = constants.incar_tags.keys()
         for key, value in self.entries.items():
             if key not in allowed_keys:
-                self._logger.error(self.ERROR_MESSAGES[self.ERROR_UNSUPPORTED_TAG] +
-                                   " The tag in question is {}".format(key.upper()))
+                self._logger.error(
+                    self.ERROR_MESSAGES[self.ERROR_UNSUPPORTED_TAG] +
+                    ' The tag in question is {}'.format(key.upper()))
                 sys.exit(self.ERROR_UNSUPPORTED_TAG)
 
         return
@@ -312,7 +335,7 @@ class Incar(BaseParser):
         """
 
         # create a new INCAR item and check it
-        entry = IncarItem(tag, value, comment, logger = self._logger)
+        entry = IncarItem(tag, value, comment, logger=self._logger)
         # store or modify
         self.entries[entry.get_tag()] = entry
 
@@ -396,12 +419,11 @@ class Incar(BaseParser):
         """
 
         string_object = StringIO.StringIO()
-        self._write(incar = string_object)
+        self._write(incar=string_object)
         incar_string = string_object.getvalue()
         string_object.close()
 
         return incar_string
-
 
     def write(self, file_path, comments=False):
         """Write the content of the current Incar instance to
@@ -418,7 +440,7 @@ class Incar(BaseParser):
         """
 
         incar = utils.file_handler(file_path, status='w', logger=self._logger)
-        self._write(incar = incar)
+        self._write(incar=incar)
         utils.file_handler(file_handler=incar, logger=self._logger)
 
     def _write(self, incar, comments=False):
@@ -435,7 +457,6 @@ class Incar(BaseParser):
 
         """
 
-
         # write in alfabetical order
         keys = sorted(self.entries)
         entries = self.entries
@@ -444,15 +465,15 @@ class Incar(BaseParser):
             value = entry.get_value()
             comment = entry.get_comment()
             if comment is None or not comments:
-                comment = ""
+                comment = ''
             else:
-                comment = " # " + comment
+                comment = ' # ' + comment
             value = self._convert_value_to_string(value)
-            string = str(key.upper()) + " = " + value + comment + "\n"
+            string = str(key.upper()) + ' = ' + value + comment + '\n'
             incar.write(string)
 
-class IncarItem(object):
 
+class IncarItem(object):
     def __init__(self, tag, value, comment, logger=None):
         """Initialize an entry in INCAR.
 
@@ -477,9 +498,8 @@ class IncarItem(object):
             self._logger = logging.getLogger('IncarItem')
 
         # clean tag and value
-        clean_tag, clean_value, clean_comment = self._clean_entry(tag,
-                                                                  value,
-                                                                  comment)
+        clean_tag, clean_value, clean_comment = self._clean_entry(
+            tag, value, comment)
         self.tag = clean_tag
         self.value = clean_value
         self.comment = clean_comment
@@ -540,7 +560,7 @@ class IncarItem(object):
 
         # make sure we keep compatibility between Python 2 and 3
         if isinstance(value, basestring):
-            if clean_tag == "system" or clean_tag == "magmom":
+            if clean_tag == 'system' or clean_tag == 'magmom':
                 # if value is SYSTEM or MAGMOM (can contain asterix), treat it a bit special and
                 # leave its string intact but remove grub
                 clean_value = value.strip()
@@ -573,8 +593,9 @@ class IncarItem(object):
 
             # check if all values are the same type (they should be)
             if not all(x == content_type[0] for x in content_type):
-                self._logger.error(self.ERROR_MESSAGES[self.ERROR_VALUES_NOT_SAME_TYPE] +
-                                   " The tag in question is: " + clean_tag.upper())
+                self._logger.error(
+                    self.ERROR_MESSAGES[self.ERROR_VALUES_NOT_SAME_TYPE] +
+                    ' The tag in question is: ' + clean_tag.upper())
                 sys.exit(self.ERROR_VALUES_NOT_SAME_TYPE)
 
         else:
@@ -583,8 +604,9 @@ class IncarItem(object):
 
             if not (isinstance(value, int) or isinstance(value, float)
                     or isinstance(value, bool) or (type(value) is list)):
-                self._logger.error(self.ERROR_MESSAGES[self.ERROR_INVALID_TYPE] +
-                                                       " The tag in question is: " + clean_tag.upper())
+                self._logger.error(
+                    self.ERROR_MESSAGES[self.ERROR_INVALID_TYPE] +
+                    ' The tag in question is: ' + clean_tag.upper())
                 sys.exit(self.ERROR_INVALID_TYPE)
             clean_value = value
 
@@ -611,17 +633,17 @@ class IncarItem(object):
             depending on what is detected.
 
         """
-        if ".True." in string \
-           or ".TRUE." in string \
-           or ".true." in string \
-           or ".t." in string \
-           or ".T." in string:
+        if '.True.' in string \
+           or '.TRUE.' in string \
+           or '.true.' in string \
+           or '.t.' in string \
+           or '.T.' in string:
             return True
-        elif ".False." in string \
-             or ".FALSE." in string \
-             or ".false." in string \
-             or ".f." in string \
-             or ".F." in string:
+        elif '.False.' in string \
+             or '.FALSE.' in string \
+             or '.false.' in string \
+             or '.f.' in string \
+             or '.F.' in string:
             return False
         else:
             return string

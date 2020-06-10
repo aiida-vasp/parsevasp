@@ -9,6 +9,7 @@ from six import iteritems
 from parsevasp import utils
 from parsevasp.base import BaseParser
 
+
 class Kpoints(BaseParser):
 
     ERROR_KPOINTS_NOT_DIRECT = 200
@@ -24,28 +25,45 @@ class Kpoints(BaseParser):
     ERROR_INVALID_CENTERING = 212
     ERROR_INVALID_MODE = 213
     BaseParser.ERROR_MESSAGES.update({
-        ERROR_KPOINTS_NOT_DIRECT: "Please supply the KPOINTS in direct coordinates.",
-        ERROR_TETRA_FIVE: "The connection line for the tetrahedra info "
-        "in the KPOINTS file does not contain five entries.",
-        ERROR_NO_AUTOMATICS: "We do not support fully automatic inputs. Please instead modify your KPOINTS file "
-        "in order to explicitely specify Gamma or Monkhorst mode, and the number of samples "
-        "along each reciprocal lattice vector.",
-        ERROR_NO_EXPERT: "Expert mode is currently not supported.",
-        ERROR_NOT_A_NUMBER: "The supplied 'point_number' is not a number (i.e. the index) "
-        "starting from 1 for the point to be modified.",
-        ERROR_CONVERSION: "Conversion from reciprocal to direct for the KPOINTS is not yet implemented.",
-        ERROR_DIVISIONS: "You have to set either 'divisions' (automatic mode) or the explicit 'points'.",
-        ERROR_INVALID_TAG: "Only 'comment', 'points', 'tetra', 'tetra_volume', 'divisions', 'shifts', 'mode' "
+        ERROR_KPOINTS_NOT_DIRECT:
+        'Please supply the KPOINTS in direct coordinates.',
+        ERROR_TETRA_FIVE:
+        'The connection line for the tetrahedra info '
+        'in the KPOINTS file does not contain five entries.',
+        ERROR_NO_AUTOMATICS:
+        'We do not support fully automatic inputs. Please instead modify your KPOINTS file '
+        'in order to explicitely specify Gamma or Monkhorst mode, and the number of samples '
+        'along each reciprocal lattice vector.',
+        ERROR_NO_EXPERT:
+        'Expert mode is currently not supported.',
+        ERROR_NOT_A_NUMBER:
+        "The supplied 'point_number' is not a number (i.e. the index) "
+        'starting from 1 for the point to be modified.',
+        ERROR_CONVERSION:
+        'Conversion from reciprocal to direct for the KPOINTS is not yet implemented.',
+        ERROR_DIVISIONS:
+        "You have to set either 'divisions' (automatic mode) or the explicit 'points'.",
+        ERROR_INVALID_TAG:
+        "Only 'comment', 'points', 'tetra', 'tetra_volume', 'divisions', 'shifts', 'mode' "
         "'num_kpoints' or 'centering' is allowed as input for entry.",
-        ERROR_WRONG_OBJECT: "At least one of the values in 'points' is not a Kpoint() object.",
-        ERROR_TOO_LARGE_POINT_INDEX: "The supplied point_number is larger than the number of points.",
-        ERROR_INVALID_CENTERING: "The supplied 'centering' have to be either 'Gamma' or 'Monkhorst-Pack'.",
-        ERROR_INVALID_MODE: "The supplied 'mode' have to be either explicit, automatic or line-mode."
+        ERROR_WRONG_OBJECT:
+        "At least one of the values in 'points' is not a Kpoint() object.",
+        ERROR_TOO_LARGE_POINT_INDEX:
+        'The supplied point_number is larger than the number of points.',
+        ERROR_INVALID_CENTERING:
+        "The supplied 'centering' have to be either 'Gamma' or 'Monkhorst-Pack'.",
+        ERROR_INVALID_MODE:
+        "The supplied 'mode' have to be either explicit, automatic or line-mode."
     })
     ERROR_MESSAGES = BaseParser.ERROR_MESSAGES
-    
-    def __init__(self, kpoints_string=None, kpoints_dict=None,
-                 file_path=None, file_handler=None, logger=None, prec=None):
+
+    def __init__(self,
+                 kpoints_string=None,
+                 kpoints_dict=None,
+                 file_path=None,
+                 file_handler=None,
+                 logger=None,
+                 prec=None):
         """Initialize a KPOINTS object and set content as a dictionary.
 
         Parameters
@@ -61,8 +79,10 @@ class Kpoints(BaseParser):
 
         """
 
-        super(Kpoints, self).__init__(file_path=file_path, file_handler=file_handler, logger=logger)
-        
+        super(Kpoints, self).__init__(file_path=file_path,
+                                      file_handler=file_handler,
+                                      logger=logger)
+
         self._kpoints_dict = kpoints_dict
         self._kpoints_string = kpoints_string
 
@@ -99,14 +119,14 @@ class Kpoints(BaseParser):
         # validate dictionary
         self._validate()
 
-
     def _from_file(self):
         """Create rudimentary dictionary of entries from a
         file.
 
         """
 
-        kpoints = utils.readlines_from_file(self._file_path, self._file_handler)
+        kpoints = utils.readlines_from_file(self._file_path,
+                                            self._file_handler)
         kpoints_dict = self._from_list(kpoints)
         return kpoints_dict
 
@@ -165,7 +185,8 @@ class Kpoints(BaseParser):
             if third_line[0].lower() not in ['k', 'c']:
                 direct = True
             if not direct:
-                self._logger.error(self.ERROR_MESSAGES[self.ERROR_KPOINTS_NOT_DIRECT])
+                self._logger.error(
+                    self.ERROR_MESSAGES[self.ERROR_KPOINTS_NOT_DIRECT])
                 sys.exit(self.ERROR_KPOINTS_NOT_DIRECT)
             loopmax = 3
             points = []
@@ -178,11 +199,11 @@ class Kpoints(BaseParser):
                 weight = None
                 if len(kentry) > 3:
                     weight = float(kentry[3])
-                points.append(Kpoint(point, weight, direct = direct))
+                points.append(Kpoint(point, weight, direct=direct))
             loopmax = num_kpoints + loopmax
             tetra = []
             if len(kpoints) > loopmax:
-                if kpoints[loopmax].strip()[0].lower() == "t":
+                if kpoints[loopmax].strip()[0].lower() == 't':
                     # tetrahedron info present
                     loopmax = loopmax + 1
                     if len(kpoints) > loopmax:
@@ -193,19 +214,21 @@ class Kpoints(BaseParser):
                         for tet in range(num_tetra):
                             con_line = kpoints[tet + loopmax].split()
                             if not len(con_line) == 5:
-                                self._logger.error(self.ERROR_MESSAGES[self.ERROR_TETRA_CON_FIVE])
+                                self._logger.error(self.ERROR_MESSAGES[
+                                    self.ERROR_TETRA_CON_FIVE])
                                 sys.exit(self.ERROR_TETRA_CON_FIVE)
                             tetra.append([int(value) for value in con_line])
         if automatic:
             third_line_char = third_line[0].lower()
             if third_line_char == 'a':
-                self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_AUTOMATICS])
+                self._logger.error(
+                    self.ERROR_MESSAGES[self.ERROR_NO_AUTOMATICS])
                 sys.exit(self.ERROR_NO_AUTOMATICS)
             elif third_line_char == 'g' or third_line_char == 'm':
                 if third_line_char == 'g':
-                    centering = "Gamma"
+                    centering = 'Gamma'
                 else:
-                    centering = "Monkhorst-Pack"
+                    centering = 'Monkhorst-Pack'
                 divisions = [int(element) for element in kpoints[3].split()]
                 if len(kpoints) == 5:
                     shifts = [float(element) for element in kpoints[4].split()]
@@ -219,32 +242,34 @@ class Kpoints(BaseParser):
             if reference == 'r' or 'd':
                 direct = True
             if not direct:
-                self._logger.error(self.ERROR_MESSAGES[self.ERROR_KPOINTS_NOT_DIRECT])
+                self._logger.error(
+                    self.ERROR_MESSAGES[self.ERROR_KPOINTS_NOT_DIRECT])
                 sys.exit(self.ERROR_KPOINTS_NOT_DIRECT)
-            for index in range((len(kpoints)-4)):
+            for index in range((len(kpoints) - 4)):
                 true_index = index + 4
-                if kpoints[true_index] != "\n":
+                if kpoints[true_index] != '\n':
                     entry = kpoints[true_index].split()[0:3]
-                    coordinate = np.asarray([float(element) for element in entry])
+                    coordinate = np.asarray(
+                        [float(element) for element in entry])
                     point = Kpoint(coordinate, 1.0)
                     points.append(point)
 
-        mode = "explicit"
+        mode = 'explicit'
         if automatic:
-            mode = "automatic"
+            mode = 'automatic'
         if line_mode:
-            mode = "line"
+            mode = 'line'
         # add to dictionary
         kpoints_dict = {}
-        kpoints_dict["comment"] = comment
-        kpoints_dict["divisions"] = divisions
-        kpoints_dict["shifts"] = shifts
-        kpoints_dict["points"] = points
-        kpoints_dict["tetra"] = tetra
-        kpoints_dict["tetra_volume"] = tetra_vol
-        kpoints_dict["mode"] = mode
-        kpoints_dict["centering"] = centering
-        kpoints_dict["num_kpoints"] = num_kpoints
+        kpoints_dict['comment'] = comment
+        kpoints_dict['divisions'] = divisions
+        kpoints_dict['shifts'] = shifts
+        kpoints_dict['points'] = points
+        kpoints_dict['tetra'] = tetra
+        kpoints_dict['tetra_volume'] = tetra_vol
+        kpoints_dict['mode'] = mode
+        kpoints_dict['centering'] = centering
+        kpoints_dict['num_kpoints'] = num_kpoints
 
         return kpoints_dict
 
@@ -277,35 +302,37 @@ class Kpoints(BaseParser):
             self._check_point_number(point_number)
             # check that position is an integer
             if not isinstance(point_number, int):
-                self._logger.error(self.ERROR_MESSAGES[self.ERROR_NOT_A_NUMBER])
+                self._logger.error(
+                    self.ERROR_MESSAGES[self.ERROR_NOT_A_NUMBER])
                 sys.exit(self.ERROR_NOT_A_NUMBER)
-            self.entries["points"][point_number] = value
+            self.entries['points'][point_number] = value
         else:
-            if entry == "points":
-                self._check_points(points = value)
+            if entry == 'points':
+                self._check_points(points=value)
                 # check that all points are in direct, if not,
                 # convert
                 for point in value:
                     if not point.get_direct():
                         point = self._to_direct(point)
-                        self._logger.error(self.ERROR_MESSAGES[self.ERROR_CONVERSION])
+                        self._logger.error(
+                            self.ERROR_MESSAGES[self.ERROR_CONVERSION])
                         sys.exit(self.ERROR_CONVERSION)
-            if entry == "comment":
-                self._check_comment(comment = value)
-            if entry == "divisions":
-                self._check_divisions(divisions = value)
-            if entry == "shifts":
-                self._check_shifts(shifts = value)
-            if entry == "tetra":
-                self._check_tetra(tetra = value)
-            if entry == "tetra_volume":
-                self._check_tetra_volume(tetra_volume = value)
-            if entry == "centering":
-                self._check_centering(centering = value)
-            if entry == "mode":
-                self._check_mode(mode = value)
-            if entry == "num_kpoints":
-                self._check_num_kpoints(num_kpoints = value)
+            if entry == 'comment':
+                self._check_comment(comment=value)
+            if entry == 'divisions':
+                self._check_divisions(divisions=value)
+            if entry == 'shifts':
+                self._check_shifts(shifts=value)
+            if entry == 'tetra':
+                self._check_tetra(tetra=value)
+            if entry == 'tetra_volume':
+                self._check_tetra_volume(tetra_volume=value)
+            if entry == 'centering':
+                self._check_centering(centering=value)
+            if entry == 'mode':
+                self._check_mode(mode=value)
+            if entry == 'num_kpoints':
+                self._check_num_kpoints(num_kpoints=value)
 
             self.entries[entry] = value
 
@@ -323,7 +350,7 @@ class Kpoints(BaseParser):
 
         self._check_points()
         self._check_point_number(point_number)
-        del self.entries["points"][point_number]
+        del self.entries['points'][point_number]
 
     def add_point(self, point_number):
         """Add a point with the supplied
@@ -353,8 +380,8 @@ class Kpoints(BaseParser):
 
         # check that at least divisions or points are set
         # to something else than None
-        if (self.entries["divisions"] is None) \
-           and (self.entries["points"] is None):
+        if (self.entries['divisions'] is None) \
+           and (self.entries['points'] is None):
             self._logger.error(self.ERROR_MESSAGES[self.ERROR_DIVISIONS])
             sys.exit(self.ERROR_DIVISIONS)
 
@@ -368,15 +395,15 @@ class Kpoints(BaseParser):
 
         """
 
-        if not (("comment" in entry) or ("points" in entry) or
-                ("tetra" in entry) or ("tetra_volume" in entry) or
-                ("divisions" in entry) or ("mode" in entry) or
-                ("num_kpoints" in entry) or ("shifts" in entry) or
-                ("centering") in entry):
+        if not (('comment' in entry) or ('points' in entry) or
+                ('tetra' in entry) or ('tetra_volume' in entry) or
+                ('divisions' in entry) or ('mode' in entry) or
+                ('num_kpoints' in entry) or ('shifts' in entry) or
+                ('centering') in entry):
             self._logger.error(self.ERROR_MESSAGES[self.ERROR_INVALID_TAG])
             sys.exit(self.ERROR_INVALID_TAG)
 
-    def _check_comment(self, comment = None):
+    def _check_comment(self, comment=None):
         """Check that the comment entry is present and
         is a string.
 
@@ -389,19 +416,20 @@ class Kpoints(BaseParser):
         """
         if comment is None:
             try:
-                comment = self.entries["comment"]
+                comment = self.entries['comment']
             except KeyError:
                 self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_KEY] +
                                    " The key in question is 'comment'.")
                 sys.exit(self.ERROR_NO_KEY)
         # allow None for comment
-        if self.entries["comment"] is not None:
+        if self.entries['comment'] is not None:
             if not isinstance(comment, str):
-                self._logger.error(self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE] +
-                                   " The key 'comment' should be a string.")
+                self._logger.error(
+                    self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE] +
+                    " The key 'comment' should be a string.")
                 sys.exit(self.ERROR_KEY_INVALID_TYPE)
 
-    def _check_points(self, points = None):
+    def _check_points(self, points=None):
         """Check that the points entries are present.
 
         Parameters
@@ -414,7 +442,7 @@ class Kpoints(BaseParser):
 
         if points is None:
             try:
-                points = self.entries["points"]
+                points = self.entries['points']
             except KeyError:
                 self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_KEY] +
                                    " The key in question is 'points'.")
@@ -422,11 +450,12 @@ class Kpoints(BaseParser):
         if points is not None:
             # allow points to be none (if no explicit entries are given)
             if not isinstance(points, list):
-                self._logger.error(self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE] +
-                                   "The key 'points' should be a list.")
+                self._logger.error(
+                    self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE] +
+                    "The key 'points' should be a list.")
                 sys.exit(self.ERROR_KEY_INVALID_TYPE)
 
-    def _check_point(self, point = None):
+    def _check_point(self, point=None):
         """Check that the point entry is a Kpoint() object.
 
         Parameters
@@ -438,18 +467,20 @@ class Kpoints(BaseParser):
         """
         if point is None:
             try:
-                points = self.entries["points"]
+                points = self.entries['points']
             except KeyError:
                 self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_KEY] +
                                    " The key in question is 'points'.")
                 sys.exit(self.ERROR_NO_KEY)
             for point in points:
                 if not isinstance(point, Kpoint):
-                    self._logger.error(self.ERROR_MESSAGES[self.ERROR_WRONG_OBJECT])
+                    self._logger.error(
+                        self.ERROR_MESSAGES[self.ERROR_WRONG_OBJECT])
                     sys.exit(self.ERROR_WRONG_OBJECT)
         else:
             if not isinstance(point, Kpoint):
-                self._logger.error(self.ERROR_MESSAGES[self.ERROR_WRONG_OBJECT])
+                self._logger.error(
+                    self.ERROR_MESSAGES[self.ERROR_WRONG_OBJECT])
                 sys.exit(self.ERROR_WRONG_OBJECT)
 
     def _check_point_number(self, point_number):
@@ -464,15 +495,17 @@ class Kpoints(BaseParser):
         """
 
         if not isinstance(point_number, int):
-            self._logger.error(self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE] +
-                               " The key 'point_number' should be an integer.")
+            self._logger.error(
+                self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE] +
+                " The key 'point_number' should be an integer.")
             sys.exit(self.ERROR_KEY_INVALID_TYPE)
-        points = self.entries["points"]
-        if point_number > (len(points)-1):
-            self._logger.error(self.ERROR_MESSAGES[self.ERROR_TOO_LARGE_POINT_INDEX])
+        points = self.entries['points']
+        if point_number > (len(points) - 1):
+            self._logger.error(
+                self.ERROR_MESSAGES[self.ERROR_TOO_LARGE_POINT_INDEX])
             sys.exit(self.ERROR_TOO_LARGE_POINT_INDEX)
 
-    def _check_shifts(self, shifts = None):
+    def _check_shifts(self, shifts=None):
         """Check that the shifts are either None or
         a list of three floats.
 
@@ -486,24 +519,27 @@ class Kpoints(BaseParser):
 
         if shifts is None:
             try:
-                shifts = self.entries["shifts"]
+                shifts = self.entries['shifts']
             except KeyError:
                 self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_KEY] +
                                    " The key in question is 'shifts'.")
                 sys.exit(self.ERROR_NO_KEY)
         if shifts is not None:
             if not isinstance(shifts, list):
-                self._logger.error(self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE] +
-                                   " The key 'shifts' should be a list.")
+                self._logger.error(
+                    self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE] +
+                    " The key 'shifts' should be a list.")
                 sys.exit(self.ERROR_KEY_INVALID_TYPE)
             else:
                 for element in shifts:
                     if not isinstance(element, float):
-                        self._logger.error(self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE] + 
-                                           " The element:" + str(element) + "in 'shifts' is not a float.")
+                        self._logger.error(
+                            self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE] +
+                            ' The element:' + str(element) +
+                            "in 'shifts' is not a float.")
                         sys.exit(self.ERROR_KEY_INVALID_TYPE)
 
-    def _check_tetra_volume(self, volume = None):
+    def _check_tetra_volume(self, volume=None):
         """Check that the volume of the tetrahedron is
         either None or a float.
 
@@ -517,18 +553,19 @@ class Kpoints(BaseParser):
 
         if volume is None:
             try:
-                volume = self.entries["tetra_volume"]
+                volume = self.entries['tetra_volume']
             except KeyError:
                 self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_KEY] +
                                    " The key in question is 'tetra_volume'.")
                 sys.exit(self.ERROR_NO_KEY)
         if volume is not None:
             if not isinstance(volume, float):
-                self._logger.error(self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE] +
-                                   " The key 'tetra_volume' should be a float.")
+                self._logger.error(
+                    self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE] +
+                    " The key 'tetra_volume' should be a float.")
                 sys.exit(self.ERROR_KEY_INVALID_TYPE)
 
-    def _check_divisions(self, divisions = None):
+    def _check_divisions(self, divisions=None):
         """Check that the divisions are either None or
         a list of three integers.
 
@@ -542,24 +579,27 @@ class Kpoints(BaseParser):
 
         if divisions is None:
             try:
-                divisions = self.entries["divisions"]
+                divisions = self.entries['divisions']
             except KeyError:
                 self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_KEY] +
                                    " The key in question is 'divisions'.")
                 sys.exit(self.ERROR_NO_KEY)
         if divisions is not None:
             if not isinstance(divisions, list):
-                self._logger.error(self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE] +
-                                   " The key 'divisions' should be a list.")
+                self._logger.error(
+                    self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE] +
+                    " The key 'divisions' should be a list.")
                 sys.exit(self.ERROR_KEY_INVALID_TYPE)
             else:
                 for element in divisions:
                     if not isinstance(element, int):
-                        self._logger.error(self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE] +
-                                           " The elements in the key 'divisions' should be integers.")
+                        self._logger.error(
+                            self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE] +
+                            " The elements in the key 'divisions' should be integers."
+                        )
                         sys.exit(self.ERROR_KEY_INVALID_TYPE)
 
-    def _check_tetra(self, tetra = None):
+    def _check_tetra(self, tetra=None):
         """Check that tetra are either None or
         a list of four integers.
 
@@ -573,32 +613,38 @@ class Kpoints(BaseParser):
 
         if tetra is None:
             try:
-                tetra = self.entries["tetra"]
+                tetra = self.entries['tetra']
             except KeyError:
                 self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_KEY] +
                                    " The key in question is 'tetra'.")
                 sys.exit(self.ERROR_NO_KEY)
         if tetra is not None:
             if not isinstance(tetra, list):
-                self._logger.error(self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE] +
-                                   " The key 'tetra' should be a list.")
+                self._logger.error(
+                    self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE] +
+                    " The key 'tetra' should be a list.")
                 sys.exit(self.ERROR_KEY_INVALID_TYPE)
             else:
                 for element in tetra:
                     if not isinstance(element, list):
-                        self._logger.error(self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE] +
-                                           " The elements of the key 'tetra' is not lists.")
+                        self._logger.error(
+                            self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE] +
+                            " The elements of the key 'tetra' is not lists.")
                         sys.exit(self.ERROR_KEY_INVALID_TYPE)
                     if len(element) != 5:
-                        self._logger.error(self.ERROR_MESSAGES[self.ERROR_TETRA_FIVE])
+                        self._logger.error(
+                            self.ERROR_MESSAGES[self.ERROR_TETRA_FIVE])
                         sys.exit(self.ERROR_TETRA_FIVE)
                     for entry in element:
                         if not isinstance(entry, int):
-                            self._logger.error(self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE] +
-                                               " The tetrahedron connectors should be integers.")
+                            self._logger.error(
+                                self.ERROR_MESSAGES[
+                                    self.ERROR_KEY_INVALID_TYPE] +
+                                ' The tetrahedron connectors should be integers.'
+                            )
                             sys.exit(self.ERROR_KEY_INVALID_TYPE)
 
-    def _check_centering(self, centering = None):
+    def _check_centering(self, centering=None):
         """Check that the centering flag is valid.
 
         Parameters
@@ -611,18 +657,19 @@ class Kpoints(BaseParser):
 
         if centering is None:
             try:
-                centering = self.entries["centering"]
+                centering = self.entries['centering']
             except KeyError:
                 self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_KEY] +
                                    " The key in question is 'centering'.")
                 sys.exit(self.ERROR_NO_KEY)
         if centering is not None:
             # allow None
-            if not (centering == "Gamma" or centering == "Monkhorst-Pack"):
-                self._logger.error(self.ERROR_MESSAGES[self.ERROR_INVALID_CENTERING])
+            if not (centering == 'Gamma' or centering == 'Monkhorst-Pack'):
+                self._logger.error(
+                    self.ERROR_MESSAGES[self.ERROR_INVALID_CENTERING])
                 sys.exit(self.ERROR_INVALID_CENTERING)
 
-    def _check_num_kpoints(self, num_kpoints = None):
+    def _check_num_kpoints(self, num_kpoints=None):
         """Check that num_kpoints is valid.
 
         Parameters
@@ -635,17 +682,18 @@ class Kpoints(BaseParser):
 
         if num_kpoints is None:
             try:
-                num_kpoints = self.entries["num_kpoints"]
+                num_kpoints = self.entries['num_kpoints']
             except KeyError:
                 self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_KEY] +
                                    " The key in question is 'num_kpoints'.")
                 sys.exit(self.ERROR_NO_KEY)
         if not isinstance(num_kpoints, int):
-            self._logger.error(self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE] +
-                               " The key 'num_kpoints' should be an integer.")
+            self._logger.error(
+                self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE] +
+                " The key 'num_kpoints' should be an integer.")
             sys.exit(self.ERROR_KEY_INVALID_TYPE)
 
-    def _check_mode(self, mode = None):
+    def _check_mode(self, mode=None):
         """Check that the mode flag is valid.
 
         Parameters
@@ -658,15 +706,16 @@ class Kpoints(BaseParser):
 
         if mode is None:
             try:
-                mode = self.entries["mode"]
+                mode = self.entries['mode']
             except KeyError:
                 self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_KEY] +
                                    " The key in question is 'mode'.")
                 sys.exit(self.ERROR_NO_KEY)
         if mode is not None:
-            if not ((mode == "explicit") or (mode == "automatic") \
-               or (mode == "line")):
-                self._logger.error(self.ERROR_MESSAGES[self.ERROR_INVALID_MODE])
+            if not ((mode == 'explicit') or (mode == 'automatic') \
+               or (mode == 'line')):
+                self._logger.error(
+                    self.ERROR_MESSAGES[self.ERROR_INVALID_MODE])
                 sys.exit(self.ERROR_INVALID_MODE)
 
     def _validate(self):
@@ -731,9 +780,11 @@ class Kpoints(BaseParser):
         for key, entry in iteritems(self.entries):
             if key == 'points':
                 if entry is not None:
-                    dictionary[key] = [[element.get_point(),
-                                        element.get_weight(),
-                                        element.get_direct()]  for element in entry]
+                    dictionary[key] = [[
+                        element.get_point(),
+                        element.get_weight(),
+                        element.get_direct()
+                    ] for element in entry]
                 else:
                     dictionary[key] = None
             else:
@@ -756,7 +807,7 @@ class Kpoints(BaseParser):
         """
 
         string_object = StringIO.StringIO()
-        self._write(kpoints = string_object)
+        self._write(kpoints=string_object)
         kpoints_string = string_object.getvalue()
         string_object.close()
 
@@ -773,8 +824,10 @@ class Kpoints(BaseParser):
 
         """
 
-        kpoints = utils.file_handler(file_path, status='w', logger=self._logger)
-        self._write(kpoints = kpoints)
+        kpoints = utils.file_handler(file_path,
+                                     status='w',
+                                     logger=self._logger)
+        self._write(kpoints=kpoints)
         utils.file_handler(file_handler=kpoints, logger=self._logger)
 
     def _write(self, kpoints):
@@ -789,92 +842,99 @@ class Kpoints(BaseParser):
 
         self._validate()
         entries = self.entries
-        comment = entries["comment"]
+        comment = entries['comment']
         if comment is None:
-            comment = "# No comment"
+            comment = '# No comment'
         else:
-            comment = "# " + comment
-        kpoints.write(comment + "\n")
+            comment = '# ' + comment
+        kpoints.write(comment + '\n')
         # check mode
-        mode = entries["mode"]
-        if mode == "explicit":
-            kpoints.write("{:6d}\n".format(entries["num_kpoints"]))
+        mode = entries['mode']
+        if mode == 'explicit':
+            kpoints.write('{:6d}\n'.format(entries['num_kpoints']))
             # points should already be direct
-            kpoints.write("Direct\n")
-            for point in entries["points"]:
+            kpoints.write('Direct\n')
+            for point in entries['points']:
                 coordinate = point.get_point()
                 weight = point.get_weight()
                 if weight is None:
                     # if weight is set to None, force it
                     # to one
-                    logger.info("None was detected for the weight, "
-                                "but for excplicit mode a weight has "
-                                "to be given. Setting it to 1.0. "
-                                "Continuing.")
+                    logger.info('None was detected for the weight, '
+                                'but for excplicit mode a weight has '
+                                'to be given. Setting it to 1.0. '
+                                'Continuing.')
                     weight = 1.0
-                kpoints.write("{:{width}.{prec}f} {:{width}.{prec}f} "
-                              "{:{width}.{prec}f} {:{width}.{prec}f}\n".format(
-                    coordinate[0],
-                    coordinate[1],
-                    coordinate[2],
-                    weight, prec = self._prec, width = self._width))
-            if entries["tetra"] is not None:
-                kpoints.write("Tetrahedra\n")
-                tetra = entries["tetra"]
-                kpoints.write("{:6d} {:{width}.{prec}f}\n".format(
+                kpoints.write('{:{width}.{prec}f} {:{width}.{prec}f} '
+                              '{:{width}.{prec}f} {:{width}.{prec}f}\n'.format(
+                                  coordinate[0],
+                                  coordinate[1],
+                                  coordinate[2],
+                                  weight,
+                                  prec=self._prec,
+                                  width=self._width))
+            if entries['tetra'] is not None:
+                kpoints.write('Tetrahedra\n')
+                tetra = entries['tetra']
+                kpoints.write('{:6d} {:{width}.{prec}f}\n'.format(
                     len(tetra),
-                    entries["tetra_volume"], prec = self._prec, width = self._width))
+                    entries['tetra_volume'],
+                    prec=self._prec,
+                    width=self._width))
                 for element in tetra:
-                    kpoints.write("{:6d} {:6d} {:6d} {:6d} {:6d}\n".format(
+                    kpoints.write('{:6d} {:6d} {:6d} {:6d} {:6d}\n'.format(
                         element[0],
                         element[1],
                         element[2],
                         element[3],
-                        element[4], prec = self._prec, width = self._width))
-        if mode == "automatic":
-            kpoints.write("0\n")
-            kpoints.write(entries["centering"] + "\n")
-            divisions = entries["divisions"]
-            kpoints.write("{:{width}d} {:{width}d} {:{width}d}\n".format(
-                divisions[0],
-                divisions[1],
-                divisions[2], width = self._width))
-            shifts = entries["shifts"]
+                        element[4],
+                        prec=self._prec,
+                        width=self._width))
+        if mode == 'automatic':
+            kpoints.write('0\n')
+            kpoints.write(entries['centering'] + '\n')
+            divisions = entries['divisions']
+            kpoints.write('{:{width}d} {:{width}d} {:{width}d}\n'.format(
+                divisions[0], divisions[1], divisions[2], width=self._width))
+            shifts = entries['shifts']
             if shifts is not None:
-                kpoints.write("{:{width}.{prec}f} {:{width}.{prec}f} "
-                              "{:{width}.{prec}f}\n".format(
-                                  shifts[0],
-                                  shifts[1],
-                                  shifts[2], prec = self._prec, width = self._width))
+                kpoints.write('{:{width}.{prec}f} {:{width}.{prec}f} '
+                              '{:{width}.{prec}f}\n'.format(shifts[0],
+                                                            shifts[1],
+                                                            shifts[2],
+                                                            prec=self._prec,
+                                                            width=self._width))
             else:
-                kpoints.write("{:{width}.{prec}f} {:{width}.{prec}f} "
-                              "{:{width}.{prec}f}\n".format(
-                                  0.0,
-                                  0.0,
-                                  0.0, prec = self._prec, width = self._width))
+                kpoints.write('{:{width}.{prec}f} {:{width}.{prec}f} '
+                              '{:{width}.{prec}f}\n'.format(0.0,
+                                                            0.0,
+                                                            0.0,
+                                                            prec=self._prec,
+                                                            width=self._width))
 
-        if mode == "line":
-            kpoints.write("{:6d}\n".format(entries["num_kpoints"]))
-            kpoints.write("Line-mode\n")
+        if mode == 'line':
+            kpoints.write('{:6d}\n'.format(entries['num_kpoints']))
+            kpoints.write('Line-mode\n')
             # assume points to be direct
-            kpoints.write("Direct\n")
+            kpoints.write('Direct\n')
             complete_set = 1
-            for index, point in enumerate(entries["points"]):
+            for index, point in enumerate(entries['points']):
                 coordinate = point.get_point()
-                kpoints.write("{:{width}.{prec}f} {:{width}.{prec}f} "
-                              "{:{width}.{prec}f}\n".format(
-                                  coordinate[0],
-                                  coordinate[1],
-                                  coordinate[2], prec = self._prec, width = self._width))
+                kpoints.write('{:{width}.{prec}f} {:{width}.{prec}f} '
+                              '{:{width}.{prec}f}\n'.format(coordinate[0],
+                                                            coordinate[1],
+                                                            coordinate[2],
+                                                            prec=self._prec,
+                                                            width=self._width))
                 if complete_set == 2:
-                    kpoints.write("\n")
+                    kpoints.write('\n')
                     complete_set = 0
                 complete_set = complete_set + 1
             utils.remove_newline(kpoints)
 
-class Kpoint(object):
 
-    def __init__(self, point, weight, direct = True, logger=None):
+class Kpoint(object):
+    def __init__(self, point, weight, direct=True, logger=None):
         """A site, typically a position in POSCAR.
 
         Parameters

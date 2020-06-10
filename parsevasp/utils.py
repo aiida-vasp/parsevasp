@@ -7,7 +7,11 @@ import math
 import numpy as np
 from parsevasp.base import BaseParser
 
-def readlines_from_file(filename, input_file_handler, contains=None, logger=None):
+
+def readlines_from_file(filename,
+                        input_file_handler,
+                        contains=None,
+                        logger=None):
     """
     Read a file and return the whole file or specific lines.
 
@@ -34,7 +38,7 @@ def readlines_from_file(filename, input_file_handler, contains=None, logger=None
 
     if logger is None:
         logger = logging.getLogger(sys._getframe().f_code.co_name)
-    
+
     if input_file_handler is not None:
         inputfile = input_file_handler
         file_data = inputfile.readlines()
@@ -65,7 +69,7 @@ def readlines_from_file(filename, input_file_handler, contains=None, logger=None
     return lines
 
 
-def file_handler(filename="", file_handler=None, status=None, logger=None):
+def file_handler(filename='', file_handler=None, status=None, logger=None):
     """
     Open and close files.
 
@@ -96,7 +100,8 @@ def file_handler(filename="", file_handler=None, status=None, logger=None):
 
     if status is None:
         if file_handler is None:
-            logger.error(BaseParser.ERROR_MESSAGES[BaseParser.ERROR_EMPTY_HANDLER])
+            logger.error(
+                BaseParser.ERROR_MESSAGES[BaseParser.ERROR_EMPTY_HANDLER])
             sys.exit(BaseParser.ERROR_EMPTY_HANDLER)
         file_handler.close()
     else:
@@ -104,8 +109,9 @@ def file_handler(filename="", file_handler=None, status=None, logger=None):
             file_handler = open(filename, status)
             return file_handler
         except IOError:
-            logger.error(BaseParser.ERROR_MESSAGES(BaseParser.ERROR_FILE_NOT_FOUND) +
-                         " The file in question is: {}".format(filename))
+            logger.error(
+                BaseParser.ERROR_MESSAGES(BaseParser.ERROR_FILE_NOT_FOUND) +
+                ' The file in question is: {}'.format(filename))
             sys.exit(BaseParser.ERROR_FILE_NOT_FOUND)
 
 
@@ -128,17 +134,19 @@ def file_exists(file_path, logger=None):
 
     if logger is None:
         logger = logging.getLogger(sys._getframe().f_code.co_name)
-    
+
     if not file_path:
-        logger.error(BaseParser.ERROR_MESSAGES[BaseParser.ERROR_EMPTY_FILE_PATH])
+        logger.error(
+            BaseParser.ERROR_MESSAGES[BaseParser.ERROR_EMPTY_FILE_PATH])
         sys.exit(BaseParser.ERROR_EMPTY_FILE_PATH)
-    
+
     status = True
     try:
         os.stat(file_path)
     except OSError:
-        logger.error(BaseParser.ERROR_MESSAGES(BaseParser.ERROR_FILE_NOT_FOUND) +
-                     " The file in question is: {}".format(file_path))
+        logger.error(
+            BaseParser.ERROR_MESSAGES(BaseParser.ERROR_FILE_NOT_FOUND) +
+            ' The file in question is: {}'.format(file_path))
         status = False
 
     return status
@@ -160,9 +168,8 @@ def is_sequence(arg):
 
     """
 
-    sequence = (not hasattr(arg, "strip") and
-                hasattr(arg, "__getitem__") or
-                hasattr(arg, "__iter__"))
+    sequence = (not hasattr(arg, 'strip') and hasattr(arg, '__getitem__')
+                or hasattr(arg, '__iter__'))
 
     return sequence
 
@@ -193,7 +200,7 @@ def test_string_content(string):
         return 'string'
 
 
-def is_numbers(s, splitter=" "):
+def is_numbers(s, splitter=' '):
     """
     Check if a string only contains numbers.
 
