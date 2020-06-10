@@ -2,12 +2,15 @@
     "author": "Espen Flage-Larsen",
     "author_email": "espen.flage-larsen@sintef.no",
     "classifiers": [
-        "Development Status :: 4 - Beta",
+	"Development Status :: 5 - Production/Stable",
+        "Environment :: Plugins",
         "Intended Audience :: Science/Research",
-        "Topic :: Scientific/Engineering :: Physics",
         "License :: OSI Approved :: MIT License",
-        "Programming Language :: Python :: 2.7",
-        "Programming Language :: Python :: 3.7"
+        "Programming Language :: Python :: 3.6",
+	"Programming Language :: Python :: 3.7",
+	"Programming Language :: Python :: 3.8",
+        "Topic :: Scientific/Engineering :: Physics",
+	"Topic :: Scientific/Engineering :: Chemistry"
     ],
     "description": "A general parser for VASP",
     "extras_require": {
