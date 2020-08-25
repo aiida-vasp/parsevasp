@@ -61,7 +61,7 @@ jobs:
         if: ${{ matrix.python }} == '3.8'
         run: pytest --cov-report=xml --cov-append --cov=parsevasp
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v1.0.7
+        uses: codecov/codecov-action@v1
         with:
           name: parsevasp
           fail_ci_if_error: true
