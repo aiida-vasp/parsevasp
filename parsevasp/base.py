@@ -19,7 +19,7 @@ class BaseParser(object):
         ERROR_NO_ENTRIES: "There is no 'entries' class attribute.",
         ERROR_NO_KEY: "The correct key in 'entries' is missing.",
         ERROR_KEY_INVALID_TYPE: 'The key has a wrong type.',
-        ERROR_FILE_NOT_FOUND: 'The path did not contain an file.',
+        ERROR_FILE_NOT_FOUND: 'The path did not contain a file.',
         ERROR_EMPTY_HANDLER: 'The supplied file handler is empty.',
         ERROR_EMPTY_FILE_PATH: 'The supplied file path is empty.'
     }

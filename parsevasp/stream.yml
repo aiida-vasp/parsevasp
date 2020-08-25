@@ -1,0 +1,15 @@
+# File containing the definition of different streams that VASP generate.
+# shortname: An unique short name
+# kind: What kind of stream is it (ERROR/WARNING)
+# regex: The string printed by VASP (what we search for when we parse the stream)
+# message: A human readable interpretation of the regex
+# suggestion: A human readable suggestion on how to act
+# location: Can be found in which stream (STDOUT/STDERR)
+# recover: If False, always break when this error appears, there is no point in recovering
+"ibzkpt":
+  kind: ERROR
+  regex: "internal error in subroutine IBZKPT"
+  message: "There is an error when creating the irreducible k-point grid, most likely the symmetry of the cell does not match the k-point sampling."
+  suggestion: "Change the k-point layout, for instance make sure that if two lattice sides are of equal length, the k-point sampling along the same sides are the same. If that does not work, try to change the sampling rate and shift the grid out of Gamma, or in to Gamma."
+  location: STDOUT
+  recover: False

@@ -7,3 +7,4 @@ import parsevasp.poscar
 import parsevasp.incar
 import parsevasp.kpoints
 import parsevasp.outcar
+import parsevasp.stream
