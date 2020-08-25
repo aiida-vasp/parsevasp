@@ -1,2 +1,3 @@
 include setup.json
-include parsevasp/incar_tags.yml
+include parsevasp/incar.yml
+include parsevasp/stream.yml
