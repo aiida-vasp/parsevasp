@@ -8,7 +8,7 @@ import numpy as np
 from parsevasp.base import BaseParser
 
 
-def readlines_from_file(filename,
+def readlines_from_file(file_name,
                         input_file_handler,
                         contains=None,
                         logger=None):
@@ -17,10 +17,10 @@ def readlines_from_file(filename,
 
     Parameters
     ----------
-    filename : str
-        The location and filename to be read.
+    file_name : str
+        The location and file name to be read.
     file_handler : object
-        A valid file handler. If both filename and file_handler is set,
+        A valid file handler. If both file name and file_handler is set,
         the file handler takes presence.
     contains : list of str
         A list of string of identifiers for the lines that is to be
@@ -43,7 +43,7 @@ def readlines_from_file(filename,
         inputfile = input_file_handler
         file_data = inputfile.readlines()
     else:
-        inputfile = file_handler(filename=filename, status='r', logger=logger)
+        inputfile = file_handler(file_name=file_name, status='r', logger=logger)
         file_data = inputfile.readlines()
         file_handler(logger, file_handler=inputfile, logger=logger)
 
@@ -69,13 +69,13 @@ def readlines_from_file(filename,
     return lines
 
 
-def file_handler(filename='', file_handler=None, status=None, logger=None):
+def file_handler(file_name='', file_handler=None, status=None, logger=None):
     """
     Open and close files.
 
     Parameters
     ----------
-    filename : str, optional
+    file_name : str, optional
         The name of the file to be handled (defaults to '').
     file_handler : object, optional
         An existing `file` object. If not supplied a file is
@@ -106,12 +106,12 @@ def file_handler(filename='', file_handler=None, status=None, logger=None):
         file_handler.close()
     else:
         try:
-            file_handler = open(filename, status)
+            file_handler = open(file_name, status)
             return file_handler
         except IOError:
             logger.error(
-                BaseParser.ERROR_MESSAGES(BaseParser.ERROR_FILE_NOT_FOUND) +
-                ' The file in question is: {}'.format(filename))
+                BaseParser.ERROR_MESSAGES[BaseParser.ERROR_FILE_NOT_FOUND] +
+                ' The file in question is: {}'.format(file_name))
             sys.exit(BaseParser.ERROR_FILE_NOT_FOUND)
 
 
