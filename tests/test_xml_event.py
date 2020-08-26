@@ -408,7 +408,6 @@ def test_xml_eigenvalues_specific(xml_parser):
     """
 
     eigenvalues = xml_parser.get_eigenvalues_specific()
-    print(type(eigenvalues))
     kpoints = xml_parser.get_kpoints_specific()
     kpointsw = xml_parser.get_kpointsw_specific()
     assert eigenvalues['total'].shape == (20, 10)

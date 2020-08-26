@@ -157,7 +157,7 @@ class Stream(BaseParser):
             for shortname, config in self._stream_config.items():
                 if config['kind'] == stream:
                     triggers[''.join([stream.lower(), 's'])].append(VaspStream(shortname=shortname, **config))
-        print(triggers)
+
         return triggers
                     
     def _parse(self):
