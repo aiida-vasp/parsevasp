@@ -35,6 +35,8 @@ class Stream(BaseParser):
             The file path that contains the standard stream.
         file_handler : object
             The file handler object.
+        logger: object
+            A logger object.
         stream : string, optional
             A string determining if a stdout, stderr or a combined stream is supplied.
         history : bool, optional
@@ -67,7 +69,7 @@ class Stream(BaseParser):
 
         # Load stream configuration from the supplied config or the standard config file
         self._stream_config = self._load_config()
-
+        
         # Now investigate the kinds of streams present in the config
         self._stream_kinds = self._set_streams()
 
@@ -127,7 +129,7 @@ class Stream(BaseParser):
 
         stream_config = None
         fname = Path(__file__).parent / 'stream.yml'
-        # Read the errors
+        # Read the config file
         with open(fname, 'r') as file_handler:
             stream_config = yaml.safe_load(file_handler)
 
@@ -157,7 +159,7 @@ class Stream(BaseParser):
             for shortname, config in self._stream_config.items():
                 if config['kind'] == stream:
                     triggers[''.join([stream.lower(), 's'])].append(VaspStream(shortname=shortname, **config))
-        print(triggers)
+
         return triggers
                     
     def _parse(self):

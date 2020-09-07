@@ -54,7 +54,6 @@ def test_stream_override(stream_parser):
                                                               'location': 'STDOUT',
                                                               'recover': False}})
     assert len(stream.entries) == 1
-    print(stream.entries[0].suggestion)
     assert stream.entries[0].kind == 'WARNING'
     assert stream.entries[0].regex == re.compile('internal error')
     assert stream.entries[0].message == 'some error'
