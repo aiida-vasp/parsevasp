@@ -128,7 +128,9 @@ class Xml(BaseParser):
             'ispin': None,
             'nbands': None,
             'nelect': None,
-            'system': None
+            'system': None,
+            'nelm': None,
+            'nsw': None,
         }
         self._lattice = {
             'unitcell': None,
@@ -239,6 +241,8 @@ class Xml(BaseParser):
         self._parameters['nbands'] = self._fetch_nbandsw(vaspxml)
         self._parameters['nelect'] = self._fetch_nelectw(vaspxml)
         self._parameters['system'] = self._fetch_systemw(vaspxml)
+        self._parameters['nelm'] = self._fetch_nelmw(vaspxml)
+        self._parameters['nsw'] = self._fetch_nsww(vaspxml)
         self._lattice['species'] = self._fetch_speciesw(vaspxml)
         self._lattice['unitcell'], self._lattice['positions'], \
             self._data['forces'], self._data['stress'] = \
@@ -1129,6 +1133,67 @@ class Xml(BaseParser):
         sigma = self._convert_f(entry)
 
         return sigma
+
+    def _fetch_nelmw(self, xml):
+        """Fetch and set nelm using etree
+
+        Parameters
+        ----------
+        xml : object
+            An ElementTree object to be used for parsing.
+
+        Returns
+        -------
+        nelm : float
+            If NELM is found it is returned.
+
+        Notes
+        -----
+        Maximum number of eletronic steps. This is needed for checking if the eletronic
+        structure is converged. 
+
+        """
+
+        entry = self._find(
+            xml, './/parameters/separator[@name="electronic"]/'
+            'separator[@name="electronic convergence"]/'
+            'i[@name="NELM"]')
+
+        if entry is None:
+            return None
+
+        nelm = self._convert_i(entry)
+
+        return nelm
+
+    def _fetch_nsww(self, xml):
+        """Fetch and set nsw using etree
+
+        Parameters
+        ----------
+        xml : object
+            An ElementTree object to be used for parsing.
+
+        Returns
+        -------
+        nsw : int
+            If NSW is found it is returned.
+
+        Notes
+        -----
+        Maximum number of eletronic steps. This is needed for checking ionic convergence. 
+        """
+
+        entry = self._find(
+            xml, './/parameters/separator[@name="ionic"]/'
+            'i[@name="NSW"]')
+
+        if entry is None:
+            return None
+
+        nsw = self._convert_i(entry)
+
+        return nsw
 
     def _fetch_ispinw(self, xml):
         """Fetch and set ispin using etree

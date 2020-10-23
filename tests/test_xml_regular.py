@@ -785,6 +785,16 @@ def test_xml_ionic(xml_parser):
     np.testing.assert_allclose(stress[10][1], testing)
 
 
+def test_xml_parameters(xml_parser):
+    """Test if parameters can be parsed"""
+    xml_data = xml_parser(filename='basicrelax.xml')
+    parameters = xml_data.get_parameters()
+    parameters['nelm'] = 60
+    parameters['nws'] = 80
+    parameters['nbands'] = 21
+    parameters['ispin'] = 1
+
+
 def test_xml_overflow(xml_parser):
     """Check that if we detect overflow (typically **** in place of number) we do a SystemExit.
 
