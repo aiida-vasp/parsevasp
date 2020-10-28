@@ -165,6 +165,11 @@ class Xml(BaseParser):
         # parse parse parse
         self._parse()
 
+    @property
+    def truncated(self):
+        """Return True of the xml parsed is truncated."""
+        return self._xml_recover
+        
     def _parse(self):
         """Perform the actual parsing
 
@@ -186,13 +191,13 @@ class Xml(BaseParser):
             return None
 
         # Do a quick check to see if the XML file is not truncated
-        xml_recover = self._check_xml()
-
-        if ((file_size < self._sizecutoff) or xml_recover) and \
+        self._xml_recover = self._check_xml()
+            
+        if ((file_size < self._sizecutoff) or self._xml_recover) and \
            not self._event:
             # run regular method (loads file into memory) and
             # enable recovery mode if necessary
-            self._parsew(xml_recover)
+            self._parsew(self._xml_recover)
         else:
             # event based, saves a bit of memory
             self._parsee()
