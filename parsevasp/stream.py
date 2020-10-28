@@ -189,18 +189,21 @@ class Stream(BaseParser):
             A list of strings containing each line in the standard stream.
 
         """
+        # Copy the dictionary as we will use pop when we do not want history to
+        # remove items as we go
+        stream_triggers = dict(self._stream_triggers)
         for index, line in enumerate(stream):
             # Go though all entries in the stream triggers
-            for kind, triggers in self._stream_triggers.items():
+            for kind, triggers in stream_triggers.items():
                 # Not check all the triggers of the given kind
-                for trigger in triggers:
+                for index, trigger in enumerate(triggers):
                     trigger_record = trigger.check_line(line)
                     if trigger_record:
                         self._streams.append(trigger_record)
                         if not self._history:
-                            # Break on first stream detection if we do not want the
+                            # Pop stream trigger if we do not want the
                             # full history of streams (e.g. multiple stream occurrences recorded)
-                            break
+                            stream_triggers[kind].pop(index)
 
 
 class VaspStream:
