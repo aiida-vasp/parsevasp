@@ -1,6 +1,6 @@
 """A parser for VASP."""
 
-__version__ = '1.1.1'
+__version__ = '1.1.2'
 
 import parsevasp.vasprun
 import parsevasp.poscar
