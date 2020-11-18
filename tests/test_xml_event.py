@@ -657,6 +657,7 @@ def test_xml_ionic(xml_parser):
     positions = xml_parser.get_positions('all')
     forces = xml_parser.get_forces('all')
     stress = xml_parser.get_stress('all')
+    energies_sc = xml_parser.get_energies('all', nosc=False)
 
     # check that all entries are present
     assert len(unitcells) == 19
@@ -681,3 +682,6 @@ def test_xml_ionic(xml_parser):
     np.testing.assert_allclose(stress[2][0], testing)
     testing = np.array([0.0, 0.60834449, -3.20314152])
     np.testing.assert_allclose(stress[10][1], testing)
+    testing = [-43.34236449, -43.31102002, -43.27768275, -43.27791002,
+               -43.27761357, -43.27757545]
+    np.testing.assert_allclose(energies_sc[1], testing)
