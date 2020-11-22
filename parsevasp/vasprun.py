@@ -418,6 +418,17 @@ class Xml(BaseParser):
                         self._parameters['system'] = element.text
                 except KeyError:
                     pass
+                try:
+                    if event == 'start' and element.attrib['name'] == 'NELM' \
+                        and element.getparent().attrib['name'] == 'electronic convergence':
+                        self._parameters['nelm'] = self._convert_i(element)
+                except KeyError:
+                    pass
+                try:
+                    if event == 'start' and element.attrib['name'] == 'NSW':
+                        self._parameters['nsw'] = self._convert_i(element)
+                except KeyError:
+                    pass
 
             if extract_calculation:
                 attribute = calc
