@@ -79,7 +79,7 @@ def test_xml_stress(xml_parser):
 
 
 @pytest.mark.parametrize('xml_parser', ['basic.xml'], indirect=True)
-def test_xml_hessian(xml_parser):
+def test_xml_hessian_basic(xml_parser):
     """Check hessian matrix.
 
     """
@@ -88,7 +88,7 @@ def test_xml_hessian(xml_parser):
 
 
 @pytest.mark.parametrize('xml_parser', ['basic.xml'], indirect=True)
-def test_xml_dynmat(xml_parser):
+def test_xml_dynmat_basic(xml_parser):
     """Check the dynamical metrix.
 
     """
@@ -97,7 +97,7 @@ def test_xml_dynmat(xml_parser):
 
 
 @pytest.mark.parametrize('xml_parser', ['basic.xml'], indirect=True)
-def test_xml_dielectrics(xml_parser):
+def test_xml_dielectrics_basic(xml_parser):
     """Check the dielectric functions.
 
     """
@@ -106,7 +106,7 @@ def test_xml_dielectrics(xml_parser):
 
 
 @pytest.mark.parametrize('xml_parser', ['basic.xml'], indirect=True)
-def test_xml_born(xml_parser):
+def test_xml_born_basic(xml_parser):
     """Check the born effective masses.
 
     """
@@ -545,6 +545,16 @@ def test_xml_eivenalues_partial(xml_parser):
     np.testing.assert_allclose(projected['total'][0, 0, 2:5, 1], test)
     test = np.array([0.025, 0.0001, 0.0243])
     np.testing.assert_allclose(projected['total'][4, 10, 2:5, 1], test)
+
+
+@pytest.mark.parametrize('xml_parser', ['basicpartial.xml'], indirect=True)
+def test_xml_parameters_partial(xml_parser):
+    """Check the parsing of parameters"""
+    parameters = xml_parser.get_parameters()
+    assert parameters['nelm'] == 60
+    assert parameters['nsw'] == 0
+    assert parameters['nbands'] == 21
+    assert parameters['ispin'] == 1
 
 
 @pytest.mark.parametrize('xml_parser', ['dielectrics.xml'], indirect=True)
