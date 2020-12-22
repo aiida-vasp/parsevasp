@@ -39,6 +39,11 @@ except ImportError:
                     sys.exit('Failed to import ElementTree.')
 
 
+_SUPPORTED_TOTAL_ENERGIES = {'energy_extrapolated': 'e_0_energy',
+                             'energy_free': 'e_fr_energy',
+                             'energy_no_entropy': 'e_wo_entrp'}
+
+
 class Xml(BaseParser):
 
     ERROR_MULTIPLE_ENTRIES = 500
@@ -120,6 +125,9 @@ class Xml(BaseParser):
         # of the eigenvalue data etc.)?
         self._k_before_band = k_before_band
 
+        # version
+        self._version = None
+        
         # dictionaries that contain the output of the parsing
         self._parameters = {
             'symprec': None,
@@ -231,9 +239,10 @@ class Xml(BaseParser):
             vaspxml = etree.parse(filer)
 
         # do we want to extract data from all calculations (e.g. ionic steps)
-        all = self._extract_all
+        extract_all = self._extract_all
 
         # let us start to parse the content
+        self._version = self._fetch_versionw(vaspxml)
         self._parameters['symprec'] = self._fetch_symprecw(vaspxml)
         self._parameters['sigma'] = self._fetch_sigmaw(vaspxml)
         self._parameters['ismear'] = self._fetch_ismearw(vaspxml)
@@ -246,7 +255,7 @@ class Xml(BaseParser):
         self._lattice['species'] = self._fetch_speciesw(vaspxml)
         self._lattice['unitcell'], self._lattice['positions'], \
             self._data['forces'], self._data['stress'] = \
-            self._fetch_upfsw(vaspxml, all=all)
+            self._fetch_upfsw(vaspxml, extract_all=extract_all)
         self._lattice['kpoints'] = self._fetch_kpointsw(vaspxml)
         self._lattice['kpointsw'] = self._fetch_kpointsww(vaspxml)
         self._lattice['kpointdiv'] = self._fetch_kpointdivw(vaspxml)
@@ -273,11 +282,13 @@ class Xml(BaseParser):
         # set logger
         self._logger.debug('Running parsee.')
 
-        # helper list
+        # helper lists
         data = []
         data2 = []
         data3 = []
         data4 = []
+        data5 = []
+        data6 = []
 
         # dicts
         cell = {}
@@ -291,6 +302,7 @@ class Xml(BaseParser):
         _dos2 = {}
 
         # bool to control extraction of content
+        extract_generator = False
         extract_parameters = False
         extract_calculation = False
         extract_latticedata = False
@@ -323,7 +335,10 @@ class Xml(BaseParser):
         extract_projected = False
         extract_forces = False
         extract_stress = False
-        extract_e0 = False
+        extract_energies = False
+        extract_e_0_energy = False
+        extract_e_fr_energy = False
+        extract_e_wo_entrp = False
         extract_scstep = False
         extract_dielectrics = False
         extract_eig_proj = False
@@ -335,7 +350,7 @@ class Xml(BaseParser):
         extract_born = False
 
         # do we want to extract data from all calculations (e.g. ionic steps)
-        all = self._extract_all
+        extract_all = self._extract_all
 
         if self._file_handler is None:
             filer = self._file_path
@@ -348,18 +363,30 @@ class Xml(BaseParser):
             # set extraction points (what to read and when to read it)
             # here we also set the relevant data elements when the tags
             # close when they contain more than one element
+            if event == 'start' and element.tag == 'generator':
+                extract_generator = True
+            if event == 'end' and element.tag == 'generator':
+                extract_generator = False
             if event == 'start' and element.tag == 'parameters':
                 extract_parameters = True
             if event == 'end' and element.tag == 'parameters':
                 extract_parameters = False
             if event == 'start' and element.tag == 'calculation':
+                # Instead of needing to check the nested dicts we initialize them here
+                # so that we can use update for each calculation.
+                totens[calc] = {}
                 extract_calculation = True
             if event == 'end' and element.tag == 'calculation':
                 data3 = self._convert_array1D_f(data3)
-                totens[calc] = {
-                    'energy_no_entropy': [data3[data3.shape[0] - 1], data3]
-                }
+                data4 = self._convert_array1D_f(data4)
+                data5 = self._convert_array1D_f(data5)
+                totens[calc].update({'energy_extrapolated': data3,
+                                     'energy_free': data4,
+                                     'energy_no_entropy': data5
+                })
                 data3 = []
+                data4 = []
+                data5 = []
                 # update index for the calculation
                 calc = calc + 1
                 extract_calculation = False
@@ -382,6 +409,12 @@ class Xml(BaseParser):
                 extract_projected = False
 
             # now fetch the data
+            if extract_generator:
+                try:
+                    if event == 'start' and element.attrib['name'] == 'version':
+                        self._version = element.text
+                except KeyError:
+                    pass
             if extract_parameters:
                 try:
                     if event == 'start' and element.attrib['name'] == 'SYMPREC':
@@ -431,7 +464,6 @@ class Xml(BaseParser):
                     pass
 
             if extract_calculation:
-                attribute = calc
                 # it would be very tempting just to fill the data and disect
                 # it later, would be faster, but it is not so easy since
                 # we do not know how many calculations have been performed
@@ -486,9 +518,9 @@ class Xml(BaseParser):
                     data2 = []
                 if event == 'end' and element.tag == 'dos' and extract_dos:
                     # check the Fermi level
-                    if len(data4) == 1:
-                        fermi_level = self._convert_f(data4[0])
-                    elif len(data4) > 1:
+                    if len(data6) == 1:
+                        fermi_level = self._convert_f(data6[0])
+                    elif len(data6) > 1:
                         self._logger.error(
                             self.ERROR_MESSAGES[self.ERROR_MULTIPLE_ENTRIES] +
                             " The tag in question is 'efermi'.")
@@ -510,7 +542,7 @@ class Xml(BaseParser):
                     self._data['dos'] = copy.deepcopy(dos)
                     data = []
                     data2 = []
-                    data4 = []
+                    data6 = []
                     _dos = {}
                     _dos2 = {}
                     extract_dos = False
@@ -564,9 +596,9 @@ class Xml(BaseParser):
                     data2 = []
                 if event == 'end' and element.tag == 'dos' and extract_dos_specific:
                     # check the Fermi level
-                    if len(data4) == 1:
-                        fermi_level = self._convert_f(data4[0])
-                    elif len(data4) > 1:
+                    if len(data6) == 1:
+                        fermi_level = self._convert_f(data6[0])
+                    elif len(data6) > 1:
                         self._logger.error(
                             self.ERROR_MESSAGES[self.ERROR_MULTIPLE_ENTRIES] +
                             " The tag in question is 'efermi'.")
@@ -588,7 +620,7 @@ class Xml(BaseParser):
                     self._data['dos_specific'] = dos
                     data = []
                     data2 = []
-                    data4 = []
+                    data6 = []
                     _dos = {}
                     _dos2 = {}
                     extract_dos_specific = False
@@ -602,7 +634,7 @@ class Xml(BaseParser):
                     extract_forces = True
                 if event == 'end' and element.tag == 'varray' and \
                    element.attrib['name'] == 'forces':
-                    force[attribute] = self._convert_array2D_f(data, 3)
+                    force[calc] = self._convert_array2D_f(data, 3)
                     data = []
                     extract_forces = False
                 if event == 'start' and element.tag == 'varray' and \
@@ -610,9 +642,13 @@ class Xml(BaseParser):
                     extract_stress = True
                 if event == 'end' and element.tag == 'varray' and \
                    element.attrib['name'] == 'stress':
-                    stress[attribute] = self._convert_array2D_f(data, 3)
+                    stress[calc] = self._convert_array2D_f(data, 3)
                     data = []
                     extract_stress = False
+                if event == 'start' and element.tag == 'energy' and not extract_scstep:
+                    extract_energies = True
+                if event == 'end' and element.tag == 'energy' and not extract_scstep:
+                    extract_energies = False
                 if event == 'start' and element.tag == 'scstep':
                     extract_scstep = True
                 if event == 'end' and element.tag == 'scstep':
@@ -710,22 +746,40 @@ class Xml(BaseParser):
 
                 # now extract data
                 if extract_scstep:
-                    # energy without entropy
+                    # extrapolated energy
                     if event == 'start' and element.tag == 'i' and \
                        element.attrib['name'] == 'e_0_energy':
-                        extract_e0 = True
+                        extract_e_0_energy = True
                     if event == 'end' and element.tag == 'i' and \
                        element.attrib['name'] == 'e_0_energy':
-                        extract_e0 = False
-                    if extract_e0:
+                        extract_e_0_energy = False
+                    if extract_e_0_energy:
                         data3.append(element)
+                    # free energy
+                    if event == 'start' and element.tag == 'i' and \
+                       element.attrib['name'] == 'e_fr_energy':
+                        extract_e_fr_energy = True
+                    if event == 'end' and element.tag == 'i' and \
+                       element.attrib['name'] == 'e_fr_energy':
+                        extract_e_fr_energy = False
+                    if extract_e_fr_energy:
+                        data4.append(element)
+                    # energy without entropy
+                    if event == 'start' and element.tag == 'i' and \
+                       element.attrib['name'] == 'e_wo_entrp':
+                        extract_e_wo_entrp = True
+                    if event == 'end' and element.tag == 'i' and \
+                       element.attrib['name'] == 'e_wo_entrp':
+                        extract_e_wo_entrp = False
+                    if extract_e_wo_entrp:
+                        data5.append(element)
                 if extract_latticedata:
                     if event == 'start' and element.tag == 'varray' \
                        and element.attrib.get('name') == 'basis':
                         extract_unitcell = True
                     if event == 'end' and element.tag == 'varray' \
                        and element.attrib.get('name') == 'basis':
-                        cell[attribute] = self._convert_array2D_f(data, 3)
+                        cell[calc] = self._convert_array2D_f(data, 3)
                         data = []
                         extract_unitcell = False
 
@@ -734,7 +788,7 @@ class Xml(BaseParser):
                         extract_positions = True
                     if event == 'end' and element.tag == 'varray' \
                        and element.attrib.get('name') == 'positions':
-                        pos[attribute] = self._convert_array2D_f(data, 3)
+                        pos[calc] = self._convert_array2D_f(data, 3)
                         data = []
                         extract_positions = False
 
@@ -752,6 +806,20 @@ class Xml(BaseParser):
                 if extract_stress:
                     if event == 'start' and element.tag == 'v':
                         data.append(element)
+
+                if extract_energies:
+                    # extrapolated energy
+                    if event == 'start' and element.tag == 'i' and \
+                       element.attrib['name'] == 'e_0_energy':
+                        totens[calc].update({'energy_extrapolated_final': float(element.text)})
+                    # free energy
+                    if event == 'start' and element.tag == 'i' and \
+                       element.attrib['name'] == 'e_fr_energy':
+                        totens[calc].update({'energy_free_final': float(element.text)})
+                    # energy without entropy
+                    if event == 'start' and element.tag == 'i' and \
+                       element.attrib['name'] == 'e_wo_entrp':
+                        totens[calc].update({'energy_no_entropy_final': float(element.text)})
 
                 if extract_eigenvalues:
                     if event == 'start' and element.tag == 'set' \
@@ -989,7 +1057,7 @@ class Xml(BaseParser):
             if extract_dos:
                 if event == 'start' and element.tag == 'i' and \
                    element.attrib.get('name') == 'efermi':
-                    data4.append(element)
+                    data6.append(element)
                 if event == 'start' and element.tag == 'set' \
                    and element.attrib.get('comment') == 'spin 1':
                     extract_dos_ispin1 = True
@@ -1012,7 +1080,7 @@ class Xml(BaseParser):
             if extract_dos_specific:
                 if event == 'start' and element.tag == 'i' and \
                    element.attrib.get('name') == 'efermi':
-                    data4.append(element)
+                    data6.append(element)
                 if event == 'start' and element.tag == 'set' \
                    and element.attrib.get('comment') == 'spin 1':
                     extract_dos_specific_ispin1 = True
@@ -1050,7 +1118,7 @@ class Xml(BaseParser):
             if len(totens) == 1:
                 totens[2] = totens[1]
 
-        if not all:
+        if not extract_all:
             # only save initial and final
             if cell:
                 cell = {key: np.asarray(cell[key]) for key in {1, 2}}
@@ -1084,6 +1152,33 @@ class Xml(BaseParser):
 
         return
 
+    def _fetch_versionw(self, xml):
+        """Fetch and set version using etree
+
+        Parameters
+        ----------
+        xml : object
+            An ElementTree object to be used for parsing.
+
+        Returns
+        -------
+        version : string
+            If version is found it is returned.
+
+        Notes
+        -----
+        Used when detecting the VASP version.
+
+        """
+
+        entry = self._find(
+            xml, './/generator/i[@name="version"]')
+
+        if entry is None:
+            return None
+
+        return entry.text
+    
     def _fetch_symprecw(self, xml):
         """Fetch and set symprec using etree
 
@@ -1395,14 +1490,14 @@ class Xml(BaseParser):
 
         return born
 
-    def _fetch_upfsw(self, xml, all=False):
+    def _fetch_upfsw(self, xml, extract_all=False):
         """Fetch the unitcell, atomic positions, force and stress.
 
         Parameters
         ----------
         xml : object
             An ElementTree object to be used for parsing.
-        all : bool
+        extract_all : bool
             Determines which unitcell and positions to get.
             Defaults to the initial and final. If True, extract all.
 
@@ -1434,7 +1529,7 @@ class Xml(BaseParser):
                 return None, None, None, None
         num_atoms = species.shape[0]
 
-        if not all:
+        if not extract_all:
             entry = self._findall(
                 xml,
                 './/structure[@name="finalpos"]/crystal/varray[@name="basis"]/v'
@@ -1979,21 +2074,27 @@ class Xml(BaseParser):
         # energies from each step in the calculation and not the scsteps as
         # well
         energies = {}
-        for index, calc in enumerate(entries):
-            # energy without entropy
-            data = self._findall(calc,
-                                 './/scstep/energy/i[@name="e_0_energy"]')
-            if data is None:
-                return None
-            data = self._convert_array1D_f(data)
-            if index == 0:
-                energies[1] = {'energy_no_entropy': [data[-1], data]}
-            else:
-                energies[index + 1] = {'energy_no_entropy': [data[-1], data]}
 
-        num_calcs = len(energies)
-        if num_calcs == 1:
-            energies[2] = energies[1]
+        for index, calc in enumerate(entries):
+            energies_pr_calc = {}
+            for supported_energy, supported_key in _SUPPORTED_TOTAL_ENERGIES.items():
+                data = self._findall(calc,
+                                     './/scstep/energy/i[@name="' + supported_key + '"]')
+                if data is None:
+                    return None
+                data = self._convert_array1D_f(data)
+                energies_pr_calc[supported_energy] = data
+
+                # now fetch the final entry outside the sc steps for each calculation
+                # this term might have been corrected and scaled compared to the final sc energy
+                # extrapolated energy
+                data = self._findall(calc,
+                                     './energy/i[@name="' + supported_key + '"]')
+                if data is None:
+                    return None
+                data = self._convert_f(data[0])
+                energies_pr_calc[supported_energy+'_final'] = data
+            energies[index + 1] = energies_pr_calc
 
         return energies
 
@@ -2985,13 +3086,14 @@ class Xml(BaseParser):
     def get_energies(self, status, etype=None, nosc=True):
 
         if etype is None:
-            etype = 'energy_no_entropy'
-        if etype == 'energy_no_entropy':
-            return self._get_energies_no_entropy(status, nosc)
-        else:
-            raise NotImplementedError
+            etype = 'energy_extrapolated'
+        # Check if the supplied etype is in the support list
+        if etype not in _SUPPORTED_TOTAL_ENERGIES.keys():
+            raise ValueError(f'The supplied total energy type: {etype} is not supported.')
 
-    def _get_energies_no_entropy(self, status, nosc):
+        return self._get_energies(status, etype, nosc)
+
+    def _get_energies(self, status, etype, nosc):
 
         enrgies = self._data['totens']
         if enrgies is None:
@@ -3000,26 +3102,27 @@ class Xml(BaseParser):
         energies = []
         if status == 'initial':
             if nosc:
-                energies.append(enrgies[1]['energy_no_entropy'][0])
+                energies.append(enrgies[1][etype][-1])
             else:
-                energies.append(enrgies[1]['energy_no_entropy'])
+                energies.append(enrgies[1][etype])
         elif status == 'final':
             largest_key = max(enrgies.keys())
             if nosc:
-                energies.append(enrgies[largest_key]['energy_no_entropy'][0])
+                energies.append(enrgies[largest_key][etype][-1])
             else:
-                energies.append(enrgies[largest_key]['energy_no_entropy'])
+                energies.append(enrgies[largest_key][etype])
         elif status == 'all':
-            # here we need to pull out energy_no_entropy of all the calc
+            # here we need to pull out energy_extrapolated of all the calc
             # steps...right now I did not find a smart way to do this, would
             # like to avoid explicit loops...but here it is anyway
             # first sort (might consider doing this initially...not so sure)
             _energies = sorted(enrgies.items())
             for index, element in _energies:
                 if nosc:
-                    energies.append(element['energy_no_entropy'][0])
+                    energies.append(element[etype][-1])
                 else:
-                    energies.append(element['energy_no_entropy'][1])
+                    energies.append(element[etype])
+
         return energies
 
     def get_dos(self):
@@ -3082,6 +3185,17 @@ class Xml(BaseParser):
         parameters = self._parameters
         return parameters
 
+    def get_version(self):
+        from re import compile
+
+        version = self._version.strip()
+        # The version entry in the xml file is typically of the form
+        # X.Y.Z or X.Y.Z.something so only keep three integers and two dots
+        pattern = r'(\d+)\.(\d+)\.(\d+)'
+        match = compile(pattern)
+
+        return match.search(version).group(0)
+    
     def _check_calc_status(self, status):
         allowed_entries = ['initial', 'final', 'all']
         if status not in allowed_entries:
