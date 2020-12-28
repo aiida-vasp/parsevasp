@@ -5,14 +5,14 @@ from parsevasp.poscar import Poscar, Site
 
 
 @pytest.fixture(scope='module')
-def poscar_parser():
+def poscar_parser(request):
     """Load POSCAR file.
 
     """
 
     testdir = os.path.dirname(__file__)
     poscarfile = testdir + '/POSCAR'
-    poscar = Poscar(file_path=poscarfile)
+    poscar = Poscar(file_path=poscarfile, write_direct=request.param)
 
     return poscar
 
@@ -57,13 +57,66 @@ def poscar_parser_vel():
 
     return poscar
 
-
+@pytest.mark.parametrize('poscar_parser', [[True]], indirect=True)
 def test_poscar_exist(poscar_parser):
     """Check if poscar_parser exists.
 
     """
 
     assert poscar_parser.get_dict()
+
+@pytest.mark.parametrize('poscar_parser', [[True]], indirect=True)
+def test_poscar_write(tmp_path, poscar_parser):
+    """Test that the POSCAR writes correctly."""
+    poscar = poscar_parser.get_dict()
+    # Write it
+    poscar_write_path = tmp_path / "POSCAR"
+    poscar_parser.write(poscar_write_path)
+    # Then load same content again, but from the newly written file
+    poscar_reloaded = Poscar(file_path=poscar_write_path).get_dict()
+    # Comment entry is modified so need to remove that before comparing
+    del poscar['comment']
+    del poscar_reloaded['comment']
+    # Compare
+    assert np.allclose(poscar['unitcell'], poscar_reloaded['unitcell'])
+    for index, site in enumerate(poscar['sites']):
+        reloaded = poscar_reloaded['sites'][index]
+        assert site['specie'] == reloaded['specie']
+        assert np.allclose(site['position'], reloaded['position'])
+        assert site['selective'] == reloaded['selective']
+        assert site['velocities'] == reloaded['velocities']
+        assert np.allclose(site['predictors'], reloaded['predictors'])
+        assert site['direct'] == reloaded['direct']
+
+@pytest.mark.parametrize('poscar_parser', [False], indirect=True)
+def test_poscar_cartesian(tmp_path, poscar_parser):
+    """Test that the POSCAR writes and reads positional cartesian coordinates correctly."""
+    poscar = poscar_parser.get_dict()
+    # Write it
+    poscar_write_path = tmp_path / "POSCAR"
+    poscar_parser.write(poscar_write_path)
+    poscar_cartesian = None
+    with open(poscar_write_path) as file_object:
+        poscar_cartesian = file_object.readlines()
+    assert poscar_cartesian[7] == 'Cartesian\n'
+    assert poscar_cartesian[8] == '  2.254110000000   2.254110000000   2.254110000000\n'
+    assert poscar_cartesian[9] == '  6.762340000000   6.762340000000   6.762340000000\n'
+    assert poscar_cartesian[39] == '  7.529650000000   3.083180000000   4.508230000000\n'
+    # Then load same content again, but from the newly written file, which should now be on cartesian form
+    poscar_reloaded = Poscar(file_path=poscar_write_path).get_dict()
+    # Comment entry is modified so need to remove that before comparing
+    del poscar['comment']
+    del poscar_reloaded['comment']
+    # Compare
+    assert np.allclose(poscar['unitcell'], poscar_reloaded['unitcell'])
+    for index, site in enumerate(poscar['sites']):
+        reloaded = poscar_reloaded['sites'][index]
+        assert site['specie'] == reloaded['specie']
+        assert np.allclose(site['position'], reloaded['position'])
+        assert site['selective'] == reloaded['selective']
+        assert site['velocities'] == reloaded['velocities']
+        assert np.allclose(site['predictors'], reloaded['predictors'])
+        assert site['direct'] == reloaded['direct']    
 
 
 def test_poscar_entries(poscar_parser_names):
@@ -93,7 +146,7 @@ def test_poscar_entries(poscar_parser_names):
     }
     assert sites[8]['specie'] == test['specie']
 
-
+@pytest.mark.parametrize('poscar_parser', [[True]], indirect=True)
 def test_poscar_entries(poscar_parser):
     """Check POSCAR entries.
 
@@ -280,8 +333,8 @@ def test_poscar_entries_vel(poscar_parser_vel):
     assert sites[8]['direct']
 
 
-def test_poscar_entries_string():
-    """Test to check inititialization using string.
+def test_poscar_entries_dict():
+    """Test to check inititialization using dict.
 
     """
 
@@ -323,7 +376,8 @@ def test_poscar_entries_string():
     assert sites[0]['direct']
 
 
-def test_poscar_entries(poscar_parser):
+@pytest.mark.parametrize('poscar_parser', [[True]], indirect=True)
+def test_poscar_cartesian(poscar_parser):
     """Check that get_dict can return cartesian coordinates.
 
     """

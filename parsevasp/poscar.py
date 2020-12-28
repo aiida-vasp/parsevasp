@@ -47,7 +47,8 @@ class Poscar(BaseParser):
                  file_handler=None,
                  logger=None,
                  prec=None,
-                 conserve_order=False):
+                 conserve_order=False,
+                 write_direct=True):
         """Initialize a POSCAR object and set content as a dictionary.
 
         Parameters
@@ -63,6 +64,8 @@ class Poscar(BaseParser):
         conserve_order : bool
             If True, do keep the ordering of the supplied positions
             and atomic species.
+        write_direct : bool (optional)
+            If True (the default), all write operations are done using direct coordinates, while if False in cartesian coordinates.
 
         """
 
@@ -70,6 +73,7 @@ class Poscar(BaseParser):
                                      file_handler=file_handler,
                                      logger=logger)
 
+        self._write_direct = write_direct
         self._poscar_dict = poscar_dict
         self._poscar_string = poscar_string
         self._conserve_order = conserve_order
@@ -172,7 +176,7 @@ class Poscar(BaseParser):
 
     def _from_list(self, poscar):
         """Go through the list and analyze for = and ; in order to
-        deentangle grouped entries etc.
+        disentangle grouped entries etc.
 
         Parameters
         ----------
@@ -609,7 +613,7 @@ class Poscar(BaseParser):
         species : list of strings
             Contains the number of unique species
         num_species : list of ints
-            Contains the occurancy of each specie in the same order as
+            Contains the occupancy of each specie in the same order as
             'species'.
         selective : bool
             True if any selective flags are enabled, False otherwise.
@@ -903,14 +907,21 @@ class Poscar(BaseParser):
         # write selective if any flags are True
         if selective:
             poscar.write('Selective dynamics\n')
-        # always write direct
-        poscar.write('Direct\n')
+        if not self._write_direct:
+            poscar.write('Cartesian\n')
+        else:
+            poscar.write('Direct\n')
+
         # write positions
         for site in sites:
+            if self._write_direct:
+                _site = site[1]
+            else:
+                _site = self._to_cart(site[1][0:3], unitcell)
             poscar.write('{:{width}.{prec}f} {:{width}.{prec}f} '
-                         '{:{width}.{prec}f}'.format(site[1][0],
-                                                     site[1][1],
-                                                     site[1][2],
+                         '{:{width}.{prec}f}'.format(_site[0],
+                                                     _site[1],
+                                                     _site[2],
                                                      prec=self._prec,
                                                      width=self._width))
             if selective:
@@ -919,19 +930,28 @@ class Poscar(BaseParser):
                 for index, flag in enumerate(flags):
                     if not flag:
                         sel[index] = 'F'
-
                 poscar.write(' {} {} {}'.format(sel[0], sel[1], sel[2]))
             poscar.write('\n')
-        # write velocities if they exist (again, always direct)
+
+        # write velocities if they exist
         if velocities:
-            poscar.write('Direct\n')
+            if self._write_direct:
+                poscar.write('Direct\n')
+            else:
+                poscar.write('Cartesian\n')
             for site in sites:
+                if self._write_direct:
+                    _site = site[4]
+                else:
+                    _site = self._to_cart(site[4][0:3], unitcell)
                 poscar.write('{:{width}.{prec}f} {:{width}.{prec}f} '
-                             '{:{width}.{prec}f}\n'.format(site[4][0],
-                                                           site[4][1],
-                                                           site[4][2],
+                             '{:{width}.{prec}f}\n'.format(_site[0],
+                                                           _site[1],
+                                                           _site[2],
                                                            prec=self._prec,
                                                            width=self._width))
+
+        # write predictors if they exist
         if predictors:
             poscar.write('\n')
             for site in sites:
