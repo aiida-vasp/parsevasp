@@ -12,7 +12,7 @@
 ibzkpt:
   kind: ERROR
   location: STDOUT
-  message: Error with Kpoints
+  message: Error with the k-points
   recover: true
   regex: internal error in subroutine IBZKPT
   suggestion: ''
