@@ -1,15 +1,165 @@
 # File containing the definition of different streams that VASP generate.
-# shortname: An unique short name
+# Each key is an unique short name of the error
 # kind: What kind of stream is it (ERROR/WARNING)
 # regex: The string printed by VASP (what we search for when we parse the stream)
 # message: A human readable interpretation of the regex
 # suggestion: A human readable suggestion on how to act
 # location: Can be found in which stream (STDOUT/STDERR)
 # recover: If False, always break when this error appears, there is no point in recovering
-"ibzkpt":
+
+# There can be multiple IBZKPT errors, some are actually warnings but all printed as "internal error...."
+# Here I let recover=True since if it is the fatal ones VASP do stop execution.
+ibzkpt:
   kind: ERROR
-  regex: "internal error in subroutine IBZKPT"
-  message: "There is an error when creating the irreducible k-point grid, most likely the symmetry of the cell does not match the k-point sampling."
-  suggestion: "Change the k-point layout, for instance make sure that if two lattice sides are of equal length, the k-point sampling along the same sides are the same. If that does not work, try to change the sampling rate and shift the grid out of Gamma, or in to Gamma."
   location: STDOUT
-  recover: False
+  message: Error with the k-points
+  recover: true
+  regex: internal error in subroutine IBZKPT
+  suggestion: ''
+brmix:
+  kind: ERROR
+  location: STDOUT
+  message: Error in BRMIX
+  recover: false
+  regex: 'BRMIX: very serious problems'
+  suggestion: ''
+cnormn:
+  kind: ERROR
+  location: STDOUT
+  message: Error in CNORMN
+  recover: false
+  regex: 'WARNING: CNORMN'
+  suggestion: ''
+denmp:
+  kind: ERROR
+  location: STDOUT
+  message: Error in DENMP
+  recover: false
+  regex: 'WARNING: DENMP: can''t reach specified precision'
+  suggestion: ''
+dentet:
+  kind: ERROR
+  location: STDOUT
+  message: Error with DENTET
+  recover: false
+  regex: 'WARNING: DENTET'
+  suggestion: ''
+edddav_zhegv:
+  kind: ERROR
+  location: STDOUT
+  message: Error in ZHEGV from EDDAV
+  recover: false
+  regex: 'Error EDDDAV: Call to ZHEGV failed'
+  suggestion: ''
+eddrmm_zhegv:
+  kind: ERROR
+  location: STDOUT
+  message: Error in EDDRMM
+  recover: false
+  regex: 'WARNING in EDDRMM: call to ZHEGV failed'
+  suggestion: ''
+edwav:
+  kind: ERROR
+  location: STDOUT
+  message: Error in EDWAV
+  recover: false
+  regex: 'EDWAV: internal error'
+  suggestion: ''
+fexcp:
+  kind: ERROR
+  location: STDOUT
+  message: Error in FEXCP
+  recover: false
+  regex: 'ERROR FEXCP: supplied Exchange'
+  suggestion: ''
+fock_acc:
+  kind: ERROR
+  location: STDERR
+  message: Error in FOCK_ACC
+  recover: false
+  regex: internal error in FOCK_ACC
+  suggestion: ''
+invgrp:
+  kind: ERROR
+  location: STDOUT
+  message: Error in INVGRP
+  recover: false
+  regex: internal error in subroutine INVGRP
+  suggestion: ''
+kpoints_trans:
+  kind: ERROR
+  location: STDERR
+  message: Error in GENERATE_KPOINTS_TRANS
+  recover: false
+  regex: internal error in GENERATE_KPOINTS_TRANS
+  suggestion: ''
+non_collinear:
+  kind: ERROR
+  location: STDOUT
+  message: Using a collinear spin executable for a non-colinear calculation
+  recover: false
+  regex: 'ERROR: non collinear calculations require'
+  suggestion: Please make sure to use the VASP executable that has been compiled with the non-colinear functionality (ncl flavor, consult build instructions)
+not_hermitian:
+  kind: ERROR
+  location: STDOUT
+  message: Sub-space matrix not Hermitian in DAV
+  recover: false
+  regex: not Hermitian in DAV
+  suggestion: '' 
+psmaxn:
+  kind: ERROR
+  location: STDOUT
+  message: Error in PSMAXN
+  recover: false
+  regex: PSMAXN for non-local potential too small
+  suggestion: ''
+pssyevx:
+  kind: ERROR
+  location: STDOUT
+  message: Error in PSSYEVX
+  recover: false
+  regex: Error in subspace rotation PSSYEVX
+  suggestion: ''
+pzstein:
+  kind: ERROR
+  location: STDOUT
+  message: Error in PZSETIN
+  recover: false
+  regex: PZSTEIN parameter number had an illegal value
+  suggestion: ''
+real_optlay:
+  kind: ERROR
+  location: STDOUT
+  message: Error in REAL_OPTLAY
+  recover: false
+  regex: 'REAL_OPTLAY: internal error'
+  suggestion: ''
+rhosyg:
+  kind: ERROR
+  location: STDOUT
+  message: Error in RHOSYG
+  recover: false
+  regex: 'RHOSYG: internal error'
+  suggestion: ''
+rspher:
+  kind: ERROR
+  location: STDOUT
+  message: Error in RSPHER
+  recover: false
+  regex: Internal ERROR RSPHER
+  suggestion: ''
+set_indpw_full:
+  kind: ERROR
+  location: STDOUT
+  message: 'Error in INDPW: insufficient memory'
+  recover: false
+  regex: 'internal error in SET_INDPW_FULL: insufficient'
+  suggestion: ''
+sgrcon:
+  kind: ERROR
+  location: STDOUT
+  message: Error in SGRCON
+  recover: false
+  regex: internal error in subroutine SGRCON
+  suggestion: ''

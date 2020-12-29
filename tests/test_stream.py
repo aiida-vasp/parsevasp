@@ -39,7 +39,8 @@ def test_stream(stream_parser):
     assert stream_parser.configured_streams
     assert stream_parser.number_of_entries == 1
     assert stream_parser.has_entries
-    assert str(entries[0]) == '(ERROR) ibzkpt: There is an error when creating the irreducible k-point grid, most likely the symmetry of the cell does not match the k-point sampling.'
+    print(entries[0])
+    assert str(entries[0]) == '(ERROR) ibzkpt: Error with the k-points'
 
 
 def test_stream_override(stream_parser):
@@ -52,7 +53,8 @@ def test_stream_override(stream_parser):
                                                               'message': 'some error',
                                                               'suggestion': 'none',
                                                               'location': 'STDOUT',
-                                                              'recover': False}})
+                                                              'recover': True}})
+    print(stream.entries)
     assert len(stream.entries) == 1
     assert stream.entries[0].kind == 'WARNING'
     assert stream.entries[0].regex == re.compile('internal error')
