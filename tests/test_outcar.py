@@ -350,3 +350,23 @@ def test_outcar_magnetization_single(outcar_parser_magnetization_single):
     _mag = np.asarray(list(magnetization['full_cell']))
     _test = np.asarray(list(test['full_cell']))
     np.testing.assert_allclose(_mag, _test)
+
+
+def test_outcar_elastic_file_object(outcar_parser_file_objects):
+    """Check if outcar_parser returns correct timing information.
+    """
+
+    timings = outcar_parser_file_objects.get_run_stats()
+    assert timings['total_cpu_time_used'] == 89.795
+    assert timings['user_time'] == 60.247
+    assert timings['elapsed_time'] == 90.990
+    assert timings['system_time'] == 29.549
+    assert timings['maximum_memory_used'] == 81612.0
+    assert timings['average_memory_used'] == 0.0
+
+    assert timings['mem_usage_base'] == 30000.0
+    assert timings['mem_usage_nonl-proj'] == 2198.0
+    assert timings['mem_usage_fftplans'] == 304.0
+    assert timings['mem_usage_grid'] == 903.0
+    assert timings['mem_usage_one-center'] == 6.0
+    assert timings['mem_usage_wavefun'] == 559.0

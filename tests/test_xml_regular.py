@@ -75,15 +75,91 @@ def test_xml_energies(xml_parser):
     """Check energies.
 
     """
+    import numpy as np
 
+    # Only one ionic step
     xml_data = xml_parser()
     energy = xml_data.get_energies('initial')[0]
     assert utils.isclose(energy, -43.312106219999997)
     energy = xml_data.get_energies('final')[0]
     assert utils.isclose(energy, -43.312106219999997)
-    energies = xml_data.get_energies('all')
-    assert utils.isclose(energies[0], -43.312106219999997)
-    assert utils.isclose(energies[1], -43.312106219999997)
+    energy = xml_data.get_energies('all')[0]
+    assert utils.isclose(energy, -43.312106219999997)
+
+    # Ionic steps
+    xml_data = xml_parser(filename='basicrelax.xml')
+    energy = xml_data.get_energies('initial')[0]
+    assert utils.isclose(energy, -42.91113348)
+    energy = xml_data.get_energies('final')[0]
+    assert utils.isclose(energy, -43.39087657)
+    energy = xml_data.get_energies('all')
+    test_array = np.array([-42.91113348, -43.27757545, -43.36648855, -43.37734069, -43.38062479, -43.38334165, -43.38753003, -43.38708193, -43.38641449, -43.38701639, -43.38699488, -43.38773717, -43.38988315, -43.3898822, -43.39011239, -43.39020751, -43.39034244, -43.39044584, -43.39087657])
+    assert np.allclose(np.array(energy),
+                       test_array)
+
+def test_xml_energies_sc(xml_parser):
+    """Check energies.
+
+    """
+    import numpy as np
+
+    # Only one ionic step
+    xml_data = xml_parser(filename='basic.xml')
+    energy = xml_data.get_energies('all', nosc=False)
+    test_array = np.array([ 34.33397233, -40.91109366, -43.93640589, -43.97897688,
+       -43.98005344, -43.52006123, -43.30797519, -43.31109453,
+       -43.31199447, -43.31209931, -43.31210726, -43.31210622])
+    assert np.allclose(energy[0], test_array)
+    energy = xml_data.get_energies('final', nosc=False)
+    test_array = np.array([ 34.33397233, -40.91109366, -43.93640589, -43.97897688,
+       -43.98005344, -43.52006123, -43.30797519, -43.31109453,
+       -43.31199447, -43.31209931, -43.31210726, -43.31210622])
+    assert np.allclose(energy[0], test_array)
+    energy = xml_data.get_energies('all', nosc=False)
+    test_array = np.array([ 34.33397233, -40.91109366, -43.93640589, -43.97897688,
+       -43.98005344, -43.52006123, -43.30797519, -43.31109453,
+       -43.31199447, -43.31209931, -43.31210726, -43.31210622])
+    assert np.allclose(energy[0], test_array)
+
+    # Ionic steps
+    xml_data = xml_parser(filename='basicrelax.xml')
+    energy = xml_data.get_energies('initial', nosc=False)
+    test_array = np.array([163.37398579,  14.26925896, -23.05190509, -34.91615104,
+       -40.20080347, -42.18390876, -42.97469852, -43.31556073,
+       -43.60169068, -43.61723125, -43.61871511, -43.61879751,
+       -43.12548175, -42.90647187, -42.91031846, -42.91099027,
+       -42.91111107, -42.91113348])
+    assert np.allclose(energy[0], test_array)
+    energy = xml_data.get_energies('final', nosc=False)
+    test_array = np.array([-43.39084354, -43.39088709, -43.39087657])
+    assert np.allclose(energy[0], test_array)
+    energy = xml_data.get_energies('all', nosc=False)
+    test_array = [np.array([163.37398579,  14.26925896, -23.05190509, -34.91615104,
+       -40.20080347, -42.18390876, -42.97469852, -43.31556073,
+       -43.60169068, -43.61723125, -43.61871511, -43.61879751,
+       -43.12548175, -42.90647187, -42.91031846, -42.91099027,
+       -42.91111107, -42.91113348]),
+                  np.array([-43.34236449, -43.31102002, -43.27768275, -43.27791002,
+       -43.27761357, -43.27757545]),
+                  np.array([-43.40320524, -43.38084022, -43.36835045, -43.36666248,
+       -43.36666583, -43.36649036, -43.36648855]),
+                  np.array([-43.37749056, -43.37749102, -43.37734414, -43.37734069]),
+                  np.array([-43.38117265, -43.38082881, -43.38063293, -43.38062479]),
+                  np.array([-43.38337336, -43.38334165]), np.array([-43.38778922, -43.38766017, -43.38752953, -43.38753003]),
+                  np.array([-43.38714489, -43.38708193]),
+                  np.array([-43.38640951, -43.38641449]),
+                  np.array([-43.3874799 , -43.3871553 , -43.38701949, -43.38701639]),
+                  np.array([-43.38790942, -43.38727062, -43.38700335, -43.38699488]),
+                  np.array([-43.38774394, -43.38773717]),
+                  np.array([-43.38984942, -43.3899134 , -43.38988315]),
+                  np.array([-43.38988117, -43.3898822 ]),
+                  np.array([-43.39032165, -43.39017866, -43.39011239]),
+                  np.array([-43.39021044, -43.39020751]),
+                  np.array([-43.39034135, -43.39034244]),
+                  np.array([-43.39044466, -43.39044584]),
+                  np.array([-43.39084354, -43.39088709, -43.39087657])]
+    for index, ionic_step in enumerate(test_array):
+        assert np.allclose(energy[index], ionic_step)
 
 
 def test_xml_energies_file_object(xml_parser):
@@ -96,9 +172,8 @@ def test_xml_energies_file_object(xml_parser):
     assert utils.isclose(energy, -43.312106219999997)
     energy = xml_data.get_energies('final')[0]
     assert utils.isclose(energy, -43.312106219999997)
-    energies = xml_data.get_energies('all')
-    assert utils.isclose(energies[0], -43.312106219999997)
-    assert utils.isclose(energies[1], -43.312106219999997)
+    energy = xml_data.get_energies('all')[0]
+    assert utils.isclose(energy, -43.312106219999997)
 
 
 def test_xml_forces(xml_parser):
@@ -759,6 +834,7 @@ def test_xml_ionic(xml_parser):
     positions = xml_data.get_positions('all')
     forces = xml_data.get_forces('all')
     stress = xml_data.get_stress('all')
+    energies_sc = xml_data.get_energies('all', nosc=False)
 
     # check that all entries are present
     assert len(unitcells) == 19
@@ -783,6 +859,26 @@ def test_xml_ionic(xml_parser):
     np.testing.assert_allclose(stress[2][0], testing)
     testing = np.array([0.0, 0.60834449, -3.20314152])
     np.testing.assert_allclose(stress[10][1], testing)
+    testing = [-43.34236449, -43.31102002, -43.27768275, -43.27791002,
+               -43.27761357, -43.27757545]
+    np.testing.assert_allclose(energies_sc[1], testing)
+
+
+def test_xml_parameters(xml_parser):
+    """Test if parameters can be parsed"""
+    xml_data = xml_parser(filename='basicrelax.xml')
+    parameters = xml_data.get_parameters()
+    parameters['nelm'] = 60
+    parameters['nws'] = 80
+    parameters['nbands'] = 21
+    parameters['ispin'] = 1
+
+
+def test_xml_version(xml_parser):
+    """Test if the version can be parsed"""
+    xml_data = xml_parser(filename='basic.xml')
+    version = xml_data.get_version()
+    assert version == '5.4.1'
 
 
 def test_xml_overflow(xml_parser):

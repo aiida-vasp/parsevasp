@@ -93,7 +93,8 @@ class Outcar(BaseParser):
                     },
                 },
                 'full_cell': {},
-            }
+            },
+            'run_stats': {},
         }
 
         # parse parse parse
@@ -272,6 +273,8 @@ class Outcar(BaseParser):
                     float(_val) for _val in outcar[index].strip().split()[5:]
                 ]
 
+        self._data['run_stats'] = self._parse_timings_memory(outcar[-50:])
+
     def get_symmetry(self):
         """Return the symmetry.
 
@@ -322,3 +325,50 @@ class Outcar(BaseParser):
 
         magnetic = self._data['magnetization']
         return magnetic
+
+    def get_run_stats(self):
+        """Return the run time statistics information. 
+        The existence of timing information also signals the calculation terminate
+        gracefully.
+
+        Parameters
+        ----------
+        None 
+
+        Returns
+        -------
+        timings : dict
+            A dictionary containing the timing information
+        """
+
+        return self._data['run_stats']
+
+    @staticmethod
+    def _parse_timings_memory(timing_lines):
+        """Parse timing information.
+
+        Parameters
+        ----------
+        timing_lines : list
+            A list of lines containing the timing information
+
+        Returns
+        -------
+        timings : dict
+            A dictionary containing the timing information
+        """
+        import re
+        info = {}
+        time_mem_pattern = re.compile(r"\((sec|kb)\)")
+        mem_pattern = re.compile(r":.*kBytes$")
+        for _, line in enumerate(timing_lines):
+            if time_mem_pattern.search(line):
+                tokens = line.strip().split(":")
+                item_name = "_".join(tmp.lower() for tmp in tokens[0].strip().split()[:-1])
+                info[item_name] = float(tokens[1].strip())
+
+            elif mem_pattern.search(line):
+                tokens = re.split(r'[: ]+', line.strip())
+                info['mem_usage_' + tokens[0]] = float(tokens[-2])
+            
+        return info
