@@ -3,6 +3,17 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2021-01-04
+
+### Added
+- Posibility to return multiple total energy types.
+- Posibility to parse the total energies for each electronic step. Since the total energy array for ionic and electronic steps is staggered,, we flatten it and supply an additional array with key `electronic_steps` where each entry indicates how many electronic steps was performed for each ionic step. Using this, the staggered array can be rebuilt.
+
+### Changed
+- The return of `get_energies` is now a dict in order to be able to return multiple energy types.
+- `final` key for the ionic steps was changed to `last`.
+- For static runs, there is now only one ionic entry that is returned.
+
 ## [1.2.0] - 2020-12-29
 
 ### Added
