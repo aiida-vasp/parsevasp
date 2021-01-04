@@ -1101,35 +1101,35 @@ class Xml(BaseParser):
                         data2.append(element)
 
         # now we need to update some elements
-        # for static runs, initial is equal to final
-        if cell:
-            if len(cell) == 1:
-                cell[2] = cell[1]
-        if pos:
-            if len(pos) == 1:
-                pos[2] = pos[1]
-        if force:
-            if len(force) == 1:
-                force[2] = force[1]
-        if stress:
-            if len(stress) == 1:
-                stress[2] = stress[1]
-        if totens:
-            if len(totens) == 1:
-                totens[2] = totens[1]
+        # for static runs, initial is equal to last
+        # if cell:
+        #     if len(cell) == 1:
+        #         cell[2] = cell[1]
+        # if pos:
+        #     if len(pos) == 1:
+        #         pos[2] = pos[1]
+        # if force:
+        #     if len(force) == 1:
+        #         force[2] = force[1]
+        # if stress:
+        #     if len(stress) == 1:
+        #         stress[2] = stress[1]
+        # if totens:
+        #     if len(totens) == 1:
+        #         totens[2] = totens[1]
 
-        if not extract_all:
-            # only save initial and final
-            if cell:
-                cell = {key: np.asarray(cell[key]) for key in {1, 2}}
-            if pos:
-                pos = {key: np.asarray(pos[key]) for key in {1, 2}}
-            if force:
-                force = {key: force[key] for key in {1, 2}}
-            if stress:
-                stress = {key: stress[key] for key in {1, 2}}
-            if totens:
-                totens = {key: totens[key] for key in {1, 2}}
+        # if not extract_all:
+        #     # only save initial and last
+        #     if cell:
+        #         cell = {key: np.asarray(cell[key]) for key in {1, 2}}
+        #     if pos:
+        #         pos = {key: np.asarray(pos[key]) for key in {1, 2}}
+        #     if force:
+        #         force = {key: force[key] for key in {1, 2}}
+        #     if stress:
+        #         stress = {key: stress[key] for key in {1, 2}}
+        #     if totens:
+        #         totens = {key: totens[key] for key in {1, 2}}
 
         # if any dict is empty, set to zero
         if not cell:
@@ -1499,7 +1499,7 @@ class Xml(BaseParser):
             An ElementTree object to be used for parsing.
         extract_all : bool
             Determines which unitcell and positions to get.
-            Defaults to the initial and final. If True, extract all.
+            Defaults to the initial and last. If True, extract all.
 
         Returns
         -------
@@ -1666,7 +1666,7 @@ class Xml(BaseParser):
                         stress[calc + 1] = self._convert_array2D_f(
                             entrystress[basecell:basecell + 3], 3)
 
-        # If we still only have one entry, or number two is None, final and initial should
+        # If we still only have one entry, or number two is None, last and initial should
         # be the same, force them to be similar. We could do this earlier, but this is done
         # to keep it tidy, and if one in the future would like to utilize the returned None.
         if cell:
@@ -2968,7 +2968,7 @@ class Xml(BaseParser):
         self._check_calc_status(status)
         if status == 'initial':
             return forces[1]
-        elif status == 'final':
+        elif status == 'last':
             largest_key = max(self._data['forces'].keys())
             return forces[largest_key]
         elif status == 'all':
@@ -2982,7 +2982,7 @@ class Xml(BaseParser):
         self._check_calc_status(status)
         if status == 'initial':
             return stress[1]
-        elif status == 'final':
+        elif status == 'last':
             largest_key = max(self._data['stress'].keys())
             return stress[largest_key]
         elif status == 'all':
@@ -3037,7 +3037,7 @@ class Xml(BaseParser):
         self._check_calc_status(status)
         if status == 'initial':
             return unitcell[1]
-        elif status == 'final':
+        elif status == 'last':
             largest_key = max(self._lattice['unitcell'].keys())
             return unitcell[largest_key]
         elif status == 'all':
@@ -3051,7 +3051,7 @@ class Xml(BaseParser):
         self._check_calc_status(status)
         if status == 'initial':
             return positions[1]
-        elif status == 'final':
+        elif status == 'last':
             largest_key = max(self._lattice['positions'].keys())
             return positions[largest_key]
         elif status == 'all':
@@ -3086,10 +3086,11 @@ class Xml(BaseParser):
     def get_energies(self, status, etype=None, nosc=True):
 
         if etype is None:
-            etype = 'energy_extrapolated'
+            etype = ['energy_extrapolated']
         # Check if the supplied etype is in the support list
-        if etype not in _SUPPORTED_TOTAL_ENERGIES.keys():
-            raise ValueError(f'The supplied total energy type: {etype} is not supported.')
+        for item in etype:
+            if item not in _SUPPORTED_TOTAL_ENERGIES.keys():
+                raise ValueError(f'The supplied total energy type: {item} is not supported.')
 
         return self._get_energies(status, etype, nosc)
 
@@ -3099,29 +3100,56 @@ class Xml(BaseParser):
         if enrgies is None:
             return None
         self._check_calc_status(status)
-        energies = []
-        if status == 'initial':
-            if nosc:
-                energies.append(enrgies[1][etype][-1])
-            else:
-                energies.append(enrgies[1][etype])
-        elif status == 'final':
-            largest_key = max(enrgies.keys())
-            if nosc:
-                energies.append(enrgies[largest_key][etype][-1])
-            else:
-                energies.append(enrgies[largest_key][etype])
-        elif status == 'all':
-            # here we need to pull out energy_extrapolated of all the calc
-            # steps...right now I did not find a smart way to do this, would
-            # like to avoid explicit loops...but here it is anyway
-            # first sort (might consider doing this initially...not so sure)
-            _energies = sorted(enrgies.items())
-            for index, element in _energies:
+        energies = {}
+        # We can have different number of electronic steps for each ionic step, so
+        # the array would be staggered. In order to save on storage and still utilize
+        # regular NumPy array functions, we flatten the array and store a separate array
+        # that keeps track of the number of electronic steps per ionic step.
+        for item in etype:
+            # For the energies inside the electronic step sections.
+            energies_per_etype = np.array([])
+            # For the final energy available inside the calculations (ionic steps) sections after closure
+            # of the electronic steps and applying corrections.
+            energy_per_etype = np.array([])
+            electronic_steps = np.array([], dtype=int)
+            steps = 1
+            if status == 'initial':
+                # Initial ionic step
+                energy_per_etype = np.append(energy_per_etype, enrgies[1][item+'_final'])
                 if nosc:
-                    energies.append(element[etype][-1])
+                    e = enrgies[1][item][-1]
                 else:
-                    energies.append(element[etype])
+                    e = enrgies[1][item]
+                    steps = len(e)
+                energies_per_etype = np.append(energies_per_etype, e)
+                electronic_steps = np.append(electronic_steps, steps)
+            elif status == 'last':
+                # Last ionic step
+                largest_key = max(enrgies.keys())
+                energy_per_etype = np.append(energy_per_etype, enrgies[largest_key][item+'_final'])
+                if nosc:
+                    e = enrgies[largest_key][item][-1]
+                else:
+                    e = enrgies[largest_key][item]
+                    steps = len(e)
+                energies_per_etype = np.append(energies_per_etype, e)
+                electronic_steps = np.append(electronic_steps, steps)
+            elif status == 'all':
+                # For all the ionic steps
+                _energies_per_etype = sorted(enrgies.items())
+                for index, element in _energies_per_etype:
+                    energy_per_etype = np.append(energy_per_etype, element[item+'_final'])
+                    if nosc:
+                        e = element[item][-1]
+                    else:
+                        e = element[item]
+                        steps = len(e)
+                    energies_per_etype = np.append(energies_per_etype, e)
+                    electronic_steps = np.append(electronic_steps, steps)
+            energies[item+'_final'] = energy_per_etype
+            energies[item] = energies_per_etype
+
+        energies['electronic_steps'] = electronic_steps
 
         return energies
 
@@ -3197,7 +3225,7 @@ class Xml(BaseParser):
         return match.search(version).group(0)
     
     def _check_calc_status(self, status):
-        allowed_entries = ['initial', 'final', 'all']
+        allowed_entries = ['initial', 'last', 'all']
         if status not in allowed_entries:
             self._logger.error(
                 self.ERROR_MESSAGES[self.ERROR_UNSUPPORTED_STATUS] +

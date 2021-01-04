@@ -30,103 +30,142 @@ def test_xml_exist(xml_parser):
 
 @pytest.mark.parametrize('xml_parser', ['basic.xml'], indirect=True)
 def test_xml_energies(xml_parser):
-    """Check energies for runs with no ionic steps.
+    """Check total energies for runs with no ionic steps.
 
     """
     import numpy as np
 
-    energy = xml_parser.get_energies('initial')[0]
-    assert utils.isclose(energy, -43.312106219999997)
-    energy = xml_parser.get_energies('final')[0]
-    assert utils.isclose(energy, -43.312106219999997)
-    energy = xml_parser.get_energies('all')[0]
-    assert utils.isclose(energy, -43.312106219999997)
+    energies_data = xml_parser.get_energies('initial')
+    test_array_energies = np.array([-43.312106219999997])
+    test_array_steps = np.array([1], dtype=int)
+    assert np.allclose(test_array_energies, energies_data['energy_extrapolated'])
+    assert np.allclose(test_array_steps, energies_data['electronic_steps'])
+    energy_data = xml_parser.get_energies('last')
+    assert np.allclose(test_array_energies, energies_data['energy_extrapolated'])
+    assert np.allclose(test_array_steps, energies_data['electronic_steps'])
+    energies_data = xml_parser.get_energies('all')
+    assert np.allclose(test_array_energies, energies_data['energy_extrapolated'])
+    assert np.allclose(test_array_steps, energies_data['electronic_steps'])
+    test_array_energies = np.array([-0.00053151])
+    # Notice that the test have here used results from VASP 5, which has a bug in the xml
+    # prints for the final energies. In VASP 6 this bug is fixed.
+    assert np.allclose(test_array_energies, energies_data['energy_extrapolated_final'])
 
 
 @pytest.mark.parametrize('xml_parser', ['basicrelax.xml'], indirect=True)
 def test_xml_energies_ionic(xml_parser):
-    """Check energies for runs with ionic steps.
+    """Check total energies for runs with ionic steps.
 
     """
     import numpy as np
-    
-    energy = xml_parser.get_energies('initial')[0]
-    assert utils.isclose(energy, -42.91113348)
-    energy = xml_parser.get_energies('final')[0]
-    assert utils.isclose(energy, -43.39087657)
-    energy = xml_parser.get_energies('all')
-    test_array = np.array([-42.91113348, -43.27757545, -43.36648855, -43.37734069, -43.38062479, -43.38334165, -43.38753003, -43.38708193, -43.38641449, -43.38701639, -43.38699488, -43.38773717, -43.38988315, -43.3898822, -43.39011239, -43.39020751, -43.39034244, -43.39044584, -43.39087657])
-    assert np.allclose(np.array(energy),
-                       test_array)
+
+    energies_data = xml_parser.get_energies('initial')
+    test_array_steps = np.array([1], dtype=int)
+    test_array_energies = np.array([-42.91113348])
+    assert np.allclose(test_array_energies, energies_data['energy_extrapolated'])
+    assert np.allclose(test_array_steps, energies_data['electronic_steps'])
+    energies_data = xml_parser.get_energies('last')
+    test_array_energies = np.array([-43.39087657])
+    assert np.allclose(test_array_energies, energies_data['energy_extrapolated'])
+    assert np.allclose(test_array_steps, energies_data['electronic_steps'])
+    energies_data = xml_parser.get_energies('all')
+    test_array_energies = np.array([-42.91113348, -43.27757545, -43.36648855, -43.37734069, -43.38062479, -43.38334165, -43.38753003, -43.38708193, -43.38641449, -43.38701639, -43.38699488, -43.38773717, -43.38988315, -43.3898822, -43.39011239, -43.39020751, -43.39034244, -43.39044584, -43.39087657])
+    test_array_steps = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], dtype=int)
+    assert np.allclose(test_array_energies, energies_data['energy_extrapolated'])
+    assert len(energies_data['electronic_steps']) == len(energies_data['energy_extrapolated'])
+    assert np.allclose(test_array_steps, energies_data['electronic_steps'])
+    test_array_energies = np.array([-0.00236637, -0.00048614, -0.00047201, -0.00043261, -0.00041668,
+                                    -0.00042584, -0.00043637, -0.00042806, -0.00042762, -0.00043875,
+                                    -0.00042731, -0.00042705, -0.00043064, -0.00043051, -0.00043161,
+                                    -0.00043078, -0.00043053, -0.00043149, -0.00043417])
+    # Notice that the test have here used results from VASP 5, which has a bug in the xml
+    # prints for the final energies. In VASP 6 this bug is fixed.
+    assert np.allclose(test_array_energies, energies_data['energy_extrapolated_final'])
+
 
 @pytest.mark.parametrize('xml_parser', ['basic.xml'], indirect=True)
-def test_xml_energies_sc(xml_parser):
-    """Check energies for runs without ionic steps, but return of also energies per self electronic steps.
+def test_xml_energies_electronic(xml_parser):
+    """Check total energies for runs without ionic steps, for each electronic step.
 
     """
     import numpy as np
 
-    energy = xml_parser.get_energies('all', nosc=False)
-    test_array = np.array([ 34.33397233, -40.91109366, -43.93640589, -43.97897688,
+    energies_data = xml_parser.get_energies('all', nosc=False)
+    test_array_energies = np.array([34.33397233, -40.91109366, -43.93640589, -43.97897688,
        -43.98005344, -43.52006123, -43.30797519, -43.31109453,
        -43.31199447, -43.31209931, -43.31210726, -43.31210622])
-    assert np.allclose(energy[0], test_array)
-    energy = xml_parser.get_energies('final', nosc=False)
-    test_array = np.array([ 34.33397233, -40.91109366, -43.93640589, -43.97897688,
-       -43.98005344, -43.52006123, -43.30797519, -43.31109453,
-       -43.31199447, -43.31209931, -43.31210726, -43.31210622])
-    assert np.allclose(energy[0], test_array)
-    energy = xml_parser.get_energies('all', nosc=False)
-    test_array = np.array([ 34.33397233, -40.91109366, -43.93640589, -43.97897688,
-       -43.98005344, -43.52006123, -43.30797519, -43.31109453,
-       -43.31199447, -43.31209931, -43.31210726, -43.31210622])
-    assert np.allclose(energy[0], test_array)
+    test_array_steps = np.array([12], dtype=int)
+    assert np.allclose(test_array_energies, energies_data['energy_extrapolated'])
+    assert np.allclose(test_array_steps, energies_data['electronic_steps'])
+    energies_data = xml_parser.get_energies('last', nosc=False)
+    assert np.allclose(test_array_energies, energies_data['energy_extrapolated'])
+    assert np.allclose(test_array_steps, energies_data['electronic_steps'])
+    energies_data = xml_parser.get_energies('all', nosc=False)
+    assert np.allclose(test_array_energies, energies_data['energy_extrapolated'])
+    assert np.allclose(test_array_steps, energies_data['electronic_steps'])
+    test_array_energies = np.array([-0.00053151])
+    assert np.allclose(test_array_energies, energies_data['energy_extrapolated_final'])
 
 
 @pytest.mark.parametrize('xml_parser', ['basicrelax.xml'], indirect=True)
-def test_xml_energies_sc(xml_parser):
-    """Check energies for runs with ionic steps, but return of also energies per self electronic steps.
+def test_xml_energies_ionic_sc(xml_parser):
+    """Check total energies for runs with ionic steps, for each electronic step.
 
     """
     import numpy as np
 
-    energy = xml_parser.get_energies('initial', nosc=False)
-    test_array = np.array([163.37398579,  14.26925896, -23.05190509, -34.91615104,
+    energies_data = xml_parser.get_energies('initial', nosc=False)
+    test_array_energies = np.array([163.37398579,  14.26925896, -23.05190509, -34.91615104,
        -40.20080347, -42.18390876, -42.97469852, -43.31556073,
        -43.60169068, -43.61723125, -43.61871511, -43.61879751,
        -43.12548175, -42.90647187, -42.91031846, -42.91099027,
        -42.91111107, -42.91113348])
-    assert np.allclose(energy[0], test_array)
-    energy = xml_parser.get_energies('final', nosc=False)
-    test_array = np.array([-43.39084354, -43.39088709, -43.39087657])
-    assert np.allclose(energy[0], test_array)
-    energy = xml_parser.get_energies('all', nosc=False)
-    test_array = [np.array([163.37398579,  14.26925896, -23.05190509, -34.91615104,
-       -40.20080347, -42.18390876, -42.97469852, -43.31556073,
-       -43.60169068, -43.61723125, -43.61871511, -43.61879751,
-       -43.12548175, -42.90647187, -42.91031846, -42.91099027,
-       -42.91111107, -42.91113348]),
-                  np.array([-43.34236449, -43.31102002, -43.27768275, -43.27791002,
-       -43.27761357, -43.27757545]),
-                  np.array([-43.40320524, -43.38084022, -43.36835045, -43.36666248,
-       -43.36666583, -43.36649036, -43.36648855]),
-                  np.array([-43.37749056, -43.37749102, -43.37734414, -43.37734069]),
-                  np.array([-43.38117265, -43.38082881, -43.38063293, -43.38062479]),
-                  np.array([-43.38337336, -43.38334165]), np.array([-43.38778922, -43.38766017, -43.38752953, -43.38753003]),
-                  np.array([-43.38714489, -43.38708193]),
-                  np.array([-43.38640951, -43.38641449]),
-                  np.array([-43.3874799 , -43.3871553 , -43.38701949, -43.38701639]),
-                  np.array([-43.38790942, -43.38727062, -43.38700335, -43.38699488]),
-                  np.array([-43.38774394, -43.38773717]),
-                  np.array([-43.38984942, -43.3899134 , -43.38988315]),
-                  np.array([-43.38988117, -43.3898822 ]),
-                  np.array([-43.39032165, -43.39017866, -43.39011239]),
-                  np.array([-43.39021044, -43.39020751]),
-                  np.array([-43.39034135, -43.39034244]),
-                  np.array([-43.39044466, -43.39044584]),
-                  np.array([-43.39084354, -43.39088709, -43.39087657])]
-    for index, ionic_step in enumerate(test_array):
-        assert np.allclose(energy[index], ionic_step)
+    test_array_steps = np.array([18], dtype=int)
+    assert np.allclose(test_array_energies, energies_data['energy_extrapolated'])
+    assert np.allclose(test_array_steps, energies_data['electronic_steps'])
+    energies_data = xml_parser.get_energies('last', nosc=False)
+    test_array_energies = np.array([-43.39084354, -43.39088709, -43.39087657])
+    test_array_steps = np.array([3], dtype=int)
+    assert np.allclose(test_array_energies, energies_data['energy_extrapolated'])
+    assert np.allclose(test_array_steps, energies_data['electronic_steps'])
+    energies_data = xml_parser.get_energies('all', nosc=False)
+    test_array_energies = [np.array([163.37398579,  14.26925896, -23.05190509, -34.91615104,
+                                     -40.20080347, -42.18390876, -42.97469852, -43.31556073,
+                                     -43.60169068, -43.61723125, -43.61871511, -43.61879751,
+                                     -43.12548175, -42.90647187, -42.91031846, -42.91099027,
+                                     -42.91111107, -42.91113348]),
+                           np.array([-43.34236449, -43.31102002, -43.27768275, -43.27791002,
+                                     -43.27761357, -43.27757545]),
+                           np.array([-43.40320524, -43.38084022, -43.36835045, -43.36666248,
+                                     -43.36666583, -43.36649036, -43.36648855]),
+                           np.array([-43.37749056, -43.37749102, -43.37734414, -43.37734069]),
+                           np.array([-43.38117265, -43.38082881, -43.38063293, -43.38062479]),
+                           np.array([-43.38337336, -43.38334165]), np.array([-43.38778922, -43.38766017, -43.38752953, -43.38753003]),
+                           np.array([-43.38714489, -43.38708193]),
+                           np.array([-43.38640951, -43.38641449]),
+                           np.array([-43.3874799 , -43.3871553 , -43.38701949, -43.38701639]),
+                           np.array([-43.38790942, -43.38727062, -43.38700335, -43.38699488]),
+                           np.array([-43.38774394, -43.38773717]),
+                           np.array([-43.38984942, -43.3899134 , -43.38988315]),
+                           np.array([-43.38988117, -43.3898822 ]),
+                           np.array([-43.39032165, -43.39017866, -43.39011239]),
+                           np.array([-43.39021044, -43.39020751]),
+                           np.array([-43.39034135, -43.39034244]),
+                           np.array([-43.39044466, -43.39044584]),
+                           np.array([-43.39084354, -43.39088709, -43.39087657])]
+    test_array_steps = np.array([18, 6, 7, 4, 4, 2, 4, 2, 2, 4, 4, 2, 3, 2, 3, 2, 2, 2, 3])
+    # Build a flattened array (not using flatten from NumPy as the content is staggered) and
+    # test number of electronic steps per ionic step
+    test_array_energies_flattened = np.array([])
+    for index, ionic_step in enumerate(test_array_energies):
+        test_array_energies_flattened = np.append(test_array_energies_flattened, ionic_step)
+    assert np.allclose(test_array_energies_flattened, energies_data['energy_extrapolated'])
+    assert np.allclose(test_array_steps, energies_data['electronic_steps'])
+    test_array_energies = np.array([-0.00236637, -0.00048614, -0.00047201, -0.00043261, -0.00041668,
+                                    -0.00042584, -0.00043637, -0.00042806, -0.00042762, -0.00043875,
+                                    -0.00042731, -0.00042705, -0.00043064, -0.00043051, -0.00043161,
+                                    -0.00043078, -0.00043053, -0.00043149, -0.00043417])
+    assert np.allclose(test_array_energies, energies_data['energy_extrapolated_final'])
 
 
 @pytest.mark.parametrize('xml_parser', ['basic.xml'], indirect=True)
@@ -144,7 +183,6 @@ def test_xml_forces(xml_parser):
     np.testing.assert_allclose(forces, test)
     forces = xml_parser.get_forces('all')
     np.testing.assert_allclose(forces[1], test)
-    np.testing.assert_allclose(forces[2], test)
 
 
 @pytest.mark.parametrize('xml_parser', ['basic.xml'], indirect=True)
@@ -157,11 +195,10 @@ def test_xml_stress(xml_parser):
     test = np.array([[-1.95307089, -0., 0.], [-0., -1.95307089, -0.],
                      [0., -0., -1.95307089]])
     np.testing.assert_allclose(stress, test)
-    stress = xml_parser.get_stress('final')
+    stress = xml_parser.get_stress('last')
     np.testing.assert_allclose(stress, test)
     stress = xml_parser.get_stress('all')
     np.testing.assert_allclose(stress[1], test)
-    np.testing.assert_allclose(stress[2], test)
 
 
 @pytest.mark.parametrize('xml_parser', ['basic.xml'], indirect=True)
@@ -219,11 +256,10 @@ def test_xml_unitcell(xml_parser):
     test = np.array([[5.46900498, 0., 0.], [0., 5.46900498, 0.],
                      [0., 0., 5.46900498]])
     np.testing.assert_allclose(unitcell, test)
-    unitcell = xml_parser.get_unitcell('final')
+    unitcell = xml_parser.get_unitcell('last')
     np.testing.assert_allclose(unitcell, test)
     unitcell = xml_parser.get_unitcell('all')
     np.testing.assert_allclose(unitcell[1], test)
-    np.testing.assert_allclose(unitcell[2], test)
 
 
 @pytest.mark.parametrize('xml_parser', ['basic.xml'], indirect=True)
@@ -241,11 +277,10 @@ def test_xml_positions(xml_parser):
                      [0.24999954, 0.75000046, 0.75000046],
                      [0.75000046, 0.75000046, 0.24999954]])
     np.testing.assert_allclose(positions, test)
-    positions = xml_parser.get_positions('final')
+    positions = xml_parser.get_positions('last')
     np.testing.assert_allclose(positions, test)
     positions = xml_parser.get_positions('all')
     np.testing.assert_allclose(positions[1], test)
-    np.testing.assert_allclose(positions[2], test)
 
 
 @pytest.mark.parametrize('xml_parser', ['basic.xml'], indirect=True)
@@ -734,20 +769,18 @@ def test_xml_structure_magmom(xml_parser):
     test = np.array([[0., 3.2395, 3.2395], [3.2395, 0., 3.2395],
                      [3.2395, 3.2395, 0.]])
     np.testing.assert_allclose(unitcell_initial, test)
-    unitcell_final = xml_parser.get_unitcell('final')
-    np.testing.assert_allclose(unitcell_final, unitcell_initial)
+    unitcell_last = xml_parser.get_unitcell('last')
+    np.testing.assert_allclose(unitcell_last, unitcell_initial)
     unitcell_all = xml_parser.get_unitcell('all')
     np.testing.assert_allclose(unitcell_all[1], unitcell_initial)
-    np.testing.assert_allclose(unitcell_all[2], unitcell_initial)
 
     positions_initial = xml_parser.get_positions('initial')
     test = np.array([[0., 0., 0.], [0.25, 0.25, 0.25]])
     np.testing.assert_allclose(positions_initial, test)
-    positions_final = xml_parser.get_positions('final')
-    np.testing.assert_allclose(positions_final, positions_initial)
+    positions_last = xml_parser.get_positions('last')
+    np.testing.assert_allclose(positions_last, positions_initial)
     positions_all = xml_parser.get_positions('all')
     np.testing.assert_allclose(positions_all[1], positions_initial)
-    np.testing.assert_allclose(positions_all[2], positions_initial)
 
 
 @pytest.mark.parametrize('xml_parser', ['basicrelax.xml'], indirect=True)
@@ -785,6 +818,3 @@ def test_xml_ionic(xml_parser):
     np.testing.assert_allclose(stress[2][0], testing)
     testing = np.array([0.0, 0.60834449, -3.20314152])
     np.testing.assert_allclose(stress[10][1], testing)
-    testing = [-43.34236449, -43.31102002, -43.27768275, -43.27791002,
-               -43.27761357, -43.27757545]
-    np.testing.assert_allclose(energies_sc[1], testing)
