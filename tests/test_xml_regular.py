@@ -24,6 +24,7 @@ def xml_parser(request, tmpdir_factory):
         tmpfile = str(tmpdir_factory.mktemp('data').join('basic_trunc.xml'))
         xml_truncate(request.param, xmlfile, tmpfile)
         xml = Xml(tmpfile, event=False)
+        xml.truncate_expected = True if request.param == 1 else False
         return xml
 
     return make_xml_parser
@@ -60,6 +61,14 @@ def xml_truncate(index, original, tmp):
         xmlfile.write(str(truncated_content))
 
     return
+
+
+def test_xml_truncate_detection(xml_parser):
+    """Test truncation detection
+    
+    """
+    parser = xml_parser()
+    assert parser.truncated == parser.truncate_expected
 
 
 def test_xml_exist(xml_parser):
