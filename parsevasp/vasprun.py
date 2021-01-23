@@ -3328,7 +3328,7 @@ class Xml(BaseParser):
                 mapping = mmap.mmap(source.fileno(), 0, prot=mmap.PROT_READ)
 
         last_line = mapping[mapping.rfind(b'\n', 0, -1) + 1:]
-        if last_line == '</modeling>\n':
+        if b'</modeling>' in last_line:
             return False
         else:
             return True
