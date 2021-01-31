@@ -170,3 +170,10 @@ no_potim:
   recover: false
   regex: 'Fatal error! IBRION=0, but no entry for POTIM on file INCAR. MUST be specified!!'
   suggestion: ''
+magmom:
+  kind: ERROR
+  location: STDOUT
+  message: MAGMON is specified, but ISPIN is set to one
+  recover: false
+  regex: "Error reading item 'MAGMOM' from file INCAR"
+  suggestion: ''  
