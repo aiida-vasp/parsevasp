@@ -17,8 +17,6 @@ class Incar(BaseParser):
     ERROR_TWO_EQUALS = 101
     ERROR_INVALID_COMMENT_SIGN = 102
     ERROR_MULTIPLE_COMMENTS = 103
-    ERROR_VALUES_NOT_SAME_TYPE = 104
-    ERROR_INVALID_TYPE = 105
     BaseParser.ERROR_MESSAGES.update({
         ERROR_TWO_EQUALS:
         'Detected two equal signs for an entry in the INCAR file.',
@@ -31,13 +29,7 @@ class Incar(BaseParser):
         'The supplied INCAR tag is not '
         'officially supported. Please consult the VASP manual or '
         'set the validate_tags attribute for the Incar class initializer to '
-        'False if you want to disable tag checking.',
-        ERROR_VALUES_NOT_SAME_TYPE:
-        'All values of an INCAR tag are not of the same type. '
-        'Maybe you forgot to add # as a comment tag?',
-        ERROR_INVALID_TYPE:
-        'The type one of the supplied values for the INCAR tag '
-        'is not recognized.'
+        'False if you want to disable tag checking.'
     })
     ERROR_MESSAGES = BaseParser.ERROR_MESSAGES
 
@@ -474,6 +466,9 @@ class Incar(BaseParser):
 
 
 class IncarItem(object):
+    ERROR_VALUES_NOT_SAME_TYPE = 104
+    ERROR_INVALID_TYPE = 105
+
     def __init__(self, tag, value, comment, logger=None):
         """Initialize an entry in INCAR.
 
@@ -593,9 +588,9 @@ class IncarItem(object):
 
             # check if all values are the same type (they should be)
             if not all(x == content_type[0] for x in content_type):
-                self._logger.error(
-                    self.ERROR_MESSAGES[self.ERROR_VALUES_NOT_SAME_TYPE] +
-                    ' The tag in question is: ' + clean_tag.upper())
+                self._logger.error('All values of an INCAR tag are not of the same type. '
+                                   'Maybe you forgot to add # as a comment tag?'
+                                   ' The tag in question is: ' + clean_tag.upper())
                 sys.exit(self.ERROR_VALUES_NOT_SAME_TYPE)
 
         else:
@@ -604,9 +599,8 @@ class IncarItem(object):
 
             if not (isinstance(value, int) or isinstance(value, float)
                     or isinstance(value, bool) or (type(value) is list)):
-                self._logger.error(
-                    self.ERROR_MESSAGES[self.ERROR_INVALID_TYPE] +
-                    ' The tag in question is: ' + clean_tag.upper())
+                self._logger.error('The type one of the supplied values for the INCAR tag '
+                                   'is not recognized. The tag in question is: ' + clean_tag.upper())
                 sys.exit(self.ERROR_INVALID_TYPE)
             clean_value = value
 
