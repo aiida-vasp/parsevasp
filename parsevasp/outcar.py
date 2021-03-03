@@ -365,10 +365,18 @@ class Outcar(BaseParser):
             if time_mem_pattern.search(line):
                 tokens = line.strip().split(":")
                 item_name = "_".join(tmp.lower() for tmp in tokens[0].strip().split()[:-1])
-                info[item_name] = float(tokens[1].strip())
+                # The entry can be empty (VASP6)
+                try:
+                    info[item_name] = float(tokens[1].strip())
+                except ValueError:
+                    info[item_name] = None
 
             elif mem_pattern.search(line):
                 tokens = re.split(r'[: ]+', line.strip())
-                info['mem_usage_' + tokens[0]] = float(tokens[-2])
+                try:
+                    info['mem_usage_' + tokens[0]] = float(tokens[-2])
+                except ValueError:
+                    info['mem_usage_' + tokens[0]] = None
+            
             
         return info
