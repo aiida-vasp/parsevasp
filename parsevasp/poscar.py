@@ -256,9 +256,9 @@ class Poscar(BaseParser):
             # fetch positions
             line = poscar[i + loopmax].split()
             position = np.zeros(3)
-            position[0] = float(line[0])
-            position[1] = float(line[1])
-            position[2] = float(line[2])
+            position[0] = float(line[0]) * scaling
+            position[1] = float(line[1]) * scaling
+            position[2] = float(line[2]) * scaling
             if not direct:
                 # convert to direct
                 position = self._to_direct(position, unitcell)
