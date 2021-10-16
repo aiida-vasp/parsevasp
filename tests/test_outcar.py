@@ -4,7 +4,7 @@ import numpy as np
 from parsevasp.outcar import Outcar
 
 @pytest.fixture
-def outcar_parser(request, tmpdir_factory):
+def outcar_parser(request):
     """Load OUTCAR file.
 
     """
@@ -20,7 +20,7 @@ def outcar_parser(request, tmpdir_factory):
     return outcar
 
 @pytest.fixture
-def outcar_parser_file_objects(request, tmpdir_factory):
+def outcar_parser_file_objects(request):
     """Load OUTCAR file from a file object.
 
     """
