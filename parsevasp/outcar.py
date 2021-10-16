@@ -8,7 +8,7 @@ from parsevasp import utils
 from parsevasp.base import BaseParser
 
 
-class Outcar(BaseParser):
+class Ou(BaseParser):
     def __init__(self,
                  file_path=None,
                  file_handler=None,
@@ -146,17 +146,6 @@ class Outcar(BaseParser):
         ----------
         outcar : list
             A list of strings containing each line in the OUTCAR file.
-
-        Returns
-        -------
-        outcar_dict : dictionary
-            A dictionary containing each OUTCAR tag as a key with the
-            associated element.
-
-        Notes
-        -----
-        No checking for consistency is done here. We do this at a later step
-        in order to be able to keep the input methods as clean as possible.
 
         """
 

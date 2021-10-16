@@ -79,17 +79,6 @@ class Eigenval(BaseParser):
         eigenval : list
             A list of strings containing each line in the EIGENVAL file.
 
-        Returns
-        -------
-        eigenval_dict : dictionary
-            A dictionary containing each EIGENVAL tag as a key with the
-            associated element.
-
-        Notes
-        -----
-        No checking for consistency is done here. We do this at a later step
-        in order to be able to keep the input methods as clean as possible.
-
         """
 
         # Read metadata
