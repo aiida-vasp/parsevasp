@@ -50,19 +50,30 @@ def doscar_parser_file_object(request):
     return doscar
 
 def test_doscar(doscar_parser):
-    """Test that the content returned by the DOSCAR parser represents the data we want."""
+    """Test that the content returned by the DOSCAR parser returns total density of states."""
     dos = doscar_parser.get_dos()
     for i in range(dos.size):
         assert dos[i] == compare_dos[i]
 
+def test_doscar_file_objcet(doscar_parser_file_object):
+    """
+    Test that the content returned by the DOSCAR parser returns total density of states
+    using file handler.
+    """
+    dos = doscar_parser_file_object.get_dos()
+    for i in range(dos.size):
+        assert dos[i] == compare_dos[i]
+
+
 @pytest.mark.parametrize('doscar_parser', ['DOSCAR.nopdos'], indirect=['doscar_parser'])
 def test_doscar(doscar_parser):
-    """Test that the content returned by the DOSCAR parser represents the data we want."""
+    """Test that the content returned by the DOSCAR parser returns total density of states."""
     dos = doscar_parser.get_dos()
     for i in range(dos.size):
         assert dos[i] == compare_dos[i]
         
-def test_doscar_partial(doscar_parser):    
+def test_doscar_partial(doscar_parser):
+    """Test that the content returned by the DOSCAR parser returns the partial density of states."""
     pdos = doscar_parser.get_pdos()
     metadata = doscar_parser.get_metadata()
     n_atoms = metadata['n_atoms']
@@ -115,6 +126,10 @@ def test_doscar_partial(doscar_parser):
 
 @pytest.mark.parametrize('doscar_parser', ['DOSCAR.spin'], indirect=['doscar_parser'])
 def test_doscar_spin(doscar_parser):
+    """
+    Test that the content returned by the DOSCAR parser returns 
+    the correct dimensions for spin density of states
+    """
     dos = doscar_parser.get_dos()
     assert len(dos.dtype) == 3
     assert dos['total'].shape == (301, 2)
@@ -125,6 +140,10 @@ def test_doscar_spin(doscar_parser):
 
 @pytest.mark.parametrize('doscar_parser', ['DOSCAR.ncl'], indirect=['doscar_parser'])
 def test_doscar_spin(doscar_parser):
+    """
+    Test that the content returned by the DOSCAR parser returns 
+    the correct dimensions for density of states for colinear calculations.
+    """    
     dos = doscar_parser.get_dos()
     assert len(dos.dtype) == 3
     assert dos['total'].shape == (301,)
