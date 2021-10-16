@@ -3,6 +3,7 @@
 import sys
 import logging
 import os
+import re
 import math
 import numpy as np
 from parsevasp.base import BaseParser
@@ -364,3 +365,28 @@ def lat_to_reclat(lattice):
     lattice_rec = 2 * math.pi * np.linalg.inv(lattice_trans)
 
     return lattice_rec
+
+
+def match_integer_param(inputs, key, string):
+    """
+    Search a string for a given parameter and set its values, assuming integer.
+
+    Parameters
+    ----------
+    inputs : dict
+      A dictionary containing the parameters we want to set in lowercase and default values.
+    key : string
+      A string containing the matching parameter we are looking for.
+    string: string
+      A string to be searched for key.
+
+    Returns
+    -------
+    value : integer
+      The located value.
+
+    """
+
+    match = re.match(r'^ +' + key + r' *= *([-0-9]+)', string)
+    if match:
+        inputs[key.lower()] = int(match.group(1))

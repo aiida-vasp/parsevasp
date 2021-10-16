@@ -3,78 +3,39 @@ import pytest
 import numpy as np
 from parsevasp.outcar import Outcar
 
-
-@pytest.fixture(scope='module', params=[0])
+@pytest.fixture
 def outcar_parser(request, tmpdir_factory):
     """Load OUTCAR file.
 
     """
+    try: 
+        name = request.param
+    except AttributeError:
+        # Test not parametrized
+        name = 'OUTCAR'
     testdir = os.path.dirname(__file__)
-    outcarfile = testdir + '/OUTCAR'
-    tmpfile = str(tmpdir_factory.mktemp('data').join('OUTCAR'))
-    outcar_truncate(request.param, outcarfile, tmpfile)
-    outcar = Outcar(file_path=tmpfile)
+    outcarfile = testdir + '/' + name
+    outcar = Outcar(file_path=outcarfile)
 
     return outcar
 
-
-@pytest.fixture(scope='module', params=[0])
+@pytest.fixture
 def outcar_parser_file_objects(request, tmpdir_factory):
     """Load OUTCAR file from a file object.
 
     """
+    try: 
+        name = request.param
+    except AttributeError:
+        # Test not parametrized
+        name = 'OUTCAR'
     testdir = os.path.dirname(__file__)
-    outcarfile = testdir + '/OUTCAR'
-    tmpfile = str(tmpdir_factory.mktemp('data').join('OUTCAR'))
-    outcar_truncate(request.param, outcarfile, tmpfile)
+    outcarfile = testdir + '/' + name
     outcar = None
-    with open(tmpfile) as file_handler:
+    with open(outcarfile) as file_handler:
         outcar = Outcar(file_handler=file_handler)
 
     return outcar
-
-
-@pytest.fixture(scope='module', params=[0])
-def outcar_parser_magnetization(request, tmpdir_factory):
-    """Load OUTCAR file.
-
-    """
-    testdir = os.path.dirname(__file__)
-    outcarfile = testdir + '/OUTCAR_MAG'
-    tmpfile = str(tmpdir_factory.mktemp('data').join('OUTCAR_MAG'))
-    outcar_truncate(request.param, outcarfile, tmpfile)
-    outcar = Outcar(file_path=tmpfile)
-
-    return outcar
-
-
-@pytest.fixture(scope='module', params=[0])
-def outcar_parser_magnetization_single(request, tmpdir_factory):
-    """Load OUTCAR file.
-
-    """
-    testdir = os.path.dirname(__file__)
-    outcarfile = testdir + '/OUTCAR_MAG_SINGLE'
-    tmpfile = str(tmpdir_factory.mktemp('data').join('OUTCAR_MAG_SINGLE'))
-    outcar_truncate(request.param, outcarfile, tmpfile)
-    outcar = Outcar(file_path=tmpfile)
-
-    return outcar
-
-
-def outcar_truncate(index, original, tmp):
-    """Truncate the OUTCAR file.
-
-    """
-
-    with open(original, 'r') as outcarfile:
-        content = outcarfile.read().splitlines()
-    truncated_content = '\n'.join(content[:-index or None])
-    with open(tmp, 'w') as outcarfile:
-        outcarfile.write(str(truncated_content))
-
-    return
-
 
 def test_outcar_symmetry(outcar_parser):
     """Check if outcar_parser returns correct symmetry entries.
@@ -82,6 +43,7 @@ def test_outcar_symmetry(outcar_parser):
     """
 
     symmetry = outcar_parser.get_symmetry()
+
     test = [
         'T_d', 'D_2d.', 'D_2d.', 'D_2d.', 'D_2d.', 'D_2d.', 'D_2d.', 'C_2',
         'C_2', 'C_2', 'C_2', 'C_2', 'C_2', 'C_2v.', 'C_2v.', 'T_d'
@@ -222,11 +184,12 @@ def test_outcar_elastic_file_object(outcar_parser_file_objects):
     np.testing.assert_allclose(elastic['total'], test)
 
 
-def test_outcar_magnetization(outcar_parser_magnetization):
+@pytest.mark.parametrize('outcar_parser', (['OUTCAR_MAG']), indirect=['outcar_parser'])
+def test_outcar_magnetization(outcar_parser):
     """Check if outcar_magnetization_parser returns the correct magnetization
     """
 
-    magnetization = outcar_parser_magnetization.get_magnetization()
+    magnetization = outcar_parser.get_magnetization()
     test = {
         'sphere': {
             'x': {
@@ -294,13 +257,13 @@ def test_outcar_magnetization(outcar_parser_magnetization):
     _test = np.asarray(list(test['full_cell']))
     np.testing.assert_allclose(_mag, _test)
 
-
-def test_outcar_magnetization_single(outcar_parser_magnetization_single):
+@pytest.mark.parametrize('outcar_parser', ['OUTCAR_MAG_SINGLE'], indirect=['outcar_parser'])
+def test_outcar_magnetization_single(outcar_parser):
     """Check if outcar_magnetization_parser returns the correct magnetization
     for a single atom in the unit cell
     """
 
-    magnetization = outcar_parser_magnetization_single.get_magnetization()
+    magnetization = outcar_parser.get_magnetization()
 
     test = {
         'sphere': {
@@ -370,3 +333,29 @@ def test_outcar_elastic_file_object(outcar_parser_file_objects):
     assert timings['mem_usage_grid'] == 903.0
     assert timings['mem_usage_one-center'] == 6.0
     assert timings['mem_usage_wavefun'] == 559.0
+
+def test_run_stats(outcar_parser):
+    """Test that the output stats is correct."""
+
+    run_stats = outcar_parser.get_run_stats()
+    compare_dict = {'mem_usage_base': 30000.0, 'mem_usage_nonl-proj': 2198.0, 'mem_usage_fftplans': 304.0, 'mem_usage_grid': 903.0, 'mem_usage_one-center': 6.0, 'mem_usage_wavefun': 559.0, 'total_cpu_time_used': 89.795, 'user_time': 60.247, 'system_time': 29.549, 'elapsed_time': 90.99, 'maximum_memory_used': 81612.0, 'average_memory_used': 0.0}
+    assert run_stats == compare_dict
+
+_TEST_DATA = [
+    ('OUTCAR.converged', [True, True, True, False, False]),
+    ('OUTCAR.nelm-breach-consistent', [True, False, False, True, True]),
+    ('OUTCAR.nelm-breach-partial', [True, False, True, False, True]),
+    ('OUTCAR.unfinished', [False, False, False, False, False]),
+    ('OUTCAR.not-converged', [True, False, True, False, False]),
+]
+
+@pytest.mark.parametrize('outcar_parser,expected', _TEST_DATA, indirect=['outcar_parser'])
+def test_run_status(outcar_parser, expected):
+    """Test that the status of the run is correct."""
+
+    run_status = outcar_parser.get_run_status()
+    assert run_status['finished'] is expected[0]
+    assert run_status['ionic_converged'] is expected[1]
+    assert run_status['electronic_converged'] is expected[2]
+    assert run_status['consistent_nelm_breach'] is expected[3]
+    assert run_status['contains_nelm_breach'] is expected[4]

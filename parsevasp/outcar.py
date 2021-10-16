@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import sys
 import logging
+import re
 import numpy as np
 
 from parsevasp import utils
@@ -95,6 +96,15 @@ class Outcar(BaseParser):
                 'full_cell': {},
             },
             'run_stats': {},
+            'run_status': {'nelm': None,
+                           'nsw': None,
+                           'last_iteration_index': None,
+                           'finished': False,
+                           'ionic_converged': False,
+                           'electronic_converged': False,
+                           'consistent_nelm_breach': False,
+                           'contains_nelm_breach': False
+            }
         }
 
         # parse parse parse
@@ -152,9 +162,30 @@ class Outcar(BaseParser):
 
         config = ''
         s_orb = {0: 's', 1: 'p', 2: 'd', 3: 'f'}
-        for index, line in enumerate(outcar):
+        params = {'ibrion': -1}
+        finished = False
+        nelec_steps = {}
 
-            # first, fetch the symmetry
+        for index, line in enumerate(outcar):
+            # Check the iteration counter
+            match = re.search(r'Iteration *(\d+)\( *(\d+)\)', line)
+            if match:
+                iter_counter = [int(match.group(1)), int(match.group(2))]
+                # Increment the counter
+                if iter_counter[0] in nelec_steps:
+                    nelec_steps[iter_counter[0]] += 1
+                else:
+                    nelec_steps[iter_counter[0]] = 1
+                continue
+            # Record the NELM / NSW requested
+            utils.match_integer_param(self._data['run_status'], 'NSW', line)
+            utils.match_integer_param(params, 'IBRION', line)
+            utils.match_integer_param(self._data['run_status'], 'NELM', line)
+            # Test if the end of execution has reached
+            if 'timing and accounting informations' in line:
+                self._data['run_status']['finished'] = True
+            
+            # Fetch the symmetry
             if line.strip().startswith(
                     'Analysis of symmetry for initial positions (statically)'):
                 config = 'static'
@@ -273,6 +304,56 @@ class Outcar(BaseParser):
                     float(_val) for _val in outcar[index].strip().split()[5:]
                 ]
 
+        # Work out if the ionic relaxation and electronic steps are to be considered converged
+        run_status = self._data['run_status']
+        run_status['last_iteration_index'] = iter_counter
+        nsw = run_status['nsw']
+        nelm = run_status['nelm']
+        finished = run_status['finished']
+        ibrion = params['ibrion']
+        if finished is True:
+            if ibrion > 0:
+                # There are fewer number of ionic iterations than the set number of maximum number of
+                # ionic iterations (NSW), thus the relaxation is considered converged.
+                # Only relevant to check ionic relaxation convergence when IBRION is larger than zero
+                if iter_counter[0] < nsw:
+                    # Fewer iterations than requested - ionic relaxation is considered converged
+                    # Note that this may include runs that has been interrupted
+                    # by STOPCAR - this is a limitation of VASP
+                    run_status['ionic_converged'] = True
+                elif iter_counter[0] == nsw and nsw > 1:
+                    # Reached the requested iterations - ionic relaxation is considered not converged
+                    run_status['ionic_converged'] = False
+                elif nsw <= 1:
+                    # Sometimes we have no or only one ionic step, which makes it difficult to determine if the
+                    # ionic relaxation is to be considered converged
+                    self._logger.warning(
+                        f'IBRION = {ibrion} but NSW is {nsw} - cannot deterimine if the relaxation structure is converged!')
+                    run_status['ionic_converged'] = None
+            else:
+                # No ionic relaxation performed
+                run_status['ionic_converged'] = None
+
+            if iter_counter[1] < nelm:
+                # There are fewer number of electronic steps in the last ionic iteration than the set maximum
+                # number of electronic steps, thus the electronic self consistent cycle is considered converged
+                run_status['electronic_converged'] = True
+
+        # Check for consistent electronic convergence problems. VASP will not break when NELM is reached during
+        # the relaxation, it will simply consider it converged. We need to detect this, which is done
+        # by checking if there are any single run that have reached NELM in the history or if NELM
+        # has been consistently reached.
+        mask = [value >= nelm
+                for sc_idx, value in sorted(nelec_steps.items(), key=lambda x: x[0])]
+        if (finished and all(mask)) or \
+           (not finished and all(mask[:-1]) and iter_counter[0] > 1):
+            # We have consistently reached NELM. Excluded the last iteration,
+            # as the calculation may not be finished
+            run_status['consistent_nelm_breach'] = True
+        if any(mask):
+            # We have at least one ionic step where NELM was reached.
+            run_status['contains_nelm_breach'] = True
+
         self._data['run_stats'] = self._parse_timings_memory(outcar[-50:])
 
     def get_symmetry(self):
@@ -341,8 +422,27 @@ class Outcar(BaseParser):
             A dictionary containing the timing information
         """
 
-        return self._data['run_stats']
+        timings = self._data['run_stats']
+        return timings
 
+    def get_run_status(self):
+        """Return the status of the run.
+        Contains information of the convergence of the ionic relaxation and electronics,
+        in addition to information if the run has finished.
+
+        Parameters
+        ----------
+        None 
+
+        Returns
+        -------
+        status : dict
+            A dictionary containing the timing information
+        """
+
+        status = self._data['run_status']
+        return status
+    
     @staticmethod
     def _parse_timings_memory(timing_lines):
         """Parse timing information.
