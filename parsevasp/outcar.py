@@ -8,7 +8,7 @@ from parsevasp import utils
 from parsevasp.base import BaseParser
 
 
-class Ou(BaseParser):
+class Outcar(BaseParser):
     def __init__(self,
                  file_path=None,
                  file_handler=None,
