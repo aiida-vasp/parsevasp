@@ -3,6 +3,7 @@
 import sys
 import logging
 import os
+import re
 import math
 import numpy as np
 from parsevasp.base import BaseParser
@@ -364,3 +365,52 @@ def lat_to_reclat(lattice):
     lattice_rec = 2 * math.pi * np.linalg.inv(lattice_trans)
 
     return lattice_rec
+
+
+def match_integer_param(inputs, key, string):
+    """
+    Search a string for a given parameter and set its values, assuming integer.
+
+    Parameters
+    ----------
+    inputs : dict
+      A dictionary containing the parameters we want to set in lowercase and default values.
+    key : string
+      A string containing the matching parameter we are looking for.
+    string: string
+      A string to be searched for key.
+
+    Returns
+    -------
+    value : integer
+      The located value.
+
+    """
+
+    match = re.match(r'^ +' + key + r' *= *([-0-9]+)', string)
+    if match:
+        inputs[key.lower()] = int(match.group(1))
+
+def line_to_type(fobject_or_string, d_type=str):
+    """
+    Grab a line from a file like object or string and convert it to d_type (default: str).
+    
+    Parameters
+    ----------
+    fobject_or_string : object
+        A file like object or a string containing something that is to be converted to a specified type
+    dtype : object
+        The dtype one want to convert to. The standard Python dtypes are supported.
+    
+    """
+    if isinstance(fobject_or_string, str):
+        line = fobject_or_string
+    else:
+        line = fobject_or_string.readline()
+    # Previously this was map instead of list comprehension
+    result = [d_type(item) for item in line.split()]
+    if len(result) == 1:
+        return result[0]
+    return result
+
+empty_line = re.compile(r'[\r\n]\s*[\r\n]')

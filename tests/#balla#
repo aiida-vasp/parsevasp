@@ -1,0 +1,21 @@
+        if finished is True:
+            # There are fewer number of ionic iteration than the max - the relaxation is converged
+            # Only check IBRION is larger than zero
+            if ibrion > 0:
+                if iter_counter[0] < nsw:
+                    # Fewer iterations than requested - run has finished
+                    # note that this may include runs that has been interrupted by STOPCAR - this is a limitation of VASP
+                    run_status['ionic_converged'] = True
+                elif iter_counter[0] == nsw and nsw > 1:
+                    # Reached the requested iterations
+                    run_status['ionic_converged'] = False
+                elif nsw <= 1:
+                    self._logger.warning(
+                        f'IBRION = {ibrion} but NSW is {nsw} - cannot deterimine if the relaxation structure is converged!')
+                    run_status['ionic_converged'] = None
+            else:
+                run_status['ionic_converged'] = None
+
+            # There are fewer electronic steps in the last iteration than the max - the electronic structure is converged
+            if iter_counter[1] < nelm:
+                run_status['electronic_converged'] = True
