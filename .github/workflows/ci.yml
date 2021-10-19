@@ -31,7 +31,7 @@ jobs:
     timeout-minutes: 30
     strategy:
       matrix:
-        python: ['3.6', '3.7', '3.8']
+        python: ['3.6', '3.7', '3.8', '3.9']
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python
@@ -58,7 +58,7 @@ jobs:
       - name: Run tox
         run: tox -e py${{ steps.tox.outputs.replaced }}-parsevasp
       - name: Run coverage from coverage-python by running pytest yet again
-        if: ${{ matrix.python }} == '3.8'
+        if: ${{ matrix.python }} == '3.9'
         run: pytest --cov-report=xml --cov-append --cov=parsevasp
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
