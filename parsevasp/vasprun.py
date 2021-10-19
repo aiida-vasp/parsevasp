@@ -2707,7 +2707,7 @@ class Xml(BaseParser):
         pdata = np.asarray(pdata)
         # Swap axis if the band index should be before the kpoint index
         # and make sure atomic index is first
-        pd_ta = np.swapaxes(pdata, 0, 3)
+        pdata = np.swapaxes(pdata, 0, 3)
         pdata = np.swapaxes(pdata, 1, 3)
         if not self._k_before_band:
             pdata = np.swapaxes(pdata, 2, 3)
