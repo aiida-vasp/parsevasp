@@ -88,22 +88,29 @@ class Xml(BaseParser):
                  extract_all=True,
                  logger=None,
                  event=False):
-        """Initialize the XmlParser by first trying the lxml and
+        """
+        Initialize the XmlParser by first trying the lxml and
         fall back to the standard ElementTree if that is not present.
 
         Parameters
         ----------
+        file_path : string
+            A string containing the file path to the file that is going to be parsed.
+        file_handler : object
+            A file like object that acts as a handler for the content to be parsed.
         k_before_band : bool
-            If True the kpoint index runs before the bands
-            index.
+            If True the kpoint index runs before the bands index.
         extract_all : bool
             Extract data from all calculation (i.e. ionic steps)
+        logger : object
+            A logger object if you would like to use an external logger for messages
+            ejected inside this parser.
         event : bool
             If True, force event based method.
 
         Notes
         -----
-        lxml should be used and is required for large files
+        The lxml library should be used and is required for large files.
         """
 
         super(Xml, self).__init__(file_path=file_path,
@@ -118,17 +125,17 @@ class Xml(BaseParser):
                 self.ERROR_MESSAGES[self.ERROR_ONLY_ONE_ARGUMENT])
             sys.exit(self.ERROR_ONLY_ONE_ARGUMENT)
 
-        # extract data from all calculations (e.g. ionic steps)
+        # Extract data from all calculations (e.g. ionic steps)
         self._extract_all = extract_all
 
-        # kpoint index before band index (for instance for the ordering
+        # Kpoint index before band index (for instance for the ordering
         # of the eigenvalue data etc.)?
         self._k_before_band = k_before_band
 
-        # version
+        # Version
         self._version = None
         
-        # dictionaries that contain the output of the parsing
+        # Dictionaries that contain the output of the parsing
         self._parameters = {
             'symprec': None,
             'ismear': None,
@@ -172,7 +179,7 @@ class Xml(BaseParser):
         else:
             self._logger.info('We are not uitilizing lxml!')
 
-        # parse parse parse
+        # Parse parse parse
         self._parse()
 
     @property
@@ -181,17 +188,7 @@ class Xml(BaseParser):
         return self._xml_recover
         
     def _parse(self):
-        """Perform the actual parsing
-
-        Parameters
-        ----------
-        None
-
-        Returns
-        -------
-        None
-
-        """
+        """Perform the actual parsing."""
 
         # Check size of the XML file. For large files we need to
         # perform event driven parsing. For smaller files this is
@@ -205,27 +202,25 @@ class Xml(BaseParser):
             
         if ((file_size < self._sizecutoff) or self._xml_recover) and \
            not self._event:
-            # run regular method (loads file into memory) and
+            # Run regular method (loads file into memory) and
             # enable recovery mode if necessary
             self._parsew(self._xml_recover)
         else:
-            # event based, saves a bit of memory
+            # Event based, saves a bit of memory
             self._parsee()
 
     def _parsew(self, xml_recover):
-        """Performs parsing on the whole XML files. For smaller files
-
-        """
+        """Performs parsing on the whole XML files. For smaller files."""
 
         self._logger.debug('Running parsew.')
 
-        # now open the complete file, we have already checked its presence when we checked the recover.
+        # Now open the complete file, we have already checked its presence when we checked the recover.
         if self._file_handler is None:
             filer = self._file_path
         else:
             filer = self._file_handler
 
-        # make sure we enable the recovery mode
+        # Make sure we enable the recovery mode
         # pretty sure there is a performance bottleneck running this
         # enabled at all times, so consider to add check for
         # truncated XML files and then enable
@@ -238,10 +233,10 @@ class Xml(BaseParser):
         else:
             vaspxml = etree.parse(filer)
 
-        # do we want to extract data from all calculations (e.g. ionic steps)
+        # Do we want to extract data from all calculations (e.g. ionic steps)
         extract_all = self._extract_all
 
-        # let us start to parse the content
+        # Let us start to parse the content
         self._version = self._fetch_versionw(vaspxml)
         self._parameters['symprec'] = self._fetch_symprecw(vaspxml)
         self._parameters['sigma'] = self._fetch_sigmaw(vaspxml)
@@ -274,15 +269,16 @@ class Xml(BaseParser):
         self._data['born'] = self._fetch_bornw(vaspxml)
 
     def _parsee(self):
-        """Performs parsing in an event driven fashion on the XML file.
+        """
+        Performs parsing in an event driven fashion on the XML file.
         Slower, but suitable for bigger files.
 
         """
 
-        # set logger
+        # Set logger
         self._logger.debug('Running parsee.')
 
-        # helper lists
+        # Helper lists
         data = []
         data2 = []
         data3 = []
@@ -290,7 +286,7 @@ class Xml(BaseParser):
         data5 = []
         data6 = []
 
-        # dicts
+        # Dicts
         cell = {}
         pos = {}
         force = {}
@@ -301,7 +297,7 @@ class Xml(BaseParser):
         _dos = {}
         _dos2 = {}
 
-        # bool to control extraction of content
+        # Bool to control extraction of content
         extract_generator = False
         extract_parameters = False
         extract_calculation = False
@@ -349,7 +345,7 @@ class Xml(BaseParser):
         extract_hessian = False
         extract_born = False
 
-        # do we want to extract data from all calculations (e.g. ionic steps)
+        # Do we want to extract data from all calculations (e.g. ionic steps)
         extract_all = self._extract_all
 
         if self._file_handler is None:
@@ -357,10 +353,10 @@ class Xml(BaseParser):
         else:
             filer = self._file_handler
 
-        # index that control the calculation step (e.g. ionic step)
+        # Index that control the calculation step (e.g. ionic step)
         calc = 1
         for event, element in etree.iterparse(filer, events=('start', 'end')):
-            # set extraction points (what to read and when to read it)
+            # Set extraction points (what to read and when to read it)
             # here we also set the relevant data elements when the tags
             # close when they contain more than one element
             if event == 'start' and element.tag == 'generator':
@@ -387,7 +383,7 @@ class Xml(BaseParser):
                 data3 = []
                 data4 = []
                 data5 = []
-                # update index for the calculation
+                # Update index for the calculation
                 calc = calc + 1
                 extract_calculation = False
             if event == 'start' and element.tag == 'array' \
@@ -395,7 +391,7 @@ class Xml(BaseParser):
                 extract_species = True
             if event == 'end' and element.tag == 'array' \
                and element.attrib.get('name') == 'atoms':
-                # only need every other element (element, not atomtype)
+                # Only need every other element (element, not atomtype)
                 self._lattice['species'] = self._convert_species(data[::2])
                 data = []
                 extract_species = False
@@ -408,7 +404,7 @@ class Xml(BaseParser):
             if event == 'end' and element.tag == 'projected':
                 extract_projected = False
 
-            # now fetch the data
+            # Now fetch the data
             if extract_generator:
                 try:
                     if event == 'start' and element.attrib['name'] == 'version':
@@ -464,7 +460,7 @@ class Xml(BaseParser):
                     pass
 
             if extract_calculation:
-                # it would be very tempting just to fill the data and disect
+                # It would be very tempting just to fill the data and disect
                 # it later, would be faster, but it is not so easy since
                 # we do not know how many calculations have been performed
                 # or how many scteps there are per calculation
@@ -473,7 +469,7 @@ class Xml(BaseParser):
                     extract_dos = True
                 if event == 'end' and element.tag == 'total' and extract_dos:
                     if data2:
-                        # only store energy for one part as
+                        # Only store energy for one part as
                         # this is the same for both
                         dos_ispin = self._convert_array2D_f(data, 3)
                         _dos['energy'] = dos_ispin[:, 0]
@@ -502,22 +498,22 @@ class Xml(BaseParser):
                         sys.exit(self.ERROR_NO_SPECIES)
                     if data2:
                         dos_ispin = self._convert_array2D_f(data, 10)
-                        # do not need the energy term (similar to total)
+                        # Do not need the energy term (similar to total)
                         _dos['partial'] = np.asarray(
                             np.split(dos_ispin[:, 1:10], num_atoms))
                         dos_ispin = self._convert_array2D_f(data2, 10)
-                        # do not need the energy term (similar to total)
+                        # Do not need the energy term (similar to total)
                         _dos2['partial'] = np.asarray(
                             np.split(dos_ispin[:, 1:10], num_atoms))
                     else:
                         dos_ispin = self._convert_array2D_f(data, 10)
-                        # do not need the energy term (similar to total)
+                        # Do not need the energy term (similar to total)
                         _dos['partial'] = np.asarray(
                             np.split(dos_ispin[:, 1:10], num_atoms))
                     data = []
                     data2 = []
                 if event == 'end' and element.tag == 'dos' and extract_dos:
-                    # check the Fermi level
+                    # Check the Fermi level
                     if len(data6) == 1:
                         fermi_level = self._convert_f(data6[0])
                     elif len(data6) > 1:
@@ -551,7 +547,7 @@ class Xml(BaseParser):
                     extract_dos_specific = True
                 if event == 'end' and element.tag == 'total' and extract_dos_specific:
                     if data2:
-                        # only store energy for one part as
+                        # Only store energy for one part as
                         # this is the same for both
                         dos_ispin = self._convert_array2D_f(data, 3)
                         _dos['energy'] = dos_ispin[:, 0]
@@ -580,22 +576,22 @@ class Xml(BaseParser):
                         sys.exit(self.ERROR_NO_SPECIES)
                     if data2:
                         dos_ispin = self._convert_array2D_f(data, 10)
-                        # do not need the energy term (similar to total)
+                        # Do not need the energy term (similar to total)
                         _dos['partial'] = np.asarray(
                             np.split(dos_ispin[:, 1:10], num_atoms))
                         dos_ispin = self._convert_array2D_f(data2, 10)
-                        # do not need the energy term (similar to total)
+                        # Do not need the energy term (similar to total)
                         _dos2['partial'] = np.asarray(
                             np.split(dos_ispin[:, 1:10], num_atoms))
                     else:
                         dos_ispin = self._convert_array2D_f(data, 10)
-                        # do not need the energy term (similar to total)
+                        # Do not need the energy term (similar to total)
                         _dos['partial'] = np.asarray(
                             np.split(dos_ispin[:, 1:10], num_atoms))
                     data = []
                     data2 = []
                 if event == 'end' and element.tag == 'dos' and extract_dos_specific:
-                    # check the Fermi level
+                    # Check the Fermi level
                     if len(data6) == 1:
                         fermi_level = self._convert_f(data6[0])
                     elif len(data6) > 1:
@@ -717,7 +713,7 @@ class Xml(BaseParser):
                     self._data['dynmat'] = dynmat
                     extract_dynmat = False
                 if event == 'start' and element.tag == 'array':
-                    # a bit of special threatment here as there is
+                    # A bit of special threatment here as there is
                     # an array element without attributes, so we get
                     # KeyErrors
                     try:
@@ -726,7 +722,7 @@ class Xml(BaseParser):
                     except KeyError:
                         pass
                 if event == 'end' and element.tag == 'array':
-                    # again a bit special
+                    # Again a bit special
                     try:
                         if element.attrib['name'] == 'born_charges':
                             num_atoms = 0
@@ -744,9 +740,9 @@ class Xml(BaseParser):
                     except KeyError:
                         pass
 
-                # now extract data
+                # Now extract data
                 if extract_scstep:
-                    # extrapolated energy
+                    # Extrapolated energy
                     if event == 'start' and element.tag == 'i' and \
                        element.attrib['name'] == 'e_0_energy':
                         extract_e_0_energy = True
@@ -755,7 +751,7 @@ class Xml(BaseParser):
                         extract_e_0_energy = False
                     if extract_e_0_energy:
                         data3.append(element)
-                    # free energy
+                    # Free energy
                     if event == 'start' and element.tag == 'i' and \
                        element.attrib['name'] == 'e_fr_energy':
                         extract_e_fr_energy = True
@@ -808,15 +804,15 @@ class Xml(BaseParser):
                         data.append(element)
 
                 if extract_energies:
-                    # extrapolated energy
+                    # Extrapolated energy
                     if event == 'start' and element.tag == 'i' and \
                        element.attrib['name'] == 'e_0_energy':
                         totens[calc].update({'energy_extrapolated_final': float(element.text)})
-                    # free energy
+                    # Free energy
                     if event == 'start' and element.tag == 'i' and \
                        element.attrib['name'] == 'e_fr_energy':
                         totens[calc].update({'energy_free_final': float(element.text)})
-                    # energy without entropy
+                    # Energy without entropy
                     if event == 'start' and element.tag == 'i' and \
                        element.attrib['name'] == 'e_wo_entrp':
                         totens[calc].update({'energy_no_entropy_final': float(element.text)})
@@ -932,7 +928,7 @@ class Xml(BaseParser):
                         data.append(element)
 
                 if extract_projected:
-                    # make sure we skip the first entry containing
+                    # Make sure we skip the first entry containing
                     # the eigenvalues (already stored at this point)
                     if event == 'end' and element.tag == 'eigenvalues':
                         extract_eig_proj = True
@@ -1100,38 +1096,7 @@ class Xml(BaseParser):
                     if event == 'start' and element.tag == 'r':
                         data2.append(element)
 
-        # now we need to update some elements
-        # for static runs, initial is equal to last
-        # if cell:
-        #     if len(cell) == 1:
-        #         cell[2] = cell[1]
-        # if pos:
-        #     if len(pos) == 1:
-        #         pos[2] = pos[1]
-        # if force:
-        #     if len(force) == 1:
-        #         force[2] = force[1]
-        # if stress:
-        #     if len(stress) == 1:
-        #         stress[2] = stress[1]
-        # if totens:
-        #     if len(totens) == 1:
-        #         totens[2] = totens[1]
-
-        # if not extract_all:
-        #     # only save initial and last
-        #     if cell:
-        #         cell = {key: np.asarray(cell[key]) for key in {1, 2}}
-        #     if pos:
-        #         pos = {key: np.asarray(pos[key]) for key in {1, 2}}
-        #     if force:
-        #         force = {key: force[key] for key in {1, 2}}
-        #     if stress:
-        #         stress = {key: stress[key] for key in {1, 2}}
-        #     if totens:
-        #         totens = {key: totens[key] for key in {1, 2}}
-
-        # if any dict is empty, set to zero
+        # If any dict is empty, set to zero
         if not cell:
             cell = None
         if not pos:
@@ -1143,7 +1108,7 @@ class Xml(BaseParser):
         if not totens:
             totens = None
 
-        # store
+        # Store
         self._lattice['unitcell'] = cell
         self._lattice['positions'] = pos
         self._data['forces'] = force
@@ -1153,7 +1118,8 @@ class Xml(BaseParser):
         return
 
     def _fetch_versionw(self, xml):
-        """Fetch and set version using etree
+        """
+        Fetch and set version using etree.
 
         Parameters
         ----------
@@ -1177,10 +1143,13 @@ class Xml(BaseParser):
         if entry is None:
             return None
 
-        return entry.text
+        version = entry.text
+
+        return version
     
     def _fetch_symprecw(self, xml):
-        """Fetch and set symprec using etree
+        """
+        Fetch and set symprec using etree.
 
         Parameters
         ----------
@@ -1210,7 +1179,8 @@ class Xml(BaseParser):
         return symprec
 
     def _fetch_sigmaw(self, xml):
-        """Fetch and set sigma using etree
+        """
+        Fetch and set sigma using etree.
 
         Parameters
         ----------
@@ -1241,7 +1211,8 @@ class Xml(BaseParser):
         return sigma
 
     def _fetch_nelmw(self, xml):
-        """Fetch and set nelm using etree
+        """
+        Fetch and set nelm using etree.
 
         Parameters
         ----------
@@ -1273,7 +1244,8 @@ class Xml(BaseParser):
         return nelm
 
     def _fetch_nsww(self, xml):
-        """Fetch and set nsw using etree
+        """
+        Fetch and set nsw using etree.
 
         Parameters
         ----------
@@ -1288,6 +1260,7 @@ class Xml(BaseParser):
         Notes
         -----
         Maximum number of eletronic steps. This is needed for checking ionic convergence. 
+
         """
 
         entry = self._find(
@@ -1302,7 +1275,8 @@ class Xml(BaseParser):
         return nsw
 
     def _fetch_ispinw(self, xml):
-        """Fetch and set ispin using etree
+        """
+        Fetch and set ispin using etree.
 
         Parameters
         ----------
@@ -1332,7 +1306,8 @@ class Xml(BaseParser):
         return ispin
 
     def _fetch_ismearw(self, xml):
-        """Fetch and set ismear using etree
+        """
+        Fetch and set ismear using etree.
 
         Parameters
         ----------
@@ -1363,7 +1338,8 @@ class Xml(BaseParser):
         return ismear
 
     def _fetch_nbandsw(self, xml):
-        """Fetch and set nbands using etree
+        """
+        Fetch and set nbands using etree.
 
         Parameters
         ----------
@@ -1392,7 +1368,8 @@ class Xml(BaseParser):
         return nbands
 
     def _fetch_nelectw(self, xml):
-        """Fetch and set nelect using etree.
+        """
+        Fetch and set nelect using etree.
 
         Parameters
         ----------
@@ -1422,7 +1399,8 @@ class Xml(BaseParser):
         return nelect
 
     def _fetch_systemw(self, xml):
-        """Fetch and set system using etree.
+        """
+        Fetch and set system using etree.
 
         Parameters
         ----------
@@ -1452,7 +1430,8 @@ class Xml(BaseParser):
         return system
 
     def _fetch_bornw(self, xml):
-        """Fetch the Born effetive charges.
+        """
+        Fetch the Born effetive charges using etree.
 
         Parameters
         ----------
@@ -1491,7 +1470,8 @@ class Xml(BaseParser):
         return born
 
     def _fetch_upfsw(self, xml, extract_all=False):
-        """Fetch the unitcell, atomic positions, force and stress.
+        """
+        Fetch the unitcell, atomic positions, force and stress using etree.
 
         Parameters
         ----------
@@ -1685,7 +1665,8 @@ class Xml(BaseParser):
         return cell, pos, force, stress
 
     def _fetch_speciesw(self, xml):
-        """Fetch the atomic species
+        """
+        Fetch the atomic species using etree.
 
         Parameters
         ----------
@@ -1711,7 +1692,8 @@ class Xml(BaseParser):
         return spec
 
     def _fetch_hessian(self, xml):
-        """Fetch the hessian.
+        """
+        Fetch the hessian using etree.
 
         Parameters
         ----------
@@ -1746,7 +1728,8 @@ class Xml(BaseParser):
         return hessian
 
     def _fetch_dynmatw(self, xml):
-        """Fetch the dynamical matrix data.
+        """
+        Fetch the dynamical matrix data using etree.
 
         Parameters
         ----------
@@ -1792,7 +1775,8 @@ class Xml(BaseParser):
 
     def _fetch_kpointsw(self, xml,
                         path='kpoints/varray[@name="kpointlist"]/v'):
-        """Fetch the kpoints.
+        """
+        Fetch the kpoints using etree.
 
         Parameters
         ----------
@@ -1819,7 +1803,8 @@ class Xml(BaseParser):
         return kpoints
 
     def _fetch_kpointsww(self, xml, path='kpoints/varray[@name="weights"]/v'):
-        """Fetch the kpoint weights.
+        """
+        Fetch the kpoint weights using etree.
 
         Parameters
         ----------
@@ -1871,7 +1856,8 @@ class Xml(BaseParser):
         return kpointdiv
 
     def _fetch_eigenvaluesw(self, xml):
-        """Fetch the eigenvalues.
+        """
+        Fetch the eigenvalues using etree.
 
         Parameters
         ----------
@@ -1887,17 +1873,17 @@ class Xml(BaseParser):
 
         """
 
-        # spin 1
+        # Spin 1
         entry_ispin1 = self._findall(
             xml, './/calculation/eigenvalues/array/set/'
             'set[@comment="spin 1"]/set/r')
 
-        # spin 2
+        # Spin 2
         entry_ispin2 = self._findall(
             xml, './/calculation/eigenvalues/array/set/'
             'set[@comment="spin 2"]/set/r')
 
-        # if we do not find spin 1 entries return right away
+        # If we do not find spin 1 entries return right away
         if entry_ispin1 is None:
             return None, None
 
@@ -1907,7 +1893,8 @@ class Xml(BaseParser):
         return eigenvalues, occupancies
 
     def _fetch_eigenvalues_specificw(self, xml):
-        """Fetch the eigenvalues at specific k-point grids.
+        """
+        Fetch the eigenvalues at specific k-point grids using etree.
 
         Parameters
         ----------
@@ -1923,12 +1910,12 @@ class Xml(BaseParser):
 
         """
 
-        # spin 1
+        # Spin 1
         entry_ispin1 = self._findall(
             xml, './/calculation/eigenvalues/'
             'eigenvalues/array/set/'
             'set[@comment="spin 1"]/set/r')
-        # spin 2
+        # Spin 2
         entry_ispin2 = self._findall(
             xml, './/calculation/eigenvalues/'
             'eigenvalues/array/set/'
@@ -1945,7 +1932,7 @@ class Xml(BaseParser):
                 path='//calculation/eigenvalues/'
                 'kpoints/varray[@name="weights"]/v')
 
-        # if we do not find spin 1 entries return right away
+        # If we do not find spin 1 entries return right away
         if entry_ispin1 is None:
             return None
 
@@ -1955,7 +1942,8 @@ class Xml(BaseParser):
         return eigenvalues
 
     def _fetch_eigenvelocitiesw(self, xml):
-        """Fetch the eigenvelocities and eigenvalues..
+        """
+        Fetch the eigenvelocities and eigenvalues using etree.
 
         Parameters
         ----------
@@ -1974,19 +1962,19 @@ class Xml(BaseParser):
 
         """
 
-        # spin 1
+        # Spin 1
         entry_ispin1 = self._findall(
             xml, './/calculation/eigenvelocities/'
             'eigenvalues/array/set/'
             'set[@comment="spin 1"]/set/r')
 
-        # spin 2
+       # Spin 2
         entry_ispin2 = self._findall(
             xml, './/calculation/eigenvelocities/'
             'eigenvalues/array/set/'
             'set[@comment="spin 2"]/set/r')
 
-        # if we do not find spin 1 entries return right away
+        # If we do not find spin 1 entries return right away
         if entry_ispin1 is None:
             return None
 
@@ -2006,7 +1994,8 @@ class Xml(BaseParser):
         return eigenvelocities
 
     def _fetch_projectorsw(self, xml):
-        """Fetch the projectors.
+        """
+        Fetch the projectors using etree.
 
         Parameters
         ----------
@@ -2021,17 +2010,17 @@ class Xml(BaseParser):
 
         """
 
-        # projectors spin 1
+        # Projectors spin 1
         entry_ispin1 = self._findall(
             xml, './/calculation/projected/array/set/'
             'set[@comment="spin1"]/set/set/r')
 
-        # projectors spin 2
+        # Projectors spin 2
         entry_ispin2 = self._findall(
             xml, './/calculation/projected/array/set/'
             'set[@comment="spin2"]/set/set/r')
 
-        # if we do not find spin 1 entries return right away
+        # If we do not find spin 1 entries return right away
         if entry_ispin1 is None:
             return None
 
@@ -2039,7 +2028,8 @@ class Xml(BaseParser):
         return projectors
 
     def _fetch_totensw(self, xml):
-        """Fetch the total energies
+        """
+        Fetch the total energies using etree.
 
         Parameters
         ----------
@@ -2054,7 +2044,7 @@ class Xml(BaseParser):
 
         """
 
-        # fetch the energies for all electronic
+        # Fetch the energies for all electronic
         # steps, due to the fact that the number of steps is not the
         # same between each calculation we need to look at all the
         # children
@@ -2069,7 +2059,7 @@ class Xml(BaseParser):
         if entries is None:
             return None
 
-        # this most likely takes too long for very long fpmd calculations,
+        # This most likely takes too long for very long fpmd calculations,
         # so consider putting in a flag that only extract the
         # energies from each step in the calculation and not the scsteps as
         # well
@@ -2099,7 +2089,8 @@ class Xml(BaseParser):
         return energies
 
     def _fetch_dosw(self, xml):
-        """Fetch the density of states.
+        """
+        Fetch the density of states using etree.
 
         Parameters
         ----------
@@ -2114,7 +2105,7 @@ class Xml(BaseParser):
 
         """
 
-        # fetch the Fermi level
+        # Fetch the Fermi level
         entry = self._find(xml, './/calculation/dos/i[@name="efermi"]')
 
         if entry is not None:
@@ -2122,27 +2113,27 @@ class Xml(BaseParser):
         else:
             fermi_level = None
 
-        # spin 1
+        # Spin 1
         entry_total_ispin1 = self._findall(
             xml, './/calculation/dos/total/array/set/set[@comment="spin 1"]/r')
 
-        # spin 2
+        # Spin 2
         entry_total_ispin2 = self._findall(
             xml, './/calculation/dos/total/array/set/set[@comment="spin 2"]/r')
 
-        # partial spin 1
+        # Partial spin 1
         entry_partial_ispin1 = self._findall(
             xml,
             './/calculation/dos/partial/array/set/set/set[@comment="spin 1"]/r'
         )
 
-        # partial spin 2
+        # Partial spin 2
         entry_partial_ispin2 = self._findall(
             xml,
             './/calculation/dos/partial/array/set/set/set[@comment="spin 2"]/r'
         )
 
-        # if no entries for spin 1, eject right away
+        # If no entries for spin 1, eject right away
         if entry_total_ispin1 is None:
             return None, None
 
@@ -2171,31 +2162,31 @@ class Xml(BaseParser):
         else:
             fermi_level = None
 
-        # spin 1
+        # Spin 1
         entry_total_ispin1 = self._findall(
             xml,
             './/calculation/dos[@comment="interpolated"]/total/array/set/set[@comment="spin 1"]/r'
         )
 
-        # spin 2
+        # Spin 2
         entry_total_ispin2 = self._findall(
             xml,
             './/calculation/dos[@comment="interpolated"]/total/array/set/set[@comment="spin 2"]/r'
         )
 
-        # partial spin 1
+        # Partial spin 1
         entry_partial_ispin1 = self._findall(
             xml,
             './/calculation/dos[@comment="interpolated"]/partial/array/set/set/set[@comment="spin 1"]/r'
         )
 
-        # partial spin 2
+        # Partial spin 2
         entry_partial_ispin2 = self._findall(
             xml,
             './/calculation/dos[@comment="interpolated"]/partial/array/set/set/set[@comment="spin 2"]/r'
         )
 
-        # if no entries for spin 1, eject right away
+        # If no entries for spin 1, eject right away
         if entry_total_ispin1 is None:
             return dos, None
 
@@ -2210,7 +2201,8 @@ class Xml(BaseParser):
     def _extract_dos(self, entry_total_ispin1, entry_total_ispin2,
                      entry_partial_ispin1, entry_partial_ispin2, fermi_level,
                      num_atoms):
-        """Extract the density of states.
+        """
+        Extract the density of states.
 
         Parameters
         ----------
@@ -2290,7 +2282,8 @@ class Xml(BaseParser):
         return dos
 
     def _fetch_dielectricsw(self, xml, method='dft', transfer=None):
-        """ Fetch the dielectric function from the VASP XML file
+        """
+        Fetch the dielectric function using etree.
 
         Parameters
         ----------
@@ -2473,7 +2466,8 @@ class Xml(BaseParser):
         #     return diel_imag, diel_real
 
     def _extract_eigenvalues(self, spin1, spin2, num_kpoints):
-        """Extract the eigenvalues.
+        """
+        Extract the eigenvalues.
 
         Parameters
         ----------
@@ -2565,7 +2559,8 @@ class Xml(BaseParser):
             return eigenvalues, None
 
     def _extract_eigenvelocities(self, spin1, spin2, num_kpoints):
-        """Extract the eigenvalues and eigenvelocities.
+        """
+        Extract the eigenvalues and eigenvelocities.
 
         Parameters
         ----------
@@ -2587,23 +2582,23 @@ class Xml(BaseParser):
 
         """
 
-        # check if we have asigned ispin
+        # Check if we have asigned ispin
         if self._parameters['ispin'] is None:
             self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_ISPIN])
             sys.exit(self.ERROR_NO_ISPIN)
 
-        # then check if we have asigned nbands
+        # Then check if we have asigned nbands
         if self._parameters['nbands'] is None:
             self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_NBANDS])
             sys.exit(self.ERROR_NO_NBANDS)
 
-        # ispin
+        # Value of ispin
         ispin = self._parameters['ispin']
 
-        # number of bands
+        # Number of bands
         num_bands = self._parameters['nbands']
 
-        # set dicts
+        # Set dicts
         eigenvelocities = {}
 
         data = []
@@ -2621,9 +2616,9 @@ class Xml(BaseParser):
             data.append(self._convert_array2D_f(spin2, 4))
             data[1] = np.asarray(np.split(data[1], num_kpoints))
 
-        # convert to numpy arrays
+        # Convert to numpy arrays
         data = np.asarray(data)
-        # swap axis if the band index should be before the kpoint index
+        # Swap axis if the band index should be before the kpoint index
         if not self._k_before_band:
             data = np.swapaxes(data, 1, 2)
         if spin2 is not None:
@@ -2635,7 +2630,8 @@ class Xml(BaseParser):
         return eigenvelocities
 
     def _extract_projectors(self, spin1, spin2):
-        """Extract the projectors.
+        """
+        Extract the projectors.
 
         Parameters
         ----------
@@ -2655,39 +2651,39 @@ class Xml(BaseParser):
 
         """
 
-        # first check if we have extracted the kpoints
+        # First check if we have extracted the kpoints
         if self._lattice['kpoints'] is None:
             self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_KPOINTS])
             sys.exit(self.ERROR_NO_KPOINTS)
 
-        # then check if we have asigned ispin
+        # Then check if we have asigned ispin
         if self._parameters['ispin'] is None:
             self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_ISPIN])
             sys.exit(self.ERROR_NO_ISPIN)
 
-        # then check if we have asigned nbands
+        # Then check if we have asigned nbands
         if self._parameters['nbands'] is None:
             self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_NBANDS])
             sys.exit(self.ERROR_NO_NBANDS)
 
         num_atoms = 0
-        # also need the number of atoms if the projected values are supplied
+        # Also need the number of atoms if the projected values are supplied
         if self._lattice['species'] is None:
             self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_NBANDS])
             sys.exit(self.ERROR_NO_NBANDS)
         else:
             num_atoms = self._lattice['species'].shape[0]
 
-        # number of kpoints to disect the eigenvalue sets later
+        # Number of kpoints to disect the eigenvalue sets later
         num_kpoints = self._lattice['kpoints'].shape[0]
 
-        # ispin
+        # Value of ispin
         ispin = self._parameters['ispin']
 
-        # number of bands
+        # Number of bands
         num_bands = self._parameters['nbands']
 
-        # set dicts
+        # Set dicts
         projectors = {}
 
         pdata = []
@@ -2707,10 +2703,10 @@ class Xml(BaseParser):
             pdata[1] = np.asarray(np.split(pdata[1], num_kpoints))
             pdata[1] = np.asarray(np.split(pdata[1], num_bands, axis=1))
 
-        # convert to numpy arrays
+        # Convert to numpy arrays
         pdata = np.asarray(pdata)
-        # swap axis if the band index should be before the kpoint index
-        # make sure atomic index is first
+        # Swap axis if the band index should be before the kpoint index
+        # and make sure atomic index is first
         pdata = np.swapaxes(pdata, 0, 3)
         pdata = np.swapaxes(pdata, 1, 3)
         if not self._k_before_band:
@@ -2725,7 +2721,8 @@ class Xml(BaseParser):
         return projectors
 
     def _convert_array_i(self, entry):
-        """Convert the input entry to numpy array
+        """
+        Convert the input entry to numpy array.
 
         Parameters
         ----------
@@ -2754,7 +2751,8 @@ class Xml(BaseParser):
         return data
 
     def _convert_array_f(self, entry):
-        """Convert the input entry to numpy array
+        """
+        Convert the input entry to numpy array.
 
         Parameters
         ----------
@@ -2783,7 +2781,8 @@ class Xml(BaseParser):
         return data
 
     def _convert_array1D_i(self, entry):
-        """Convert the input entry to numpy array
+        """
+        Convert the input entry to numpy array.
 
         Parameters
         ----------
@@ -2814,7 +2813,8 @@ class Xml(BaseParser):
         return data
 
     def _convert_array1D_f(self, entry):
-        """Convert the input entry to numpy array
+        """
+        Convert the input entry to numpy array.
 
         Parameters
         ----------
@@ -2846,7 +2846,8 @@ class Xml(BaseParser):
         return data
 
     def _convert_array2D_f(self, entry, dim):
-        """Convert the input entry to numpy array
+        """
+        Convert the input entry to numpy array.
 
         Parameters
         ----------
@@ -2881,7 +2882,8 @@ class Xml(BaseParser):
         return data
 
     def _convert_f(self, entry):
-        """Convert the input entry to a float.
+        """
+        Convert the input entry to a float.
 
         Parameters
         ----------
@@ -2905,7 +2907,8 @@ class Xml(BaseParser):
         return data
 
     def _convert_i(self, entry):
-        """Convert the input entry to an integer.
+        """
+        Convert the input entry to an integer.
 
         Parameters
         ----------
@@ -2929,7 +2932,8 @@ class Xml(BaseParser):
         return data
 
     def _convert_species(self, entry):
-        """Set the atomic species to the correct value
+        """
+        Set the atomic species to the correct value.
 
         Parameters
         ----------
@@ -2961,7 +2965,24 @@ class Xml(BaseParser):
         return species
 
     def get_forces(self, status):
+        """
+        Get force on ions from the stored data dict.
 
+        Parameters
+        ----------
+        status : {'all', 'initial', 'final'}
+            A string containing which forces to return. For `all`, forces for all ionic steps
+            are returned. For `initial` and `final`, the forces for the first and last ionic step
+            is returned, respectively.
+        
+        Returns
+        -------
+        forces : dict or ndarray
+            Returns a dict of NumPy arrays if `status` is `all`, otherwise a NumPy array. The keys in the dict
+            represent the ionic steps. The first index in the ndarray is the ions, while the second index
+            is each direction used for thus calculation. Forces are returned in units of eV/AA.
+
+        """
         forces = self._data['forces']
         if forces is None:
             return None
@@ -2975,6 +2996,24 @@ class Xml(BaseParser):
             return forces
 
     def get_stress(self, status):
+        """
+        Get stress in unit cell from the stored data dict.
+
+        Parameters
+        ----------
+        status : {'all', 'initial', 'final'}
+            A string containing which stress to return. For `all`, stress for all ionic steps
+            are returned. For `initial` and `final`, the stress for the first and last ionic step
+            is returned, respectively.
+        
+        Returns
+        -------
+        stress : dict or ndarray
+            Returns a dict of NumPy arrays if `status` is `all`, otherwise a NumPy array. The keys in the dict
+            represent the ionic steps. The first index in the ndarray represent the lattice vectors.
+            Stress is returned in units of kB.
+
+        """
 
         stress = self._data['stress']
         if stress is None:
@@ -2989,47 +3028,134 @@ class Xml(BaseParser):
             return stress
 
     def get_hessian(self):
+        """
+        Return the Hessian matrix.
 
+        Returns
+        -------
+        hessian : ndarray
+            A NumPy array that has a dimension of three times number of atoms squared.
+
+        """
         hessian = self._data['hessian']
         return hessian
 
     def get_dynmat(self):
+        """
+        Return the eigenvalues and eigenvectors of the dynamical matrix.
+        
+        Returns
+        -------
+        dynmat : dict
+            A dict containing `eigenvalues` and `eigenvectors` as keys. Both contain
+            NumPy arrays with dimensions three times number of atoms for the `eigenvalues` and
+            three times the number of atoms first the first and second index for the `eigenvectors`.
+
+        """
 
         dynmat = self._data['dynmat']
         return dynmat
 
     def get_dielectrics(self):
+        """
+        Return the dielectric function.
 
+        Returns
+        -------
+        dielectrics : dict
+            A dict containing the keys `real`, `imag`, `epsilon` and `epsilon_ion`.
+            See respective `get_` methods.
+        """
+        
         dielectrics = self._data['dielectrics']
         return dielectrics
 
     def get_epsilon(self):
-
+        """
+        Return the """ 
         epsilon = self._data['dielectrics']['epsilon']
         return epsilon
 
     def get_epsilon_ion(self):
+        """
+        Return the ionic contribution to the macroscopic dielectric tensor.
+
+        Returns
+        -------
+        epsilon_ion : ndarray
+            A 3x3 tensor containing the ionic contribution to the macroscopic
+            dielectric tensor.
+
+        """
 
         epsilon_ion = self._data['dielectrics']['epsilon_ion']
         return epsilon_ion
 
     def get_fermi_level(self):
+        """
+        Return the Fermi level from the density of states.
 
+        Returns
+        -------
+        fermi_level : float
+            The Fermi level in eV calculated from the density of states routines.
+
+        """
+        
         fermi_level = self._data['dos']['total']['fermi_level']
         return fermi_level
 
     def get_fermi_level_specific(self):
+        """
+        Return the Fermi level from the density of states calculated
+        using the grid shift interpolation.
+        
+        Returns
+        -------
+        fermi_level_specific : float
+            The Fermi level in eV from the density of states.
+
+        """
 
         fermi_level_specific = self._data['dos_specific']['total'][
             'fermi_level']
         return fermi_level_specific
 
     def get_born(self):
+        """
+        Return the Born effective charges.
+        
+        Returns
+        -------
+        born : ndarray
+            A NumPy array where the first index runs over the ions, while the two next
+            are the tensor indexes representing the atomic displacements along the unit
+            cell axis.
+        
+        """
 
         born = self._data['born']
         return born
 
     def get_unitcell(self, status):
+        """
+        Return the unit cell.
+
+        Parameters
+        ----------
+        status : {'all', 'initial', 'final'}
+            A string containing which unitcell(s) to return. For `all`, unitcells for all ionic steps
+            are returned. For `initial` and `final`, the unitcell for the first and last ionic step
+            is returned, respectively. 
+
+        Returns
+        -------
+        unitcell : dict or ndarray
+            Returns a dict of NumPy arrays if `status` is `all`, otherwise a NumPy array. The keys in the dict
+            represent the ionic steps. The first index of the NumPy array represent the lattice vector, 
+            while the second represent the coordinates, using zero as a reference of each lattice vector. 
+            
+        """
 
         unitcell = self._lattice['unitcell']
         if unitcell is None:
@@ -3044,6 +3170,24 @@ class Xml(BaseParser):
             return unitcell
 
     def get_positions(self, status):
+        """
+        Return the positions of the ions.
+
+        Parameters
+        ----------
+        status : {'all', 'initial', 'final'}
+            A string containing which positions to return. For `all`, positionss for all ionic steps
+            are returned. For `initial` and `final`, the positions for the first and last ionic step
+            is returned, respectively. 
+
+        Returns
+        -------
+        positions : dict or ndarray
+            Returns a dict of NumPy arrays if `status` is `all`, otherwise a NumPy array. The keys in the dict
+            represent the ionic steps. The first index of the NumPy array represent the ion, 
+            while the second represent the positional coordinates, respectively.
+   
+        """
 
         positions = self._lattice['positions']
         if positions is None:
@@ -3058,32 +3202,114 @@ class Xml(BaseParser):
             return positions
 
     def get_species(self):
+        """
+        Return species.
+
+        Returns
+        -------
+        species : list
+            A list containing the atomic number for each ion.
+
+        """
 
         species = self._lattice['species']
         return species
 
     def get_lattice(self, status):
+        """
+        Return the lattice.
+
+        Composed of species, unitcell and positions. See
+        separate documentation, respectively.
+
+        Returns
+        -------
+        lattice : dict
+            A dict composed of keys `unitcell`, `positions` and `species`, each
+            with a value of the unitcell, positions and species, respectively.
+        
+        """
 
         species = self.get_species()
         unitcell = self.get_unitcell(status)
         positions = self.get_positions(status)
-        return {
+        lattice = {
             'unitcell': unitcell,
             'positions': positions,
             'species': species
         }
+        return lattice
 
     def get_kpoints(self):
+        """
+        Return the kpoints.
+
+        Returns
+        -------
+        kpoints : ndarray
+            A NumPy array containing the k-points. First index is the specific k-point, while the
+            second represent the coordinates.
+
+        """
 
         kpoints = self._lattice['kpoints']
         return kpoints
 
     def get_kpointsw(self):
+        """
+        Return the k-point weights.
+
+        Returns
+        -------
+        kpointsw : ndarray
+            A NumPy array containing the weights for each k-point. Index correspond to the
+            returned k-points in `get_kpoints`.
+
+        """
 
         kpointsw = self._lattice['kpointsw']
         return kpointsw
 
     def get_energies(self, status, etype=None, nosc=True):
+        """
+        Return the total energies.
+
+        Paramaeters
+        -----------
+        status : {'all', 'initial', 'final'}
+            A string containing which positions to return. For `all`, positionss for all ionic steps
+            are returned. For `initial` and `final`, the positions for the first and last ionic step
+            is returned, respectively. 
+        etype : {'energy_extrapolated', 'energy_free', 'energy_no_entropy'}
+            The type of total energy to return. The `energy_extrapolated`, `energy_free` and
+            `energy_no_entropy` transfers to `e_0_energy`, `e_fr_energy` and `energy_no_entropy`
+            as printed in the XML file.
+        nosc : bool
+            If `True` we do not return the total energies of all the electronic steps, only the last, 
+            otherwise if `False`.
+
+        Returns
+        -------
+        energies : dict
+            A dict containing the keys `etype`, `etype_final` and `electronic_steps`, each
+            containing NumPy arrays. Since for each ionic run we can have different number of 
+            electronic steps, the array can be staggered. Instead of dealing with staggered 
+            arrays, the array is flattened and an index array, `electronic_steps` is provided 
+            to describe how many elextronic steps was performed for each ionic. 
+            If `nosc` is set to `True` the `electronic_steps` only contain `1` as its elements.
+            The NumPy array for `etype` is the energy in the self consistent electronic
+            cycle and has its ionic step as the first index, while the second index contains 
+            the electronic step. Index for `etype_final` is simplified as this energy
+            is the one after the electronic cycles have been completed and any corrections
+            applied. It only has the ionic steps as its index.
+
+        Notes
+        -----
+        Notice that there is a rather well known bug in VASP causing the energies of
+        `etype` and `etype_final` not to be the same, even though no corrections
+        have been applied. This has been fixed in VASP 6.
+
+        """
 
         if etype is None:
             etype = ['energy_extrapolated']
@@ -3095,6 +3321,45 @@ class Xml(BaseParser):
         return self._get_energies(status, etype, nosc)
 
     def _get_energies(self, status, etype, nosc):
+        """
+        Driver for the `get_energies`.
+
+        Paramaeters
+        -----------
+        status : {'all', 'initial', 'final'}
+            A string containing which positions to return. For `all`, positionss for all ionic steps
+            are returned. For `initial` and `final`, the positions for the first and last ionic step
+            is returned, respectively. 
+        etype : {'energy_extrapolated', 'energy_free', 'energy_no_entropy'}
+            The type of total energy to return. The `energy_extrapolated`, `energy_free` and
+            `energy_no_entropy` transfers to `e_0_energy`, `e_fr_energy` and `energy_no_entropy`
+            as printed in the XML file.
+        nosc : bool
+            If `True` we do not return the total energies of all the electronic steps, only the last, 
+            otherwise if `False`.
+
+        Returns
+        -------
+        energies : dict
+            A dict containing the keys `etype`, `etype_final` and `electronic_steps`, each
+            containing NumPy arrays. Since for each ionic run we can have different number of 
+            electronic steps, the array can be staggered. Instead of dealing with staggered 
+            arrays, the array is flattened and an index array, `electronic_steps` is provided 
+            to describe how many elextronic steps was performed for each ionic. 
+            If `nosc` is set to `True` the `electronic_steps` only contain `1` as its elements.
+            The NumPy array for `etype` is the energy in the self consistent electronic
+            cycle and has its ionic step as the first index, while the second index contains 
+            the electronic step. Index for `etype_final` is simplified as this energy
+            is the one after the electronic cycles have been completed and any corrections
+            applied. It only has the ionic steps as its index.
+
+        Notes
+        -----
+        Notice that there is a rather well known bug in VASP causing the energies of
+        `etype` and `etype_final` not to be the same, even though no corrections
+        have been applied. This has been fixed in VASP 6.
+
+        """
 
         enrgies = self._data['totens']
         if enrgies is None:
@@ -3135,15 +3400,25 @@ class Xml(BaseParser):
                 energies_per_etype = np.append(energies_per_etype, e)
                 electronic_steps = np.append(electronic_steps, steps)
             elif status == 'all':
-                # For all the ionic steps
+                # For all the ionic steps, first sort as the dict for each
+                # ionic step is not necessarily in the right order. We need it to be
+                # incremental in the NumPy array
                 _energies_per_etype = sorted(enrgies.items())
                 for index, element in _energies_per_etype:
+                    # Iterate over incremental ionic steps
+                    # Set the energy after the electronic steps have been completed.
+                    # This can contain corrections and might be different to the last energy
+                    # in the self consistent step.
                     energy_per_etype = np.append(energy_per_etype, element[item+'_final'])
+                    # Then fetch the energies for the electronic steps and how many
+                    # steps was performed
                     if nosc:
                         e = element[item][-1]
                     else:
                         e = element[item]
                         steps = len(e)
+                    # Set the energy for all or just the last electronic step, in
+                    # addition to the electronic steps for this ionic step
                     energies_per_etype = np.append(energies_per_etype, e)
                     electronic_steps = np.append(electronic_steps, steps)
             energies[item+'_final'] = energy_per_etype
@@ -3154,51 +3429,179 @@ class Xml(BaseParser):
         return energies
 
     def get_dos(self):
+        """
+        Return density of states.
+
+        Returns
+        -------
+        dos : dict
+            A dict containing keys `total`, `up` and `down` to represent the total
+            (sum of both spinds) density of states and density of states for the 
+            first and second spin channel, respectively. Each of the values for 
+            the respective keys contain again a dict with the keys `total`, `integrated`,
+            `partial`. These contain NumPy arrays containing the density of states,
+            integrated density of states and partial density of states. In addition,
+            for the topmost key `total` there are in addition to the ones stated above
+            the `energy` key containing a NumPy array of the energy grid that was used to
+            calculate the density of states and `fermi_level` which is the energy
+            of the highest occupied state within the method used to calculate the
+            density of states.
+
+        """
 
         dos = self._data['dos']
         return dos
 
     def get_dos_specific(self):
+        """
+        Return the density of states.
 
+        Dedicated routine to extract the density of states from the grid shift
+        interpolation technique in VASP.
+
+        Returns
+        -------
+        dos_specific : dict
+            See documentation for `get_dos`.
+
+        """
+        
         dos_specific = self._data['dos_specific']
         return dos_specific
 
     def get_eigenvalues(self):
+        """
+        Return the eigenvalues for each k-point.
+
+        Returns
+        -------
+        eigenvalues : ndarray
+            A NumPy array containing the eigenvalues for each k-point used in the
+            calculation.  The first index specifies the respective bands, while the
+            second index specifies the k-point.
+
+        """
 
         eigenvalues = self._data['eigenvalues']
         return eigenvalues
 
     def get_eigenvalues_specific(self):
+        """
+        Return the eigenvalues for each k-point.
 
+        Dedicated routine to extract the eigenvalues from the grid shift
+        interpolation technique in VASP.
+
+        Returns
+        -------
+        eigenvalues_specific : ndarray
+            See documentation for `get_eigenvalues_specific`.
+        
+        """
         eigenvalues_specific = self._data['eigenvalues_specific']
         return eigenvalues_specific
 
     def get_eigenvelocities(self):
+        """
+        Return the eigenvelocities for each k-point.
+
+        The eigenvelocities are the derivatives of the energies with respect to
+        each direction in reciprocal space. Typically used for transport calculations etc.
+
+        Returns
+        -------
+        eigenvelocities : ndarray
+            A NumPy array containing the eigenvalocities, i.e. the derivative with respect
+            to the reciprocal space directions. First index specifies the band index, 
+            second index specifies the k-point on which the derivative is calculated and
+            the final index gives for the first entry the eigenvalues (no derivative), 
+            while for the three next entries the directions.
+        
+        """
 
         eigenvelocities = self._data['eigenvelocities']
         return eigenvelocities
 
     def get_kpoints_specific(self):
+        """
+        Return the kpoints.
+
+        Dedicated routine to extract the interpolation k-points from the grid shift
+        interpolation technique in VASP.
+
+        Returns
+        -------
+        kpoints : ndarray
+            A NumPy array containing the k-points. First index is the specific k-point, while the
+            second represent the coordinates.
+
+        """
 
         kpoints_specific = self._data['kpoints']
         return kpoints_specific
 
     def get_kpointsw_specific(self):
+        """
+        Return the k-point weights.
+
+        Dedicated routine to extract the k-point weights from the grid shift
+        interpolation technique in VASP.
+
+        Returns
+        -------
+        kpointsw : ndarray
+            A NumPy array containing the weights for each k-point. Index correspond to the
+            returned k-points in `get_kpoints`.
+
+        """
 
         kpointsw_specific = self._data['kpointsw']
         return kpointsw_specific
 
     def get_occupancies(self):
+        """
+        Return the occupancies
+
+        Returns
+        -------
+        occupancies : ndarray
+            A NumPy array with the occupancies. First index specify the band, while the second
+            specify the k-point.
+        
+        """
 
         occupancies = self._data['occupancies']
         return occupancies
 
     def get_projectors(self):
+        """
+        Returns the projectors.
+
+        Gives the state projected weights for each band and k-point.
+        
+        Returns
+        -------
+        projectors : ndarray
+            A NumPy array with the state projected weights. First index is the ion
+            index, second index specifies the band, third the k-point and the last
+            the s, py, pz, px etc. projections according to the calculations executed.
+
+        """
 
         projectors = self._data['projectors']
         return projectors
 
     def get_dict(self):
+        """
+        Return a dictionary containing all parsed data.
+
+        Returns
+        -------
+        dictionary : dict
+            A dict containing the `parameters`, `lattice` and `data` which houses
+            the parsed input parameters, lattice properties and all data.
+
+        """
 
         dictionary = {
             'parameters': self._parameters,
@@ -3209,11 +3612,30 @@ class Xml(BaseParser):
         return dictionary
 
     def get_parameters(self):
+        """
+        Return the parsed input parameters.
+
+        Returns
+        -------
+        parameters : dict
+            A dict containing the input parameters.
+
+        """
 
         parameters = self._parameters
         return parameters
 
     def get_version(self):
+        """
+        Return the VASP version.
+
+        Returns
+        -------
+        version : string
+            A string containing the VASP version.
+
+        """
+
         from re import compile
 
         version = self._version.strip()
@@ -3222,9 +3644,11 @@ class Xml(BaseParser):
         pattern = r'(\d+)\.(\d+)\.(\d+)'
         match = compile(pattern)
 
-        return match.search(version).group(0)
+        version = match.search(version).group(0)
+        return version
     
     def _check_calc_status(self, status):
+        """Check if the supplied status flag is valid."""
         allowed_entries = ['initial', 'last', 'all']
         if status not in allowed_entries:
             self._logger.error(

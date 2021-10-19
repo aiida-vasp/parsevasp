@@ -104,7 +104,6 @@ def test_incar_parameters_file_object(incar_parser_file_object):
     assert dictionary['algo'] == 'V'
 
 
-@pytest.mark.incar
 def test_incar_from_dict(incar_dict):
     """Test passing a dictionary.
 
@@ -119,7 +118,6 @@ def test_incar_from_dict(incar_dict):
     assert str(sorted(incar_io.get_dict())) == str(sorted(comp_dict))
 
 
-@pytest.mark.incar
 def test_from_string():
     """Test passing a string.
 
@@ -133,7 +131,6 @@ def test_from_string():
     assert not incar_dict
 
 
-@pytest.mark.incar
 def test_parser():
     """Test passing a more complex string.
 
@@ -157,7 +154,6 @@ def test_parser():
     assert 'float' not in incar_dict
 
 
-@pytest.mark.incar
 def test_parser_invalid_tag():
     """Test passing a tag that is not recognized.
 
@@ -168,7 +164,6 @@ def test_parser_invalid_tag():
         parsed = Incar(incar_string=test_string)
 
 
-@pytest.mark.incar
 def test_parser_invalid_tag():
     """Test passing a tag that is not recognized and its override.
 
@@ -180,7 +175,6 @@ def test_parser_invalid_tag():
     assert list(incar_dict.keys())[0] == 'someinvalidtag'
 
 
-@pytest.mark.incar
 def test_incar_item():
     """Test the incar item class.
 

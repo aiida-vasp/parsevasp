@@ -58,6 +58,13 @@ class Poscar(BaseParser):
             breaks if multiline, otherwise the POSCAR will be mangled.
         poscar_dict : dict
             A dictionary containing the POSCAR entries.
+        file_path : string
+            A string containing the file path to the file that is going to be parsed.
+        file_handler : object
+            A file like object that acts as a handler for the content to be parsed.
+        logger : object
+            A logger object if you would like to use an external logger for messages
+            ejected inside this parser.
         prec : int, optional
             An integer describing how many decimals the users wants
             when printing files.
@@ -78,21 +85,21 @@ class Poscar(BaseParser):
         self._poscar_string = poscar_string
         self._conserve_order = conserve_order
 
-        # check that only one argument is supplied
+        # Check that only one argument is supplied
         if (self._poscar_string is not None and self._poscar_dict is not None) \
            or (self._poscar_string is not None and self._file_path is not None) \
            or (self._poscar_dict is not None and self._file_path is not None and self._file_handler is not None):
             self._logger.error(
                 self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
             sys.exit(self.ERROR_USE_ONE_ARGUMENT)
-        # check that at least one is suplpied
+        # Check that at least one is suplpied
         if (self._poscar_string is None and self._poscar_dict is None
                 and self._file_path is None and self._file_handler is None):
             self._logger.error(
                 self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
             sys.exit(self.ERROR_USE_ONE_ARGUMENT)
 
-        # set precision
+        # Set precision
         if prec is None:
             self._prec = 12
         else:
@@ -100,21 +107,21 @@ class Poscar(BaseParser):
         self._width = self._prec + 4
 
         if self._file_path is not None or self._file_handler is not None:
-            # create dictionary from a file
+            # Create dictionary from a file
             self._poscar_dict = self._from_file()
 
         if self._poscar_string is not None:
-            # create dictionary from a string
+            # Create dictionary from a string
             self._poscar_dict = self._from_string()
 
         if self._poscar_dict is not None:
-            # update site entries to Site objects
+            # Update site entries to Site objects
             self._from_dict()
 
-        # store entries
+        # Store entries
         self.entries = self._poscar_dict
 
-        # validate dictionary
+        # Validate dictionary
         self._validate()
 
     def _from_file(self):
@@ -146,12 +153,12 @@ class Poscar(BaseParser):
         sites = self._poscar_dict['sites']
         for site in sites:
             if not isinstance(site, Site):
-                # entry is not of a Site type, convert it
+                # Entry is not of a Site type, convert it
                 direct = site['direct']
                 position = site['position']
                 velocities = site['velocities']
                 if not direct:
-                    # convert to direct
+                    # Convert to direct
                     position = self._to_direct(position,
                                                self._poscar_dict['unitcell'])
                     if velocities is not None:
@@ -162,7 +169,7 @@ class Poscar(BaseParser):
                             velocities, site['predictors'], direct)
             else:
                 if not site.get_direct():
-                    # cartesian, so convert.
+                    # Cartesian, so convert.
                     position = site.get_position()
                     velocities = site.get_velocities()
                     position = self._to_direct(position,
@@ -175,7 +182,8 @@ class Poscar(BaseParser):
                     site.set_direct(True)
 
     def _from_list(self, poscar):
-        """Go through the list and analyze for = and ; in order to
+        """
+        Go through the list and analyze for = and ; in order to
         disentangle grouped entries etc.
 
         Parameters
@@ -198,14 +206,14 @@ class Poscar(BaseParser):
 
         comment = poscar[0].replace('#', '').strip()
         vasp5 = True
-        # check for VASP 5 POSCAR
+        # Check for VASP 5 POSCAR
         if (utils.is_numbers(poscar[5])):
             vasp5 = False
-        # set direct, test is done later
+        # Set direct, test is done later
         direct = True
-        # set selective, test is done later
+        # Set selective, test is done later
         selective = False
-        # check scaling factor
+        # Check scaling factor
         scaling = float(poscar[1].split()[0])
         if (scaling < 0.0):
             self._logger.error(
@@ -216,13 +224,13 @@ class Poscar(BaseParser):
         spec = None
         loopmax = 8
         if (vasp5):
-            # EFL: could go straight to numpy with fromstring, consider
+            # Could go straight to numpy with fromstring, consider
             # to change in the future
             unitcell[0] = [float(x) for x in poscar[2].split()]
             unitcell[1] = [float(x) for x in poscar[3].split()]
             unitcell[2] = [float(x) for x in poscar[4].split()]
             unitcell = np.asarray(unitcell)
-            # apply scaling factor
+            # Apply scaling factor
             unitcell = scaling * unitcell
             spec = poscar[5].split()
             atoms = [int(x) for x in poscar[6].split()]
@@ -240,29 +248,29 @@ class Poscar(BaseParser):
             self._logger.error(self.ERROR_MESSAGES[self.ERROR_VASPFOUR])
             sys.exit(self.ERROR_VASPFOUR)
 
-        # create site objects
+        # Create site objects
         specie_slot = 0
         index = 1
         sites_temp = []
         velocities = False
         predictor = False
-        # loop positions
+        # Loop positions
         for i in range(nions):
-            # fetch specie
+            # Fetch specie
             if index > atoms[specie_slot]:
                 specie_slot = specie_slot + 1
                 index = 1
             specie = spec[specie_slot]
-            # fetch positions
+            # Fetch positions
             line = poscar[i + loopmax].split()
             position = np.zeros(3)
             position[0] = float(line[0])
             position[1] = float(line[1])
             position[2] = float(line[2])
             if not direct:
-                # convert to direct
+                # Convert to direct
                 position = self._to_direct(position, unitcell)
-            # fetch selective flags
+            # Fetch selective flags
             flags = [True, True, True]
             if selective:
                 if 'f' in line[3].lower():
@@ -271,12 +279,12 @@ class Poscar(BaseParser):
                     flags[1] = False
                 if 'f' in line[5].lower():
                     flags[2] = False
-            # create a site object and add to sites list
+            # Create a site object and add to sites list
             index = index + 1
             velo = None
             pred = None
             sites_temp.append([specie, position, flags, velo, pred])
-        # now check if there is more in the POSCAR
+        # Now check if there is more in the POSCAR
         loopmax_pos = nions + loopmax
         if len(poscar) > loopmax_pos:
             first_char = poscar[loopmax_pos][0].lower()
@@ -284,36 +292,36 @@ class Poscar(BaseParser):
                or first_char == 'c':
                 velocities = True
                 if first_char == 'c':
-                    # make sure we convert velocities to direct
+                    # Make sure we convert velocities to direct
                     direct = False
             elif poscar[loopmax_pos].replace(' ', '') == '\n':
                 predictor = True
-        # now check that the next line is in fact a coordinate
+        # Now check that the next line is in fact a coordinate
         loopmax_pos = loopmax_pos + 1
-        # allow for blank lines at the end of the positions
+        # Allow for blank lines at the end of the positions
         if len(poscar) > loopmax_pos:
             if not utils.is_number(poscar[loopmax_pos].split()[0]):
                 self._logger.error(
                     self.ERROR_MESSAGES[self.ERROR_NO_VEL_OR_PRED])
                 sys.exit(self.ERROR_NO_VEL_OR_PRED)
         else:
-            # but make sure the predictor is set back to False
+            # But make sure the predictor is set back to False
             # if we only have a blank line and nothing else following
             # the coordinates
             predictor = False
         if velocities:
             for i in range(nions):
-                # fetch velocities
+                # Fetch velocities
                 line = poscar[i + loopmax_pos].split()
                 vel = np.zeros(3)
                 vel[0] = float(line[0])
                 vel[1] = float(line[1])
                 vel[2] = float(line[2])
                 if not direct:
-                    # convert to direct
+                    # Convert to direct
                     vel = self._to_direct(vel, unitcell)
                 sites_temp[i][3] = vel
-            # now check if there is predictor-corrector coordinates following
+            # Now check if there is predictor-corrector coordinates following
             # the velocities
             loopmax_pos = nions + loopmax_pos
             if len(poscar) > loopmax_pos:
@@ -327,7 +335,7 @@ class Poscar(BaseParser):
                             pre[1] = float(line[1])
                             pre[2] = float(line[2])
                             sites_temp[i][4] = pre
-        # do one final loop to create the objects and read
+        # Do one final loop to create the objects and read
         # predictors if they exist
         sites = []
         loopmax_pos = nions + loopmax + 1
@@ -346,7 +354,7 @@ class Poscar(BaseParser):
                         predictors=sites_temp[i][4])
             sites.append(site)
 
-        # build dictionary and convert to NumPy
+        # Build dictionary and convert to NumPy
         poscar_dict = {}
         poscar_dict['comment'] = comment
         poscar_dict['unitcell'] = np.asarray(unitcell)
@@ -354,12 +362,13 @@ class Poscar(BaseParser):
         return poscar_dict
 
     def modify(self, entry, value, site_number=None):
-        """Modify an entry tag in the Poscar dictionary.
+        """
+        Modify an entry tag in the Poscar dictionary.
         If it is not found add it.
 
         Parameters
         ----------
-        tag : string
+        entry : string
             The entry tag of the POSCAR entry.
         value
             The entry value of the POSCAR entry.
@@ -372,16 +381,16 @@ class Poscar(BaseParser):
 
         """
 
-        # check allowed entries
+        # Check allowed entries
         self._check_allowed_entries(entry)
-        # check that entries exists
+        # Check that entries exists
         self._check_dict()
         if site_number is not None:
-            # check that a Site() object is supplied
+            # Check that a Site() object is supplied
             self._check_site(value)
-            # check site number
+            # Check site number
             self._check_site_number(site_number)
-            # check that position is an integer
+            # Check that position is an integer
             if not utils.is_number(site_number):
                 self._logger.error(self.ERROR_MESSAGES[self.ERROR_SITE_NUMBER])
                 sys.exit(self.ERROR_SITE_NUMBER)
@@ -397,7 +406,8 @@ class Poscar(BaseParser):
             self.entries[entry] = value
 
     def delete_site(self, site_number):
-        """Delete the site with the supplied
+        """
+        Delete the site with the supplied
         number.
 
         Parameters
@@ -413,7 +423,8 @@ class Poscar(BaseParser):
         del self.entries['sites'][site_number]
 
     def add_site(self, site_number):
-        """Add a site with the supplied
+        """
+        Add a site with the supplied
         number. If not supplied, add at the end
         of the last element of the specie group
 
@@ -425,7 +436,7 @@ class Poscar(BaseParser):
 
         """
 
-        # EFL: ADD LATER
+        raise NotImplementedError
 
     def _check_dict(self):
         """Check that entries is present.
@@ -439,7 +450,8 @@ class Poscar(BaseParser):
             sys.exit(self.ERROR_NO_ENTRIES)
 
     def _check_allowed_entries(self, entry):
-        """Check the allowed values of entry.
+        """
+        Check the allowed values of entry.
 
         Parameters
         ----------
@@ -454,7 +466,8 @@ class Poscar(BaseParser):
             sys.exit(self.ERROR_INVALID_ENTRY)
 
     def _check_unitcell(self, unitcell=None):
-        """Check that the unitcell entries are present and
+        """
+        Check that the unitcell entries are present and
         are of a 3x3 ndarray type.
 
         Parameters
@@ -482,7 +495,8 @@ class Poscar(BaseParser):
             sys.exit(self.ERROR_KEY_INVALID_TYPE)
 
     def _check_comment(self, comment=None):
-        """Check that the comment entry is present and
+        """
+        Check that the comment entry is present and
         is a string.
 
         Parameters
@@ -500,7 +514,7 @@ class Poscar(BaseParser):
                     self.ERROR_MESSAGES[self.ERROR_NO_KEY +
                                         " The key in question is 'comment'."])
                 sys.exit(self.ERROR_NO_KEY)
-        # allow None for comment
+        # Allow None for comment
         if self.entries['comment'] is not None:
             if not isinstance(comment, str):
                 self._logger.error(
@@ -509,7 +523,8 @@ class Poscar(BaseParser):
                 sys.exit(self.ERROR_KEY_INVALID_TYPE)
 
     def _check_sites(self, sites=None):
-        """Check that the sites entries are present.
+        """
+        Check that the sites entries are present.
 
         Parameters
         ----------
@@ -534,7 +549,8 @@ class Poscar(BaseParser):
             sys.exit(self.ERROR_KEY_INVALID_TYPE)
 
     def _check_site(self, site=None):
-        """Check that the site entry is a Site() object.
+        """
+        Check that the site entry is a Site() object.
 
         Parameters
         ----------
@@ -566,7 +582,8 @@ class Poscar(BaseParser):
                 sys.exit(self.ERROR_KEY_INVALID_TYPE)
 
     def _check_site_number(self, site_number):
-        """Check that the site_number is an int and that
+        """
+        Check that the site_number is an int and that
         it is not out of bounds.
 
         Parameters
@@ -598,7 +615,8 @@ class Poscar(BaseParser):
         self._check_sites()
 
     def _sort_and_group_sites(self):
-        """Sort and group the positions and species to
+        """
+        Sort and group the positions and species to
         VASP specifications.
 
         Returns
@@ -633,7 +651,7 @@ class Poscar(BaseParser):
             vel = site.get_velocities()
             pre = site.get_predictors()
             if direct is False:
-                # make sure it is direct as the writer only
+                # Make sure it is direct as the writer only
                 # supports this
                 self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_DIRECT])
                 sys.exit(self.ERROR_NO_DIRECT)
@@ -647,7 +665,7 @@ class Poscar(BaseParser):
             species.append(specie)
 
         if not self._conserve_order:
-            # find unique entries and their number
+            # Find unique entries and their number
             counter = Counter(species)
             # Counter does not order, so order now with the
             # least occuring element first (typical for compounds)
@@ -658,17 +676,17 @@ class Poscar(BaseParser):
                 species.append(key)
                 num_species.append(counter[key])
 
-            # now make sure the sites is on the same order
+            # Now make sure the sites is on the same order
             ordered_sites = []
             for specie in species:
                 ordered_sites.extend(
                     [site for site in sites if specie == site[0]])
-            # EFL: consider to also sort on coordinate after specie
+            # Consider to also sort on coordinate after specie
 
             return ordered_sites, species, num_species, selective, \
                 velocities, predictors
         else:
-            # do not order, but we still need to group similar species
+            # Do not order, but we still need to group similar species
             # that follow each other
             num_species = []
             species_concat = []
@@ -688,7 +706,8 @@ class Poscar(BaseParser):
         return item[0]
 
     def _to_direct(self, position_cart, unitcell):
-        """Transforms the position from cartesian to direct
+        """
+        Transforms the position from cartesian to direct
         coordinates.
 
         Parameters
@@ -714,7 +733,8 @@ class Poscar(BaseParser):
         return position
 
     def _to_cart(self, position_dir, unitcell):
-        """Transforms the position from direct to cartesian
+        """
+        Transforms the position from direct to cartesian
         coordinates.
 
         Parameters
@@ -740,7 +760,8 @@ class Poscar(BaseParser):
         return position
 
     def get(self, tag):
-        """Return the value and comment of the entry with tag.
+        """
+        Return the value and comment of the entry with tag.
 
         Parameters
         ----------
@@ -763,7 +784,8 @@ class Poscar(BaseParser):
         return value
 
     def get_dict(self, direct=True):
-        """Get a true dictionary containing the entries in an
+        """
+        Get a true dictionary containing the entries in an
         POSCAR compatible fashion.
 
         Returns
@@ -785,7 +807,7 @@ class Poscar(BaseParser):
                     velocities = element.get_velocities()
                     temp_direct = element.get_direct()
                     if not direct:
-                        # convert to cartesian
+                        # Convert to cartesian
                         position = self._to_cart(position,
                                                  self.entries['unitcell'])
                         if velocities is not None:
@@ -814,13 +836,13 @@ class Poscar(BaseParser):
         return dictionary
 
     def get_string(self):
-        """Get a string containing the entries in a POSCAR
+        """
+        Get a string containing the entries in a POSCAR
         compatible fashion. Each line is broken by a newline
         character
 
         Returns
         -------
-
         poscar_string : str
             A string containing the POSCAR entries of the
             current instance.
@@ -835,7 +857,8 @@ class Poscar(BaseParser):
         return poscar_string
 
     def write(self, file_path):
-        """ Write POSCAR like files
+        """
+        Write POSCAR like files
 
         Parameters
         ----------
@@ -850,7 +873,8 @@ class Poscar(BaseParser):
         utils.file_handler(file_handler=poscar, logger=self._logger)
 
     def _write(self, poscar):
-        """ Write POSCAR like files to a file or string
+        """
+        Write POSCAR like files to a file or string
 
         Parameters
         ----------
@@ -863,10 +887,10 @@ class Poscar(BaseParser):
         entries = self.entries
         comment = entries['comment']
         unitcell = entries['unitcell']
-        # sort and group to VASP specifications
+        # Sort and group to VASP specifications
         sites, species, num_species, selective, velocities, predictors = \
             self._sort_and_group_sites()
-        # update comment
+        # Update comment
         compound = ''
         for index, specie in enumerate(species):
             if num_species[index] == 1:
@@ -882,11 +906,11 @@ class Poscar(BaseParser):
         else:
             comment = '# ' + comment
         poscar.write(comment + '\n')
-        # we avoid usage of the scaling factor
+        # We avoid usage of the scaling factor
         poscar.write('{:{width}.{prec}f}\n'.format(1.0,
                                                    prec=self._prec,
                                                    width=self._width))
-        # write unitcell
+        # Write unitcell
         for i in range(3):
             poscar.write('{:{width}.{prec}f} {:{width}.{prec}f} '
                          '{:{width}.{prec}f}\n'.format(unitcell[i][0],
@@ -894,17 +918,17 @@ class Poscar(BaseParser):
                                                        unitcell[i][2],
                                                        prec=self._prec,
                                                        width=self._width))
-        # write specie types
+        # Write specie types
         tempostring = ''
         for specie in species:
             tempostring = tempostring + '{:5s} '.format(specie.capitalize())
         poscar.write('{}\n'.format(tempostring.rstrip()))
-        # write number of species
+        # Write number of species
         tempostring = ''
         for number in num_species:
             tempostring = tempostring + '{:5d} '.format(number)
         poscar.write('{}\n'.format(tempostring.rstrip()))
-        # write selective if any flags are True
+        # Write selective if any flags are True
         if selective:
             poscar.write('Selective dynamics\n')
         if not self._write_direct:
@@ -912,7 +936,7 @@ class Poscar(BaseParser):
         else:
             poscar.write('Direct\n')
 
-        # write positions
+        # Write positions
         for site in sites:
             if self._write_direct:
                 _site = site[1]
@@ -933,7 +957,7 @@ class Poscar(BaseParser):
                 poscar.write(' {} {} {}'.format(sel[0], sel[1], sel[2]))
             poscar.write('\n')
 
-        # write velocities if they exist
+        # Write velocities if they exist
         if velocities:
             if self._write_direct:
                 poscar.write('Direct\n')
@@ -951,7 +975,7 @@ class Poscar(BaseParser):
                                                            prec=self._prec,
                                                            width=self._width))
 
-        # write predictors if they exist
+        # Write predictors if they exist
         if predictors:
             poscar.write('\n')
             for site in sites:
@@ -972,7 +996,8 @@ class Site(object):
                  predictors=None,
                  direct=True,
                  logger=None):
-        """A site, typically a position in POSCAR.
+        """
+        A site, typically a position in POSCAR.
 
         Parameters
         ----------
@@ -1006,7 +1031,8 @@ class Site(object):
         self.direct = direct
 
     def get_specie(self):
-        """Return the specie.
+        """
+        Return the specie.
 
         Returns
         -------
@@ -1019,7 +1045,8 @@ class Site(object):
         return specie
 
     def set_position(self, position):
-        """Sets the position.
+        """
+        Sets the position.
 
         Parameters
         ----------
@@ -1032,7 +1059,8 @@ class Site(object):
         return
 
     def get_position(self):
-        """Return the position.
+        """
+        Return the position.
 
         Returns
         -------
@@ -1044,7 +1072,8 @@ class Site(object):
         return position
 
     def get_selective(self):
-        """Return the selective flags.
+        """
+        Return the selective flags.
 
         Returns
         -------
@@ -1058,7 +1087,8 @@ class Site(object):
         return selective
 
     def set_velocities(self, velocities):
-        """Sets the velocities.
+        """
+        Sets the velocities.
 
         Parameters
         ----------
@@ -1071,7 +1101,8 @@ class Site(object):
         return
 
     def get_velocities(self):
-        """Return the velocities.
+        """
+        Return the velocities.
 
         Returns
         -------
@@ -1085,7 +1116,8 @@ class Site(object):
         return velocities
 
     def get_predictors(self):
-        """Return the predictors.
+        """
+        Return the predictors.
 
         Returns
         -------
@@ -1099,7 +1131,8 @@ class Site(object):
         return predictors
 
     def set_direct(self, direct):
-        """Sets direct.
+        """
+        Sets direct.
 
         Parameters
         ----------
@@ -1113,7 +1146,8 @@ class Site(object):
         return
 
     def get_direct(self):
-        """Return the direct status of the coordinate.
+        """
+        Return the direct status of the coordinate.
 
         Returns
         -------

@@ -66,14 +66,14 @@ class Incar(BaseParser):
         self._incar_string = incar_string
         self._validate_tags = validate_tags
 
-        # set precision
+        # Set precision
         if prec is None:
             self._prec = 12
         else:
             self._prec = prec
         self._width = self._prec + 4
 
-        # check that only one argument is supplied
+        # Check that only one argument is supplied
         if (self._incar_string is not None and self._incar_dict is not None) \
            or (self._incar_string is not None and self._file_path is not None) \
            or (self._incar_dict is not None and self._file_path is not None) and self._file_handler is not None: # pylint: disable=too-many-boolean-expressions
@@ -81,7 +81,7 @@ class Incar(BaseParser):
                 self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
             sys.exit(self.ERROR_USE_ONE_ARGUMENT)
 
-        # check that at least one is supplied
+        # Check that at least one is supplied
         if (self._incar_string is None and self._incar_dict is None
                 and self._file_path is None and self._file_handler is None):
             self._logger.error(
@@ -89,11 +89,11 @@ class Incar(BaseParser):
             sys.exit(self.ERROR_USE_ONE_ARGUMENT)
 
         if self._file_path is not None or self._file_handler is not None:
-            # create list from a file
+            # Create list from a file
             incar_list = self._from_file()
 
         if self._incar_string is not None:
-            # create list from a string
+            # Create list from a string
             incar_list = self._from_string()
 
         if self._incar_dict is None:
@@ -101,10 +101,10 @@ class Incar(BaseParser):
         else:
             incar = self._from_dict(self._incar_dict)
 
-        # store entries
+        # Ctore entries
         self.entries = incar
 
-        # validate dictionary
+        # Validate dictionary
         self.validate()
 
     def _from_file(self):
@@ -126,7 +126,8 @@ class Incar(BaseParser):
         return incar
 
     def _from_list(self, incar):
-        """Go through the list and analyze for = and ; in order to
+        """
+        Go through the list and analyze for = and ; in order to
         deentangle grouped entries etc. Also set up IncarItem elements.
 
         Parameters
@@ -149,23 +150,23 @@ class Incar(BaseParser):
 
         incar_dict = {}
         for line in incar:
-            # check for comment at the start of a line, if so skip
+            # Check for comment at the start of a line, if so skip
             comment = not line.split('#')[0].split()
             if not comment:
-                # now check if a line contains a comment, if so, only take
+                # Now check if a line contains a comment, if so, only take
                 # what is in front of this, truly...
                 splitted = line.split('#', 1)
                 if len(splitted) > 1:
                     comment = splitted[1]
                 else:
                     comment = None
-                # now split on ; as we could have combined entries
+                # Now split on ; as we could have combined entries
                 splitted = splitted[0].split(';')
                 for ntry in splitted:
                     if ntry == '\n':
-                        # skip if the user used ; at the end of a line
+                        # Skip if the user used ; at the end of a line
                         continue
-                    # then split on = and analyze each entry
+                    # Then split on = and analyze each entry
                     final_split = ntry.split('=')
                     if len(final_split) > 2:
                         self._logger.error(
@@ -180,7 +181,7 @@ class Incar(BaseParser):
                         sys.exit(self.ERROR_INVALID_COMMENT_SIGN)
                     tag = final_split[0]
                     value = final_split[1]
-                    # create new instance of entry
+                    # Create new instance of entry
                     entry = IncarItem(tag, value, comment, logger=self._logger)
                     clean_tag = entry.get_tag()
                     if clean_tag in incar_dict:
@@ -194,7 +195,8 @@ class Incar(BaseParser):
         return incar_dict
 
     def _from_dict(self, incar):
-        """Go through the dict and setup the IncarItem elements.
+        """"
+        Go through the dict and setup the IncarItem elements.
 
         Parameters
         ----------
@@ -216,7 +218,7 @@ class Incar(BaseParser):
 
         incar_dict = {}
         for tag, value in iteritems(incar):
-            # check for comment in value, if so skip shuffle to comment
+            # Check for comment in value, if so skip shuffle to comment
             comment = None
             if isinstance(value, str):
                 comment = value.split('#')
@@ -227,7 +229,7 @@ class Incar(BaseParser):
                     sys.exit(self.ERROR_MULTIPLE_COMMENTS)
                 if len(comment) == 1:
                     comment = None
-            # create new instance of entry
+            # Create new instance of entry
             if comment is not None:
                 if len(comment) == 2:
                     entry = IncarItem(tag,
@@ -248,9 +250,9 @@ class Incar(BaseParser):
         return incar_dict
 
     def _convert_value_to_string(self, value):
-        """Converts a value for an INCAR entry to a string that
+        """
+        Converts a value for an INCAR entry to a string that
         is compatible with VASP.
-
 
         Parameters
         ----------
@@ -264,7 +266,7 @@ class Incar(BaseParser):
 
         """
 
-        # possible values are:
+        # Possible values are:
         # 1 - integer
         # True - bool
         # Something - a string
@@ -274,7 +276,7 @@ class Incar(BaseParser):
         # [1.0, 2.0, 3.0] - list of floats
 
         if type(value) is list:
-            # list of values (we know all are either string, int or float)
+            # List of values (we know all are either string, int or float)
             string = ' '.join(map(str, value))
         else:
             if isinstance(value, bool):
@@ -287,7 +289,8 @@ class Incar(BaseParser):
         return string
 
     def validate(self):
-        """Validate the content of the current Incar instance.
+        """
+        Validate the content of the current Incar instance.
 
         Notes
         -----
@@ -312,8 +315,8 @@ class Incar(BaseParser):
         return
 
     def modify(self, tag, value, comment=None):
-        """Modify the entry tag in INCAR. If it is not found,
-        add it.
+        """
+        Modify the entry tag in INCAR. If it is not found, add it.
 
         Parameters
         ----------
@@ -326,9 +329,9 @@ class Incar(BaseParser):
 
         """
 
-        # create a new INCAR item and check it
+        # Create a new INCAR item and check it
         entry = IncarItem(tag, value, comment, logger=self._logger)
-        # store or modify
+        # Store or modify
         self.entries[entry.get_tag()] = entry
 
     def delete(self, tag):
@@ -347,7 +350,8 @@ class Incar(BaseParser):
             pass
 
     def get(self, tag, comment=False):
-        """Return the value and comment of the entry with tag.
+        """
+        Return the value and comment of the entry with tag.
 
         Parameters
         ----------
@@ -382,7 +386,8 @@ class Incar(BaseParser):
             return value
 
     def get_dict(self):
-        """Get a true dictionary containing the entries in an
+        """
+        Get a true dictionary containing the entries in an
         INCAR compatible fashion.
 
         Returns
@@ -399,7 +404,8 @@ class Incar(BaseParser):
         return dictionary
 
     def get_string(self):
-        """Get a string containing the entries in an
+        """
+        Get a string containing the entries in an
         POSCAR compatible fashion. Each line is terminated by
         a newline character.
 
@@ -418,7 +424,8 @@ class Incar(BaseParser):
         return incar_string
 
     def write(self, file_path, comments=False):
-        """Write the content of the current Incar instance to
+        """
+        Write the content of the current Incar instance to
         file.
 
         Parameters
@@ -436,7 +443,8 @@ class Incar(BaseParser):
         utils.file_handler(file_handler=incar, logger=self._logger)
 
     def _write(self, incar, comments=False):
-        """Write the content of the current Incar instance to
+        """
+        Write the content of the current Incar instance to
         file or string.
 
         Parameters
@@ -449,7 +457,7 @@ class Incar(BaseParser):
 
         """
 
-        # write in alfabetical order
+        # Write in alfabetical order
         keys = sorted(self.entries)
         entries = self.entries
         for key in keys:
@@ -470,7 +478,8 @@ class IncarItem(object):
     ERROR_INVALID_TYPE = 105
 
     def __init__(self, tag, value, comment, logger=None):
-        """Initialize an entry in INCAR.
+        """
+        Initialize an entry in INCAR.
 
         Parameters
         ----------
@@ -485,14 +494,14 @@ class IncarItem(object):
 
         """
 
-        # set logger
+        # Set logger
         if logger is not None:
             self._logger = logger
         else:
             logging.basicConfig(level=logging.DEBUG)
             self._logger = logging.getLogger('IncarItem')
 
-        # clean tag and value
+        # Clean tag and value
         clean_tag, clean_value, clean_comment = self._clean_entry(
             tag, value, comment)
         self.tag = clean_tag
@@ -509,7 +518,8 @@ class IncarItem(object):
         return self.comment
 
     def _clean_entry(self, tag, value, comment):
-        """Cleans the tag and value, for instance makes sures
+        """
+        Cleans the tag and value, for instance makes sures
         there are no spaces around the tag, that it is in lower case,
         and that the value is build into a list of several different
         parameters are given.
@@ -534,13 +544,13 @@ class IncarItem(object):
 
         """
 
-        # remove possible spaces on tag
+        # Remove possible spaces on tag
         clean_tag = tag.split()
 
-        # make sure tag is lowerscore
+        # Make sure tag is lowerscore
         clean_tag = clean_tag[0].lower()
 
-        # possible solutions for the value are (if INCAR is read):
+        # Possible solutions for the value are (if INCAR is read):
         # 1 - integer
         # .TRUE. - bool
         # Something - a string
@@ -550,22 +560,22 @@ class IncarItem(object):
         # 1.0 2.0 3.0 - set of floats
         # 10*1.0 etc., interpreted as strings here
 
-        # however, let us also open for the fact that users might
+        # However, let us also open for the fact that users might
         # give a value what they would in INCAR
 
-        # make sure we keep compatibility between Python 2 and 3
+        # Make sure we keep compatibility between Python 2 and 3
         if isinstance(value, basestring):
             if clean_tag == 'system' or clean_tag == 'magmom':
-                # if value is SYSTEM or MAGMOM (can contain asterix), treat it a bit special and
+                # If value is SYSTEM or MAGMOM (can contain asterix), treat it a bit special and
                 # leave its string intact but remove grub
                 clean_value = value.strip()
                 return clean_tag, clean_value, None
 
-            # values is a string, so we have read an INCAR or the user
+            # Values is a string, so we have read an INCAR or the user
             # tries to assign an entry with just a string
             values = value.split()
 
-            # if we have some kind of set, check if all are ints, floats
+            # If we have some kind of set, check if all are ints, floats
             # or strings
             content_type = []
             clean_value = []
@@ -577,16 +587,16 @@ class IncarItem(object):
                 elif cnt_type == 'float':
                     cnt = float(element)
                 else:
-                    # we have here also have a bool, so check that
+                    # We have here also have a bool, so check that
                     cnt = self._test_string_for_bool(element)
                 clean_value.append(cnt)
 
-            # now if there is only one element in clean_value
+            # Now if there is only one element in clean_value
             # remove list
             if len(clean_value) == 1:
                 clean_value = clean_value[0]
 
-            # check if all values are the same type (they should be)
+            # Check if all values are the same type (they should be)
             if not all(x == content_type[0] for x in content_type):
                 self._logger.error('All values of an INCAR tag are not of the same type. '
                                    'Maybe you forgot to add # as a comment tag?'
@@ -594,7 +604,7 @@ class IncarItem(object):
                 sys.exit(self.ERROR_VALUES_NOT_SAME_TYPE)
 
         else:
-            # if the user wants to assign an element as a list, int,
+            # If the user wants to assign an element as a list, int,
             # float or bool, accept this, including unicode
 
             if not (isinstance(value, int) or isinstance(value, float)
@@ -604,7 +614,7 @@ class IncarItem(object):
                 sys.exit(self.ERROR_INVALID_TYPE)
             clean_value = value
 
-        # finally clean comment by removing any redundant spaces
+        # Finally clean comment by removing any redundant spaces
         if comment is not None:
             clean_comment = comment.strip()
         else:
@@ -613,7 +623,8 @@ class IncarItem(object):
         return clean_tag, clean_value, clean_comment
 
     def _test_string_for_bool(self, string):
-        """Detects if string contains Fortran bool.
+        """
+        Detects if string contains Fortran bool.
 
         Parameters
         ----------

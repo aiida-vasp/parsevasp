@@ -7,12 +7,13 @@ import numpy as np
 from parsevasp import utils
 from parsevasp.base import BaseParser
 
-# Map from number of columns in DOSCAR to dtype.
+# Map from number of columns in DOSCAR to dtype for the total density of states.
 DTYPES_DOS = {
     3: np.dtype([('energy', float), ('total', float), ('integrated', float)]),
     5: np.dtype([('energy', float), ('total', float, (2,)), ('integrated', float, (2,))]),
 }
 
+# Map from the number of columns in DDSCAR to dtype for the partial density of states.
 DTYPES_PDOS = {
     # l-decomposed
     4:
@@ -53,7 +54,7 @@ DTYPES_PDOS = {
                   ('fz(x2-y2)', float, (4,)), ('fx(x2-3y2)', float, (4,))]),
 }
 
-# Mapping between the number of columns to the number of spins
+# Mapping between the number of columns to the number of spins.
 COLSPIN_MAP = {7: 2, 9: 2, 19: 2, 35: 2, 13: 4, 17: 4, 37: 4, 69: 4, 4: 1, 5: 1, 10: 1, 18: 1}
 
 
@@ -62,16 +63,23 @@ class Doscar(BaseParser):
     def __init__(self,
                  file_path=None,
                  file_handler=None,
-                 logger=None,
-                 prec=None,
-                 conserve_order=False):
-        """Initialize an DOSCAR object and set content as a dictionary."""
+                 logger=None):
+        """
+        Initialize an DOSCAR object and set content as a dictionary.
+
+        file_path : string
+            A string containing the file path to the file that is going to be parsed.
+        file_handler : object
+            A file like object that acts as a handler for the content to be parsed.
+        logger : object
+            A logger object if you would like to use an external logger for messages
+            ejected inside this parser.
+
+        """
 
         super(Doscar, self).__init__(file_path=file_path,
                                      file_handler=file_handler,
                                      logger=logger)
-
-        self._conserve_order = conserve_order
 
         # check that at least one is supplied
         if self._file_path is None and self._file_handler is None:
@@ -94,17 +102,7 @@ class Doscar(BaseParser):
         self._parse()
 
     def _parse(self):
-        """Perform the actual parsing
-
-        Parameters
-        ----------
-        None
-
-        Returns
-        -------
-        None
-
-        """
+        """Perform the actual parsing."""
 
         if self._file_path is None and self._file_handler is None:
             return
@@ -113,7 +111,8 @@ class Doscar(BaseParser):
         self._from_file()
 
     def _from_file(self):
-        """Create a dictionary of entries from a
+        """
+        Create a dictionary of entries from a
         file and store them in the this instance's data dictionary.
 
         """
@@ -219,7 +218,8 @@ class Doscar(BaseParser):
         self._data['dos'] = dos
 
     def get_metadata(self):
-        """Return the metadata.
+        """
+        Return the metadata.
 
         Parameters
         ----------
@@ -237,7 +237,8 @@ class Doscar(BaseParser):
         return metadata
 
     def get_dos(self):
-        """Return the total density of states.
+        """
+        Return the total density of states.
 
         Parameters
         ----------
@@ -256,7 +257,8 @@ class Doscar(BaseParser):
         return dos
 
     def get_pdos(self):
-        """Return the partial density of states.
+        """
+        Return the partial density of states.
 
         Parameters
         ----------
@@ -265,7 +267,6 @@ class Doscar(BaseParser):
         Returns
         -------
         pdos : nparray
-
 
         """
 

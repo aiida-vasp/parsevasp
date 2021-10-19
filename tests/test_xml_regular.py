@@ -126,7 +126,8 @@ def test_xml_energies(xml_parser):
                                     -0.00042731, -0.00042705, -0.00043064, -0.00043051, -0.00043161,
                                     -0.00043078, -0.00043053, -0.00043149, -0.00043417])
     # Notice that the test have here used results from VASP 5, which has a bug in the xml
-    # prints for the final energies. In VASP 6 this bug is fixed.
+    # prints for the final energies. In VASP 6 this bug is fixed. Try not to be too surprised
+    # when inspecting this test. These values should actually be in the -4x eV range.
     assert np.allclose(test_array_energies, energies_data['energy_extrapolated_final'])
 
 

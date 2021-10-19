@@ -11,7 +11,7 @@ from parsevasp.base import BaseParser
 
 
 class Kpoints(BaseParser):
-
+    
     ERROR_KPOINTS_NOT_DIRECT = 200
     ERROR_TETRA_FIVE = 201
     ERROR_NO_AUTOMATICS = 202
@@ -73,6 +73,13 @@ class Kpoints(BaseParser):
             breaks if multiline, otherwise the KPOINTS will be mangled.
         kpoints_dict : dict
             A dictionary containing the KPOINTS entries.
+        file_path : string
+            A string containing the file path to the file that is going to be parsed.
+        file_handler : object
+            A file like object that acts as a handler for the content to be parsed.
+        logger : object
+            A logger object if you would like to use an external logger for messages
+            ejected inside this parser.
         prec : int, optional
             An integer describing how many decimals the users wants
             when printing files.
@@ -86,37 +93,37 @@ class Kpoints(BaseParser):
         self._kpoints_dict = kpoints_dict
         self._kpoints_string = kpoints_string
 
-        # set precision
+        # Set precision
         if prec is None:
             self._prec = 9
         else:
             self._prec = prec
         self._width = self._prec + 4
 
-        # check that only one argument is supplied
+        # Check that only one argument is supplied
         if (self._kpoints_string is not None and self._kpoints_dict is not None) \
            or (self._kpoints_string is not None and self._file_path is not None) \
            or (self._kpoints_dict is not None and self._file_path is not None and self._file_handler is not None):
             self._logger.error(self.ERROR_MESSAGES[self.USE_ONE_ARGUMENT])
             sys.exit(self.USE_ONE_ARGUMENT)
-        # check that at least one is suplpied
+        # Check that at least one is suplpied
         if (self._kpoints_string is None and self._kpoints_dict is None
                 and self._file_path is None and self._file_handler is None):
             self._logger.error(self.ERROR_MESSAGES[self.USE_ONE_ARGUMENT])
             sys.exit(self.USE_ONE_ARGUMENT)
 
         if self._file_path is not None or self._file_handler is not None:
-            # create dictionary from a file
+            # Create dictionary from a file
             self._kpoints_dict = self._from_file()
 
         if self._kpoints_string is not None:
-            # create dictionary from a string
+            # Create dictionary from a string
             self._kpoints_dict = self._from_string()
 
-        # store entries
+        # Ctore entries
         self.entries = self._kpoints_dict
 
-        # validate dictionary
+        # Validate dictionary
         self._validate()
 
     def _from_file(self):
@@ -141,7 +148,8 @@ class Kpoints(BaseParser):
         return kpoints_dict
 
     def _from_list(self, kpoints):
-        """Go through the list and analyze for = and ; in order to
+        """
+        Go through the list and analyze for = and ; in order to
         deentangle grouped entries etc.
 
         Parameters
@@ -174,11 +182,11 @@ class Kpoints(BaseParser):
         centering = None
         direct = False
         if num_kpoints <= 0:
-            # check if we are using automatic mode
+            # Check if we are using automatic mode
             automatic = True
         third_line = kpoints[2].strip()
         if third_line[0].lower() == 'l':
-            # line mode is detected
+            # Line mode is detected
             line_mode = True
         if not automatic and not line_mode:
             direct = False
@@ -204,7 +212,7 @@ class Kpoints(BaseParser):
             tetra = []
             if len(kpoints) > loopmax:
                 if kpoints[loopmax].strip()[0].lower() == 't':
-                    # tetrahedron info present
+                    # Tetrahedron info present
                     loopmax = loopmax + 1
                     if len(kpoints) > loopmax:
                         first_line = kpoints[loopmax].split()
@@ -259,7 +267,7 @@ class Kpoints(BaseParser):
             mode = 'automatic'
         if line_mode:
             mode = 'line'
-        # add to dictionary
+        # Add to dictionary
         kpoints_dict = {}
         kpoints_dict['comment'] = comment
         kpoints_dict['divisions'] = divisions
@@ -274,11 +282,12 @@ class Kpoints(BaseParser):
         return kpoints_dict
 
     def modify(self, entry, value, point_number=None):
-        """Modify an entry tag in the Kpoints dictionary.
+        """
+        Modify an entry tag in the Kpoints dictionary.
 
         Parameters
         ----------
-        tag : string
+        entry : string
             The entry tag of the KPOINTS entry.
         value
             The entry value of the KPOINTS entry.
@@ -291,16 +300,16 @@ class Kpoints(BaseParser):
 
         """
 
-        # check allowed entries
+        # Check allowed entries
         self._check_allowed_entries(entry)
-        # check that entries exists
+        # Check that entries exists
         self._check_dict()
         if point_number is not None:
-            # check that a Kpoint() object is supplied
+            # Check that a Kpoint() object is supplied
             self._check_point(value)
-            # check site number
+            # Check site number
             self._check_point_number(point_number)
-            # check that position is an integer
+            # Check that position is an integer
             if not isinstance(point_number, int):
                 self._logger.error(
                     self.ERROR_MESSAGES[self.ERROR_NOT_A_NUMBER])
@@ -309,7 +318,7 @@ class Kpoints(BaseParser):
         else:
             if entry == 'points':
                 self._check_points(points=value)
-                # check that all points are in direct, if not,
+                # Check that all points are in direct, if not,
                 # convert
                 for point in value:
                     if not point.get_direct():
@@ -337,8 +346,8 @@ class Kpoints(BaseParser):
             self.entries[entry] = value
 
     def delete_point(self, point_number):
-        """Delete the point with the supplied
-        number.
+        """
+        Delete the point with the supplied number.
 
         Parameters
         ----------
@@ -353,9 +362,9 @@ class Kpoints(BaseParser):
         del self.entries['points'][point_number]
 
     def add_point(self, point_number):
-        """Add a point with the supplied
-        number. If not supplied, add at the end
-        of the last element of the specie group
+        """
+        Add a point with the supplied number. If not supplied, 
+        add at the end of the last element of the specie group.
 
         Parameters
         ----------
@@ -365,7 +374,7 @@ class Kpoints(BaseParser):
 
         """
 
-        # EFL: ADD LATER
+        raise NotImplementedError
 
     def _check_dict(self):
         """Check that entries is present.
@@ -378,7 +387,7 @@ class Kpoints(BaseParser):
             self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_ENTRIES])
             sys.exit(self.ERROR_NO_ENTRIES)
 
-        # check that at least divisions or points are set
+        # Check that at least divisions or points are set
         # to something else than None
         if (self.entries['divisions'] is None) \
            and (self.entries['points'] is None):
@@ -386,7 +395,8 @@ class Kpoints(BaseParser):
             sys.exit(self.ERROR_DIVISIONS)
 
     def _check_allowed_entries(self, entry):
-        """Check the allowed values of entry.
+        """
+        Check the allowed values of entry.
 
         Parameters
         ----------
@@ -404,8 +414,8 @@ class Kpoints(BaseParser):
             sys.exit(self.ERROR_INVALID_TAG)
 
     def _check_comment(self, comment=None):
-        """Check that the comment entry is present and
-        is a string.
+        """
+        Check that the comment entry is present and is a string.
 
         Parameters
         ----------
@@ -421,7 +431,7 @@ class Kpoints(BaseParser):
                 self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_KEY] +
                                    " The key in question is 'comment'.")
                 sys.exit(self.ERROR_NO_KEY)
-        # allow None for comment
+        # Allow None for comment
         if self.entries['comment'] is not None:
             if not isinstance(comment, str):
                 self._logger.error(
@@ -430,7 +440,8 @@ class Kpoints(BaseParser):
                 sys.exit(self.ERROR_KEY_INVALID_TYPE)
 
     def _check_points(self, points=None):
-        """Check that the points entries are present.
+        """
+        Check that the points entries are present.
 
         Parameters
         ----------
@@ -448,7 +459,7 @@ class Kpoints(BaseParser):
                                    " The key in question is 'points'.")
                 sys.exit(self.ERROR_NO_KEY)
         if points is not None:
-            # allow points to be none (if no explicit entries are given)
+            # Allow points to be none (if no explicit entries are given)
             if not isinstance(points, list):
                 self._logger.error(
                     self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE] +
@@ -456,7 +467,8 @@ class Kpoints(BaseParser):
                 sys.exit(self.ERROR_KEY_INVALID_TYPE)
 
     def _check_point(self, point=None):
-        """Check that the point entry is a Kpoint() object.
+        """
+        Check that the point entry is a Kpoint() object.
 
         Parameters
         ----------
@@ -484,8 +496,8 @@ class Kpoints(BaseParser):
                 sys.exit(self.ERROR_WRONG_OBJECT)
 
     def _check_point_number(self, point_number):
-        """Check that the point_number is an int and that
-        it is not out of bounds.
+        """
+        Check that the point_number is an int and that it is not out of bounds.
 
         Parameters
         ----------
@@ -506,8 +518,8 @@ class Kpoints(BaseParser):
             sys.exit(self.ERROR_TOO_LARGE_POINT_INDEX)
 
     def _check_shifts(self, shifts=None):
-        """Check that the shifts are either None or
-        a list of three floats.
+        """
+        Check that the shifts are either None or a list of three floats.
 
         Parameters
         ----------
@@ -540,8 +552,8 @@ class Kpoints(BaseParser):
                         sys.exit(self.ERROR_KEY_INVALID_TYPE)
 
     def _check_tetra_volume(self, volume=None):
-        """Check that the volume of the tetrahedron is
-        either None or a float.
+        """
+        Check that the volume of the tetrahedron is either None or a float.
 
         Parameters
         ----------
@@ -566,8 +578,8 @@ class Kpoints(BaseParser):
                 sys.exit(self.ERROR_KEY_INVALID_TYPE)
 
     def _check_divisions(self, divisions=None):
-        """Check that the divisions are either None or
-        a list of three integers.
+        """
+        Check that the divisions are either None or a list of three integers.
 
         Parameters
         ----------
@@ -600,8 +612,8 @@ class Kpoints(BaseParser):
                         sys.exit(self.ERROR_KEY_INVALID_TYPE)
 
     def _check_tetra(self, tetra=None):
-        """Check that tetra are either None or
-        a list of four integers.
+        """
+        Check that tetra are either None or a list of four integers.
 
         Parameters
         ----------
@@ -645,7 +657,8 @@ class Kpoints(BaseParser):
                             sys.exit(self.ERROR_KEY_INVALID_TYPE)
 
     def _check_centering(self, centering=None):
-        """Check that the centering flag is valid.
+        """
+        Check that the centering flag is valid.
 
         Parameters
         ----------
@@ -670,7 +683,8 @@ class Kpoints(BaseParser):
                 sys.exit(self.ERROR_INVALID_CENTERING)
 
     def _check_num_kpoints(self, num_kpoints=None):
-        """Check that num_kpoints is valid.
+        """
+        Check that num_kpoints is valid.
 
         Parameters
         ----------
@@ -694,7 +708,8 @@ class Kpoints(BaseParser):
             sys.exit(self.ERROR_KEY_INVALID_TYPE)
 
     def _check_mode(self, mode=None):
-        """Check that the mode flag is valid.
+        """
+        Check that the mode flag is valid.
 
         Parameters
         ----------
@@ -743,7 +758,8 @@ class Kpoints(BaseParser):
         return point
 
     def get(self, tag):
-        """Return the value and comment of the entry with tag.
+        """
+        Return the value and comment of the entry with tag.
 
         Parameters
         ----------
@@ -766,7 +782,8 @@ class Kpoints(BaseParser):
         return value
 
     def get_dict(self):
-        """Get a true dictionary containing the entries in an
+        """
+        Get a true dictionary containing the entries in an
         KPOINTS compatible fashion.
 
         Returns
@@ -793,13 +810,13 @@ class Kpoints(BaseParser):
         return dictionary
 
     def get_string(self):
-        """Get a string containing the entries in a KPOINTS
+        """
+        Get a string containing the entries in a KPOINTS
         compatible fashion. Each line is broken by a newline
         character
 
         Returns
         -------
-
         kpoints_string : str
             A string containing the KPOINTS entries of the
             current instance.
@@ -831,7 +848,8 @@ class Kpoints(BaseParser):
         utils.file_handler(file_handler=kpoints, logger=self._logger)
 
     def _write(self, kpoints):
-        """ Write KPOINTS like files to a file or string
+        """
+        Write KPOINTS like files to a file or string.x
 
         Parameters
         ----------
@@ -848,17 +866,17 @@ class Kpoints(BaseParser):
         else:
             comment = '# ' + comment
         kpoints.write(comment + '\n')
-        # check mode
+        # Check mode
         mode = entries['mode']
         if mode == 'explicit':
             kpoints.write('{:6d}\n'.format(entries['num_kpoints']))
-            # points should already be direct
+            # Points should already be direct
             kpoints.write('Direct\n')
             for point in entries['points']:
                 coordinate = point.get_point()
                 weight = point.get_weight()
                 if weight is None:
-                    # if weight is set to None, force it
+                    # If weight is set to None, force it
                     # to one
                     logger.info('None was detected for the weight, '
                                 'but for excplicit mode a weight has '
@@ -915,7 +933,7 @@ class Kpoints(BaseParser):
         if mode == 'line':
             kpoints.write('{:6d}\n'.format(entries['num_kpoints']))
             kpoints.write('Line-mode\n')
-            # assume points to be direct
+            # Assume points to be direct
             kpoints.write('Direct\n')
             complete_set = 1
             for index, point in enumerate(entries['points']):
@@ -935,7 +953,8 @@ class Kpoints(BaseParser):
 
 class Kpoint(object):
     def __init__(self, point, weight, direct=True, logger=None):
-        """A site, typically a position in POSCAR.
+        """
+        A site, typically a position in POSCAR.
 
         Parameters
         ----------
