@@ -12,24 +12,24 @@ class Outcar(BaseParser):
     def __init__(self,
                  file_path=None,
                  file_handler=None,
-                 logger=None,
-                 prec=None,
-                 conserve_order=False):
+                 logger=None):
         """Initialize an OUTCAR object and set content as a dictionary.
 
         Parameters
         ----------
-        prec : int, optional
-            An integer describing how many decimals the users wants
-            when printing files.
-
+        file_path : string
+            A string containing the file path to the file that is going to be parsed.
+        file_handler : object
+            A file like object that acts as a handler for the content to be parsed.
+        logger : object
+            A logger object if you would like to use an external logger for messages
+            ejected inside this parser.
+        
         """
 
         super(Outcar, self).__init__(file_path=file_path,
                                      file_handler=file_handler,
                                      logger=logger)
-
-        self._conserve_order = conserve_order
 
         # check that at least one is supplied
         if self._file_path is None and self._file_handler is None:
@@ -41,13 +41,6 @@ class Outcar(BaseParser):
             self._logger.error(
                 self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
             sys.exit(self.ERROR_USE_ONE_ARGUMENT)
-
-        # set precision
-        if prec is None:
-            self._prec = 12
-        else:
-            self._prec = prec
-        self._width = self._prec + 4
 
         self._data = {
             'elastic_moduli': {
@@ -111,17 +104,7 @@ class Outcar(BaseParser):
         self._parse()
 
     def _parse(self):
-        """Perform the actual parsing
-
-        Parameters
-        ----------
-        None
-
-        Returns
-        -------
-        None
-
-        """
+        """Perform the actual parsing."""
 
         if self._file_path is None and self._file_handler is None:
             return
@@ -130,17 +113,17 @@ class Outcar(BaseParser):
         self._from_file()
 
     def _from_file(self):
-        """Create a dictionary of entries from a
+        """
+        Create a dictionary of entries from a
         file and store them in the this instance's data dictionary.
-
         """
 
         outcar = utils.readlines_from_file(self._file_path, self._file_handler)
         self._from_list(outcar)
 
     def _from_list(self, outcar):
-        """Go through the list and extract what is not present in the
-        XML file.
+        """
+        Go through the list and extract what is not present in the XML file.
 
         Parameters
         ----------
@@ -346,7 +329,8 @@ class Outcar(BaseParser):
         self._data['run_stats'] = self._parse_timings_memory(outcar[-50:])
 
     def get_symmetry(self):
-        """Return the symmetry.
+        """
+        Return the symmetry.
 
         Parameters
         ----------
@@ -363,7 +347,8 @@ class Outcar(BaseParser):
         return symmetry
 
     def get_elastic_moduli(self):
-        """Return the elastic moduli in kBar.
+        """
+        Return the elastic moduli in kBar.
 
         Parameters
         ----------
@@ -380,7 +365,8 @@ class Outcar(BaseParser):
         return elastic
 
     def get_magnetization(self):
-        """Return the magnetization of the cell.
+        """
+        Return the magnetization of the cell.
 
         Parameters
         ----------
@@ -397,7 +383,9 @@ class Outcar(BaseParser):
         return magnetic
 
     def get_run_stats(self):
-        """Return the run time statistics information. 
+        """
+        Return the run time statistics information. 
+        
         The existence of timing information also signals the calculation terminate
         gracefully.
 
@@ -408,14 +396,16 @@ class Outcar(BaseParser):
         Returns
         -------
         timings : dict
-            A dictionary containing the timing information
+            A dictionary containing the timing information.
         """
 
         timings = self._data['run_stats']
         return timings
 
     def get_run_status(self):
-        """Return the status of the run.
+        """
+        Return the status of the run.
+        
         Contains information of the convergence of the ionic relaxation and electronics,
         in addition to information if the run has finished.
 
@@ -426,7 +416,7 @@ class Outcar(BaseParser):
         Returns
         -------
         status : dict
-            A dictionary containing the timing information
+            A dictionary containing the timing information.
         """
 
         status = self._data['run_status']
@@ -434,17 +424,18 @@ class Outcar(BaseParser):
     
     @staticmethod
     def _parse_timings_memory(timing_lines):
-        """Parse timing information.
+        """
+        Parse timing information.
 
         Parameters
         ----------
         timing_lines : list
-            A list of lines containing the timing information
+            A list of lines containing the timing information.
 
         Returns
         -------
-        timings : dict
-            A dictionary containing the timing information
+        info : dict
+            A dictionary containing the timing information.
         """
         import re
         info = {}

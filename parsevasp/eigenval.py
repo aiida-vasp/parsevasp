@@ -12,16 +12,25 @@ class Eigenval(BaseParser):
     def __init__(self,
                  file_path=None,
                  file_handler=None,
-                 logger=None,
-                 prec=None,
-                 conserve_order=False):
-        """Initialize an EIGENVAL object and set content as a dictionary."""
+                 logger=None):
+        """
+        Initialize an EIGENVAL object and set content as a dictionary.
+
+        Parameters
+        ----------
+        file_path : string
+            A string containing the file path to the file that is going to be parsed.
+        file_handler : object
+            A file like object that acts as a handler for the content to be parsed.
+        logger : object
+            A logger object if you would like to use an external logger for messages
+            ejected inside this parser.
+
+        """
 
         super(Eigenval, self).__init__(file_path=file_path,
                                      file_handler=file_handler,
                                      logger=logger)
-
-        self._conserve_order = conserve_order
 
         # check that at least one is supplied
         if self._file_path is None and self._file_handler is None:
@@ -44,17 +53,7 @@ class Eigenval(BaseParser):
         self._parse()
 
     def _parse(self):
-        """Perform the actual parsing
-
-        Parameters
-        ----------
-        None
-
-        Returns
-        -------
-        None
-
-        """
+        """Perform the actual parsing."""
 
         if self._file_path is None and self._file_handler is None:
             return
@@ -63,7 +62,8 @@ class Eigenval(BaseParser):
         self._from_file()
 
     def _from_file(self):
-        """Create a dictionary of entries from a
+        """
+        Create a dictionary of entries from a
         file and store them in the this instance's data dictionary.
 
         """
@@ -72,7 +72,8 @@ class Eigenval(BaseParser):
         self._from_list(eigenval)
 
     def _from_list(self, eigenval):
-        """Go through the list and extract bands, kpoints and metadata
+        """
+        Go through the list and extract bands, kpoints and metadata.
 
         Parameters
         ----------
@@ -138,7 +139,8 @@ class Eigenval(BaseParser):
         self._data['kpoints'] = kpoints
 
     def get_metadata(self):
-        """Return the metadata.
+        """
+        Return the metadata.
 
         Parameters
         ----------
@@ -156,7 +158,8 @@ class Eigenval(BaseParser):
         return metadata
 
     def get_bands(self):
-        """Return the bands.
+        """
+        Return the bands.
 
         Parameters
         ----------
@@ -174,7 +177,8 @@ class Eigenval(BaseParser):
         return bands
 
     def get_kpoints(self):
-        """Return the kpoints.
+        """
+        Return the kpoints.
 
         Parameters
         ----------
