@@ -118,7 +118,58 @@ def test_poscar_cartesian(tmp_path, poscar_parser):
         assert np.allclose(site['predictors'], reloaded['predictors'])
         assert site['direct'] == reloaded['direct']    
 
+@pytest.mark.parametrize('poscar_parser', [True], indirect=True)
+def test_poscar_scaling(tmp_path, poscar_parser):
+    """Test that the scaling factor works when reading a POSCAR file."""
+    poscar = poscar_parser.get_dict()
+    # Locate scaling factor
+    scaling = poscar['unitcell'][1,1]
+    poscar = poscar_parser.get_string()
+    poscar_lines = poscar.splitlines()
+    
+    # First test scaling when positions are in direct coordinates
+    # Prepare scaled unitcell, but direct coordinates
+    poscar_lines[1] = str(scaling)
+    for i in range(2,5):
+        poscar_lines[i] = ' '.join([str(float(item) / scaling) for item in poscar_lines[i].split()])
+    poscar_write_path = tmp_path / "POSCAR"
+    # Dump it to file
+    with open(poscar_write_path, 'w') as file_object:
+        file_object.write('\n'.join(poscar_lines))
+    # Read it using a new Poscar instance
+    poscar_scaled_direct = Poscar(file_path = poscar_write_path).get_dict()
+    unitcell_test = np.array([[9.0164589999999993, 0., 0.],
+                              [0., 9.0164589999999993, 0.],
+                              [0., 0., 9.0164589999999993]])
+    position_test = np.array([0.24999947, 0.24999947, 0.24999947])
+    assert np.allclose(poscar_scaled_direct['sites'][0]['position'], position_test)
+    assert np.allclose(poscar_scaled_direct['unitcell'], unitcell_test)
 
+    # Then test scaling when positions are in cartesian coordinates
+    # Create a new Poscar instance where the write is in cartesian coordinates
+    poscar_parser_temp = Poscar(poscar_string = poscar, write_direct=False)
+    poscar_parser_temp.write(poscar_write_path)
+    with open(poscar_write_path, 'r') as file_object:
+        poscar_cart_unscaled = file_object.readlines()
+    poscar_cart_unscaled[1] = str(scaling) + '\n'
+    # Scale unitcell
+    for i in range(2,5):
+        poscar_cart_unscaled[i] = ' '.join([str(float(item) / scaling) for item in poscar_cart_unscaled[i].split()]) + '\n'
+    # Scale positions
+    for i in range(8,40):
+        poscar_cart_unscaled[i] = ' '.join([str(float(item) / scaling) for item in poscar_cart_unscaled[i].split()]) + '\n'
+    # Write file
+    with open(poscar_write_path, 'w') as file_object:
+        file_object.writelines(poscar_cart_unscaled)
+    poscar_cart_scaled = Poscar(file_path = poscar_write_path).get_dict()
+    unitcell_test = np.array([[9.0164589999999993, 0., 0.],
+                              [0., 9.0164589999999993, 0.],
+                              [0., 0., 9.0164589999999993]])
+    position_test = np.array([0.24999947, 0.24999947, 0.24999947])
+    assert np.allclose(poscar_scaled_direct['sites'][0]['position'], position_test)
+    assert np.allclose(poscar_scaled_direct['unitcell'], unitcell_test)
+
+    
 def test_poscar_entries(poscar_parser_names):
     """Check that the POSCAR do not have to have
     elemental names.
