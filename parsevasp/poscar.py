@@ -264,9 +264,14 @@ class Poscar(BaseParser):
             # Fetch positions
             line = poscar[i + loopmax].split()
             position = np.zeros(3)
-            position[0] = float(line[0])
-            position[1] = float(line[1])
-            position[2] = float(line[2])
+            if direct:
+                # When we have direct coordinates, the
+                # positions should not be scaled by the
+                # scaling factor
+                scaling = 1.0
+            position[0] = float(line[0]) * scaling
+            position[1] = float(line[1]) * scaling
+            position[2] = float(line[2]) * scaling
             if not direct:
                 # Convert to direct
                 position = self._to_direct(position, unitcell)
@@ -849,7 +854,7 @@ class Poscar(BaseParser):
 
         """
 
-        string_object = StringIO.StringIO()
+        string_object = StringIO()
         self._write(poscar=string_object)
         poscar_string = string_object.getvalue()
         string_object.close()
