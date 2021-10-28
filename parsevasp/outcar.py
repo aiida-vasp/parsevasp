@@ -103,6 +103,10 @@ class Outcar(BaseParser):
         # parse parse parse
         self._parse()
 
+    def _write(self, *args, **kwargs):
+        """Write not supported for OUTCAR."""
+        raise NotImplementedError('Writing OUTCAR files is not supported.')
+
     def _parse(self):
         """Perform the actual parsing."""
 

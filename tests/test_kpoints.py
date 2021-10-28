@@ -166,6 +166,8 @@ def test_kpoints_params_line(kpoints_parser_line):
 def test_kpoints_write_auto(kpoints_parser_auto, tmpdir):
     """Test read, write and read KPOINTS in auto mode.
 
+    Here we also test that the write using file handler works properly.
+
     """
 
     kpoints = kpoints_parser_auto.get_dict()
@@ -173,15 +175,13 @@ def test_kpoints_write_auto(kpoints_parser_auto, tmpdir):
     kpoints_parser_auto.write(file_path=temp_file)
     kpoints_parser_auto_temp = Kpoints(file_path=temp_file)
     kpoints_temp = kpoints_parser_auto_temp.get_dict()
-    assert kpoints_temp['mode'] == 'automatic'
-    assert kpoints_temp['comment'] == 'Example file'
-    assert kpoints_temp['divisions'] == [4, 4, 4]
-    assert kpoints_temp['shifts'] == [0.0, 0.0, 0.0]
-    assert kpoints_temp['points'] == None
-    assert kpoints_temp['centering'] == 'Gamma'
-    assert kpoints_temp['tetra'] == None
-    assert kpoints_temp['tetra_volume'] == None
-    assert kpoints_temp['num_kpoints'] == 0
+    verify_kpoints_content(kpoints_temp)
+    with open(temp_file, 'w') as handler:
+        kpoints_parser_auto.write(file_handler=handler)
+    with open(temp_file, 'r') as handler:
+        kpoints_parser_auto_temp = Kpoints(file_handler=handler)
+    kpoints_temp = kpoints_parser_auto_temp.get_dict()
+    verify_kpoints_content(kpoints_temp)
 
 
 def test_kpoints_write_explicit(kpoints_parser_explicit, tmpdir):
@@ -402,3 +402,16 @@ def test_kpoints_dict(tmpdir):
     assert kpoints_temp['tetra'] == None
     assert kpoints_temp['tetra_volume'] == None
     assert kpoints_temp['num_kpoints'] == 0
+
+
+def verify_kpoints_content(kpoints):
+    """Verify that the content of kpoints is correct."""
+    assert kpoints['mode'] == 'automatic'
+    assert kpoints['comment'] == 'Example file'
+    assert kpoints['divisions'] == [4, 4, 4]
+    assert kpoints['shifts'] == [0.0, 0.0, 0.0]
+    assert kpoints['points'] == None
+    assert kpoints['centering'] == 'Gamma'
+    assert kpoints['tetra'] == None
+    assert kpoints['tetra_volume'] == None
+    assert kpoints['num_kpoints'] == 0

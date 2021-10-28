@@ -63,7 +63,7 @@ def incar_truncate(index, original, tmp):
     return
 
 
-def test_incar_read(incar_parser):
+def test_incar_parser_read(incar_parser):
     """Check if incar_parser exists.
 
     """
@@ -71,7 +71,7 @@ def test_incar_read(incar_parser):
     assert incar_parser.get_dict()
 
 
-def test_incar_parameters(incar_parser):
+def test_incar_parser_parameters(incar_parser):
     """Check parameters of the INCAR.
 
     """
@@ -87,8 +87,26 @@ def test_incar_parameters(incar_parser):
     assert dictionary['ismear'] == -5
     assert dictionary['algo'] == 'V'
 
+def test_incar_parser_write(incar_parser, tmp_path):
+    """Check the write functions for both file paths and file objects.
 
-def test_incar_parameters_file_object(incar_parser_file_object):
+    """
+    incar = incar_parser.get_dict()
+    # Write the content
+    incar_write_path = tmp_path / "INCAR"
+    incar_parser.write(file_path=incar_write_path)
+    # Then reload and compare
+    incar_reloaded = Incar(file_path=incar_write_path).get_dict()
+    assert incar == incar_reloaded
+    # Write again with file object
+    with open(incar_write_path, 'w') as handler:
+        incar_parser.write(file_handler=handler)
+    # Then reload again and compare
+    with open(incar_write_path, 'r') as handler:
+        incar_reloaded = Incar(file_handler=handler).get_dict()
+    assert incar == incar_reloaded
+    
+def test_incar_parser_parameters_file_object(incar_parser_file_object):
     """Check parameters of the INCAR using a file object
 
     """
@@ -118,7 +136,7 @@ def test_incar_from_dict(incar_dict):
     assert str(sorted(incar_io.get_dict())) == str(sorted(comp_dict))
 
 
-def test_from_string():
+def test_incar_parser_from_string():
     """Test passing a string.
 
     """
@@ -131,7 +149,7 @@ def test_from_string():
     assert not incar_dict
 
 
-def test_parser():
+def test_incar_parser_from_string_complexr():
     """Test passing a more complex string.
 
     """
@@ -154,7 +172,7 @@ def test_parser():
     assert 'float' not in incar_dict
 
 
-def test_parser_invalid_tag():
+def test_incar_parser_invalid_tag():
     """Test passing a tag that is not recognized.
 
     """
@@ -164,7 +182,7 @@ def test_parser_invalid_tag():
         parsed = Incar(incar_string=test_string)
 
 
-def test_parser_invalid_tag():
+def test_incar_parser_invalid_tag():
     """Test passing a tag that is not recognized and its override.
 
     """

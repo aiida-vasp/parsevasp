@@ -101,6 +101,10 @@ class Doscar(BaseParser):
         # parse parse parse
         self._parse()
 
+    def _write(self, *args, **kwargs):
+        """Write not supported for DOSCAR."""
+        raise NotImplementedError('Writing DOSCAR files is not supported.')
+
     def _parse(self):
         """Perform the actual parsing."""
 

@@ -182,6 +182,10 @@ class Xml(BaseParser):
         # Parse parse parse
         self._parse()
 
+    def _write(self, *args, **kwargs):
+        """Write not supported for XML."""
+        raise NotImplementedError('Writing XML files is not supported.')
+
     @property
     def truncated(self):
         """Return True of the xml parsed is truncated."""
