@@ -71,30 +71,24 @@ def test_poscar_write(tmp_path, poscar_parser):
     poscar = poscar_parser.get_dict()
     # Write it
     poscar_write_path = tmp_path / "POSCAR"
-    poscar_parser.write(poscar_write_path)
+    poscar_parser.write(file_path=poscar_write_path)
     # Then load same content again, but from the newly written file
     poscar_reloaded = Poscar(file_path=poscar_write_path).get_dict()
-    # Comment entry is modified so need to remove that before comparing
-    del poscar['comment']
-    del poscar_reloaded['comment']
-    # Compare
-    assert np.allclose(poscar['unitcell'], poscar_reloaded['unitcell'])
-    for index, site in enumerate(poscar['sites']):
-        reloaded = poscar_reloaded['sites'][index]
-        assert site['specie'] == reloaded['specie']
-        assert np.allclose(site['position'], reloaded['position'])
-        assert site['selective'] == reloaded['selective']
-        assert site['velocities'] == reloaded['velocities']
-        assert np.allclose(site['predictors'], reloaded['predictors'])
-        assert site['direct'] == reloaded['direct']
-
+    compare_poscars(poscar, poscar_reloaded)
+    # Check that handler also works for write by yet again writing a new POSCAR and comparing
+    with open(poscar_write_path, 'w') as handler:
+        poscar_parser.write(file_handler=handler)
+    with open(poscar_write_path, 'r') as handler:
+        poscar_reloaded = Poscar(file_handler=handler).get_dict()
+    compare_poscars(poscar, poscar_reloaded)    
+    
 @pytest.mark.parametrize('poscar_parser', [False], indirect=True)
 def test_poscar_cartesian(tmp_path, poscar_parser):
     """Test that the POSCAR writes and reads positional cartesian coordinates correctly."""
     poscar = poscar_parser.get_dict()
     # Write it
     poscar_write_path = tmp_path / "POSCAR"
-    poscar_parser.write(poscar_write_path)
+    poscar_parser.write(file_path=poscar_write_path)
     poscar_cartesian = None
     with open(poscar_write_path) as file_object:
         poscar_cartesian = file_object.readlines()
@@ -148,7 +142,7 @@ def test_poscar_scaling(tmp_path, poscar_parser):
     # Then test scaling when positions are in cartesian coordinates
     # Create a new Poscar instance where the write is in cartesian coordinates
     poscar_parser_temp = Poscar(poscar_string = poscar, write_direct=False)
-    poscar_parser_temp.write(poscar_write_path)
+    poscar_parser_temp.write(file_path=poscar_write_path)
     with open(poscar_write_path, 'r') as file_object:
         poscar_cart_unscaled = file_object.readlines()
     poscar_cart_unscaled[1] = str(scaling) + '\n'
@@ -463,3 +457,23 @@ def test_poscar_cartesian(poscar_parser):
     }
     np.testing.assert_allclose(sites[8]['position'], test['position'])
     assert not sites[8]['direct']
+
+
+def compare_poscars(poscar, poscar_reloaded):
+    """Compare specific content in POSCAR before and after write."""
+    # Comment entry is modified so need to remove that before comparing
+    if 'comment' in poscar:
+        del poscar['comment']
+    if 'comment' in poscar_reloaded:
+        del poscar_reloaded['comment']
+    # Compare
+    assert np.allclose(poscar['unitcell'], poscar_reloaded['unitcell'])
+    for index, site in enumerate(poscar['sites']):
+        reloaded = poscar_reloaded['sites'][index]
+        assert site['specie'] == reloaded['specie']
+        assert np.allclose(site['position'], reloaded['position'])
+        assert site['selective'] == reloaded['selective']
+        assert site['velocities'] == reloaded['velocities']
+        assert np.allclose(site['predictors'], reloaded['predictors'])
+        assert site['direct'] == reloaded['direct']
+        

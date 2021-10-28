@@ -824,36 +824,19 @@ class Kpoints(BaseParser):
         """
 
         string_object = StringIO.StringIO()
-        self._write(kpoints=string_object)
+        self._write(file_handler=string_object)
         kpoints_string = string_object.getvalue()
         string_object.close()
 
-        return poscar_string
+        return kpoints_string
 
-    def write(self, file_path):
-        """ Write KPOINTS like files
-
-        Parameters
-        ----------
-        file_path : str
-            The location and filename of the KPOINTS like file to be
-            written.
-
-        """
-
-        kpoints = utils.file_handler(file_path,
-                                     status='w',
-                                     logger=self._logger)
-        self._write(kpoints=kpoints)
-        utils.file_handler(file_handler=kpoints, logger=self._logger)
-
-    def _write(self, kpoints):
+    def _write(self, file_handler, **kwargs):
         """
         Write KPOINTS like files to a file or string.x
 
         Parameters
         ----------
-        kpoints : object
+        file_handler : object
             Either a file object or a StringIO object.
 
         """
@@ -865,13 +848,13 @@ class Kpoints(BaseParser):
             comment = '# No comment'
         else:
             comment = '# ' + comment
-        kpoints.write(comment + '\n')
+        file_handler.write(comment + '\n')
         # Check mode
         mode = entries['mode']
         if mode == 'explicit':
-            kpoints.write('{:6d}\n'.format(entries['num_kpoints']))
+            file_handler.write('{:6d}\n'.format(entries['num_kpoints']))
             # Points should already be direct
-            kpoints.write('Direct\n')
+            file_handler.write('Direct\n')
             for point in entries['points']:
                 coordinate = point.get_point()
                 weight = point.get_weight()
@@ -883,7 +866,7 @@ class Kpoints(BaseParser):
                                 'to be given. Setting it to 1.0. '
                                 'Continuing.')
                     weight = 1.0
-                kpoints.write('{:{width}.{prec}f} {:{width}.{prec}f} '
+                file_handler.write('{:{width}.{prec}f} {:{width}.{prec}f} '
                               '{:{width}.{prec}f} {:{width}.{prec}f}\n'.format(
                                   coordinate[0],
                                   coordinate[1],
@@ -892,15 +875,15 @@ class Kpoints(BaseParser):
                                   prec=self._prec,
                                   width=self._width))
             if entries['tetra'] is not None:
-                kpoints.write('Tetrahedra\n')
+                file_handler.write('Tetrahedra\n')
                 tetra = entries['tetra']
-                kpoints.write('{:6d} {:{width}.{prec}f}\n'.format(
+                file_handler.write('{:6d} {:{width}.{prec}f}\n'.format(
                     len(tetra),
                     entries['tetra_volume'],
                     prec=self._prec,
                     width=self._width))
                 for element in tetra:
-                    kpoints.write('{:6d} {:6d} {:6d} {:6d} {:6d}\n'.format(
+                    file_handler.write('{:6d} {:6d} {:6d} {:6d} {:6d}\n'.format(
                         element[0],
                         element[1],
                         element[2],
@@ -909,21 +892,21 @@ class Kpoints(BaseParser):
                         prec=self._prec,
                         width=self._width))
         if mode == 'automatic':
-            kpoints.write('0\n')
-            kpoints.write(entries['centering'] + '\n')
+            file_handler.write('0\n')
+            file_handler.write(entries['centering'] + '\n')
             divisions = entries['divisions']
-            kpoints.write('{:{width}d} {:{width}d} {:{width}d}\n'.format(
+            file_handler.write('{:{width}d} {:{width}d} {:{width}d}\n'.format(
                 divisions[0], divisions[1], divisions[2], width=self._width))
             shifts = entries['shifts']
             if shifts is not None:
-                kpoints.write('{:{width}.{prec}f} {:{width}.{prec}f} '
+                file_handler.write('{:{width}.{prec}f} {:{width}.{prec}f} '
                               '{:{width}.{prec}f}\n'.format(shifts[0],
                                                             shifts[1],
                                                             shifts[2],
                                                             prec=self._prec,
                                                             width=self._width))
             else:
-                kpoints.write('{:{width}.{prec}f} {:{width}.{prec}f} '
+                file_handler.write('{:{width}.{prec}f} {:{width}.{prec}f} '
                               '{:{width}.{prec}f}\n'.format(0.0,
                                                             0.0,
                                                             0.0,
@@ -931,24 +914,24 @@ class Kpoints(BaseParser):
                                                             width=self._width))
 
         if mode == 'line':
-            kpoints.write('{:6d}\n'.format(entries['num_kpoints']))
-            kpoints.write('Line-mode\n')
+            file_handler.write('{:6d}\n'.format(entries['num_kpoints']))
+            file_handler.write('Line-mode\n')
             # Assume points to be direct
-            kpoints.write('Direct\n')
+            file_handler.write('Direct\n')
             complete_set = 1
             for index, point in enumerate(entries['points']):
                 coordinate = point.get_point()
-                kpoints.write('{:{width}.{prec}f} {:{width}.{prec}f} '
+                file_handler.write('{:{width}.{prec}f} {:{width}.{prec}f} '
                               '{:{width}.{prec}f}\n'.format(coordinate[0],
                                                             coordinate[1],
                                                             coordinate[2],
                                                             prec=self._prec,
                                                             width=self._width))
                 if complete_set == 2:
-                    kpoints.write('\n')
+                    file_handler.write('\n')
                     complete_set = 0
                 complete_set = complete_set + 1
-            utils.remove_newline(kpoints)
+            utils.remove_newline(file_handler)
 
 
 class Kpoint(object):

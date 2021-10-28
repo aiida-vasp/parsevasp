@@ -3,6 +3,8 @@ import sys
 import logging
 import os
 
+from parsevasp import utils
+
 
 class BaseParser(object):
 
@@ -47,6 +49,46 @@ class BaseParser(object):
         else:
             logging.basicConfig(level=logging.DEBUG)
             self._logger = logging.getLogger('ParsevaspParser')
+
+
+    def write(self, **kwargs):
+        """Write respective content as files using a path or handler.
+
+        Parameters
+        ----------
+        file_path : str, optional
+            A string containing the file path to the file that is going to be parsed.
+        file_handler : object, optional
+            A file like object that acts as a handler for the content to be parsed.
+        other : optional
+            Any other argument than file path or handler is passed to the specific
+            `_write` function.
+
+        One has to provide either a file path or a file handler.
+
+        """
+
+        # Check that we only supply either or of path and handler.
+        if ('file_path' in kwargs and 'file_handler' in kwargs) or \
+           ('file_path' not in kwargs and 'file_handler' not in kwargs):
+            self._logger.error(
+                self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
+            sys.exit(self.ERROR_USE_ONE_ARGUMENT)
+
+        file_path = kwargs.pop('file_path', '')
+        file_handler = kwargs.pop('file_handler', '')
+        if file_path:
+            # Open file
+            file_handler = utils.file_handler(file_path, status='w', logger=self._logger)
+
+        # Do the write for each specific content parser _write function using handler, also
+        # bring any extra arguments.
+        self._write(file_handler, **kwargs)
+
+        if file_path:
+            # Close file
+            utils.file_handler(file_handler=file_handler, logger=self._logger)
+
 
     def _check_file(self, file_path=None):
         """

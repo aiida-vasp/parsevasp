@@ -855,35 +855,19 @@ class Poscar(BaseParser):
         """
 
         string_object = StringIO()
-        self._write(poscar=string_object)
+        self._write(file_handler=string_object)
         poscar_string = string_object.getvalue()
         string_object.close()
 
         return poscar_string
 
-    def write(self, file_path):
-        """
-        Write POSCAR like files
-
-        Parameters
-        ----------
-        file_path : str
-            The location and filename of the POSCAR like file to be
-            written.
-
-        """
-
-        poscar = utils.file_handler(file_path, status='w', logger=self._logger)
-        self._write(poscar=poscar)
-        utils.file_handler(file_handler=poscar, logger=self._logger)
-
-    def _write(self, poscar):
+    def _write(self, file_handler, **kwargs):
         """
         Write POSCAR like files to a file or string
 
         Parameters
         ----------
-        poscar : object
+        file_handler : object
             Either a file object or a StringIO object.
 
         """
@@ -910,14 +894,14 @@ class Poscar(BaseParser):
             comment = '# ' + compound + ' Old comment: ' + comment
         else:
             comment = '# ' + comment
-        poscar.write(comment + '\n')
+        file_handler.write(comment + '\n')
         # We avoid usage of the scaling factor
-        poscar.write('{:{width}.{prec}f}\n'.format(1.0,
+        file_handler.write('{:{width}.{prec}f}\n'.format(1.0,
                                                    prec=self._prec,
                                                    width=self._width))
         # Write unitcell
         for i in range(3):
-            poscar.write('{:{width}.{prec}f} {:{width}.{prec}f} '
+            file_handler.write('{:{width}.{prec}f} {:{width}.{prec}f} '
                          '{:{width}.{prec}f}\n'.format(unitcell[i][0],
                                                        unitcell[i][1],
                                                        unitcell[i][2],
@@ -927,19 +911,19 @@ class Poscar(BaseParser):
         tempostring = ''
         for specie in species:
             tempostring = tempostring + '{:5s} '.format(specie.capitalize())
-        poscar.write('{}\n'.format(tempostring.rstrip()))
+        file_handler.write('{}\n'.format(tempostring.rstrip()))
         # Write number of species
         tempostring = ''
         for number in num_species:
             tempostring = tempostring + '{:5d} '.format(number)
-        poscar.write('{}\n'.format(tempostring.rstrip()))
+        file_handler.write('{}\n'.format(tempostring.rstrip()))
         # Write selective if any flags are True
         if selective:
-            poscar.write('Selective dynamics\n')
+            file_handler.write('Selective dynamics\n')
         if not self._write_direct:
-            poscar.write('Cartesian\n')
+            file_handler.write('Cartesian\n')
         else:
-            poscar.write('Direct\n')
+            file_handler.write('Direct\n')
 
         # Write positions
         for site in sites:
@@ -947,7 +931,7 @@ class Poscar(BaseParser):
                 _site = site[1]
             else:
                 _site = self._to_cart(site[1][0:3], unitcell)
-            poscar.write('{:{width}.{prec}f} {:{width}.{prec}f} '
+            file_handler.write('{:{width}.{prec}f} {:{width}.{prec}f} '
                          '{:{width}.{prec}f}'.format(_site[0],
                                                      _site[1],
                                                      _site[2],
@@ -959,21 +943,21 @@ class Poscar(BaseParser):
                 for index, flag in enumerate(flags):
                     if not flag:
                         sel[index] = 'F'
-                poscar.write(' {} {} {}'.format(sel[0], sel[1], sel[2]))
-            poscar.write('\n')
+                file_handler.write(' {} {} {}'.format(sel[0], sel[1], sel[2]))
+            file_handler.write('\n')
 
         # Write velocities if they exist
         if velocities:
             if self._write_direct:
-                poscar.write('Direct\n')
+                file_handler.write('Direct\n')
             else:
-                poscar.write('Cartesian\n')
+                file_handler.write('Cartesian\n')
             for site in sites:
                 if self._write_direct:
                     _site = site[4]
                 else:
                     _site = self._to_cart(site[4][0:3], unitcell)
-                poscar.write('{:{width}.{prec}f} {:{width}.{prec}f} '
+                file_handler.write('{:{width}.{prec}f} {:{width}.{prec}f} '
                              '{:{width}.{prec}f}\n'.format(_site[0],
                                                            _site[1],
                                                            _site[2],
@@ -982,9 +966,9 @@ class Poscar(BaseParser):
 
         # Write predictors if they exist
         if predictors:
-            poscar.write('\n')
+            file_handler.write('\n')
             for site in sites:
-                poscar.write('{:{width}.{prec}f} {:{width}.{prec}f} '
+                file_handler.write('{:{width}.{prec}f} {:{width}.{prec}f} '
                              '{:{width}.{prec}f}\n'.format(site[5][0],
                                                            site[5][1],
                                                            site[5][2],

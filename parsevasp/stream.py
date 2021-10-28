@@ -88,6 +88,10 @@ class Stream(BaseParser):
         """Define a string representation for the class which can be used for reporting purposes."""
         return f"We detected {self.number_of_entries} unique {', '.join(self._stream_kinds)}'s"
 
+    def _write(self, *args, **kwargs):
+        """Write not supported for standard streams."""
+        raise NotImplementedError('Writing VASP standard streams files is not supported.')
+    
     @property
     def configured_streams(self):
         """Return the configured streams."""

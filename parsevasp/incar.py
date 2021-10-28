@@ -417,39 +417,20 @@ class Incar(BaseParser):
         """
 
         string_object = StringIO.StringIO()
-        self._write(incar=string_object)
+        self._write(file_handler=string_object)
         incar_string = string_object.getvalue()
         string_object.close()
 
         return incar_string
 
-    def write(self, file_path, comments=False):
-        """
-        Write the content of the current Incar instance to
-        file.
-
-        Parameters
-        ----------
-        file_path : string
-            The location to write INCAR.
-        comments : bool, optional
-            If set to true, the comments are also dumped to the file,
-            else not.
-
-        """
-
-        incar = utils.file_handler(file_path, status='w', logger=self._logger)
-        self._write(incar=incar)
-        utils.file_handler(file_handler=incar, logger=self._logger)
-
-    def _write(self, incar, comments=False):
+    def _write(self, file_handler, **kwargs):
         """
         Write the content of the current Incar instance to
         file or string.
 
         Parameters
         ----------
-        incar : object
+        file_handler : object
             Either a file object or a StringIO object.
         comments : bool, optional
             If set to true, the comments are also dumped to the file,
@@ -457,6 +438,8 @@ class Incar(BaseParser):
 
         """
 
+        comments = kwargs.pop('comments', False)
+        
         # Write in alfabetical order
         keys = sorted(self.entries)
         entries = self.entries
@@ -470,7 +453,7 @@ class Incar(BaseParser):
                 comment = ' # ' + comment
             value = self._convert_value_to_string(value)
             string = str(key.upper()) + ' = ' + value + comment + '\n'
-            incar.write(string)
+            file_handler.write(string)
 
 
 class IncarItem(object):

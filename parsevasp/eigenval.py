@@ -52,6 +52,10 @@ class Eigenval(BaseParser):
         # parse parse parse
         self._parse()
 
+    def _write(self, *args, **kwargs):
+        """Write not supported for EIGENVAL."""
+        raise NotImplementedError('Writing EIGENVAL files is not supported.')
+
     def _parse(self):
         """Perform the actual parsing."""
 
