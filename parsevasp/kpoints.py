@@ -209,10 +209,10 @@ class Kpoints(BaseParser):
                     weight = float(kentry[3])
                 points.append(Kpoint(point, weight, direct=direct))
             loopmax = num_kpoints + loopmax
-            tetra = []
             if len(kpoints) > loopmax:
                 if kpoints[loopmax].strip()[0].lower() == 't':
                     # Tetrahedron info present
+                    tetra = []
                     loopmax = loopmax + 1
                     if len(kpoints) > loopmax:
                         first_line = kpoints[loopmax].split()
