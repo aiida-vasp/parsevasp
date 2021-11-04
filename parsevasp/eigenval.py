@@ -92,8 +92,8 @@ class Eigenval(BaseParser):
         line_2 = utils.line_to_type(eigenval[2], float)
         coord_type = utils.line_to_type(eigenval[3])
 
-        # Read name
-        name = utils.line_to_type(eigenval[4])
+        # Read system
+        system = utils.line_to_type(eigenval[4], no_split=True)
 
         # Read number of kpoints and bands
         param_0, num_kp, num_bands = utils.line_to_type(eigenval[5], int)
@@ -132,7 +132,7 @@ class Eigenval(BaseParser):
         metadata['p00'] = p00
         metadata['nspin'] = num_spins
         metadata['cartesian'] = coord_type.startswith(('c', 'C'))
-        metadata['name'] = name
+        metadata['name'] = system
         metadata['some_num'] = param_0
         metadata['n_bands'] = num_bands
         metadata['n_kp'] = num_kp
