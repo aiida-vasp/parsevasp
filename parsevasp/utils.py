@@ -391,7 +391,7 @@ def match_integer_param(inputs, key, string):
     if match:
         inputs[key.lower()] = int(match.group(1))
 
-def line_to_type(fobject_or_string, d_type=str):
+def line_to_type(fobject_or_string, d_type=str, no_split=False):
     """
     Grab a line from a file like object or string and convert it to d_type (default: str).
     
@@ -401,6 +401,8 @@ def line_to_type(fobject_or_string, d_type=str):
         A file like object or a string containing something that is to be converted to a specified type
     dtype : object
         The dtype one want to convert to. The standard Python dtypes are supported.
+    no_splot : bool
+        If True do not split a string. Useful for comments etc. We still strip.
     
     """
     if isinstance(fobject_or_string, str):
@@ -408,7 +410,10 @@ def line_to_type(fobject_or_string, d_type=str):
     else:
         line = fobject_or_string.readline()
     # Previously this was map instead of list comprehension
-    result = [d_type(item) for item in line.split()]
+    if not no_split:
+        result = [d_type(item) for item in line.split()]
+    else:
+        result = line.strip()
     if len(result) == 1:
         return result[0]
     return result

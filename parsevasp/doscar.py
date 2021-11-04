@@ -152,7 +152,7 @@ class Doscar(BaseParser):
         coord_type = utils.line_to_type(doscar[3])
 
         # Name of system
-        name = utils.line_to_type(doscar[4])
+        system = utils.line_to_type(doscar[4], no_split=True)
 
         # Energy min, energy max, number of points between, fermi level, weight
         line_2 = utils.line_to_type(doscar[5], float)
@@ -209,7 +209,7 @@ class Doscar(BaseParser):
         metadata['n_ions'] = num_ions
         metadata['n_atoms'] = num_atoms
         metadata['cartesian'] = coord_type.startswith(('c', 'C'))
-        metadata['name'] = name
+        metadata['name'] = system
         metadata['emax'] = emax
         metadata['emin'] = emin
         metadata['n_dos'] = ndos
