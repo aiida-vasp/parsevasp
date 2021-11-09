@@ -130,7 +130,7 @@ class Poscar(BaseParser):
 
         """
 
-        poscar = utils.readlines_from_file(self._file_path, self._file_handler)
+        poscar = utils.read_from_file(self._file_path, self._file_handler)
         poscar_dict = self._from_list(poscar)
         return poscar_dict
 

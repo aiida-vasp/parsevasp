@@ -106,12 +106,7 @@ class Doscar(BaseParser):
         raise NotImplementedError('Writing DOSCAR files is not supported.')
 
     def _parse(self):
-        """Perform the actual parsing."""
-
-        if self._file_path is None and self._file_handler is None:
-            return
-
-        # create dictionary from a file
+        """Perform the actual parsing by parsing from file like content."""
         self._from_file()
 
     def _from_file(self):
@@ -121,7 +116,7 @@ class Doscar(BaseParser):
 
         """
 
-        doscar = utils.readlines_from_file(self._file_path, self._file_handler)
+        doscar = utils.read_from_file(self._file_path, self._file_handler)
         self._from_list(doscar)
 
     def _from_list(self, doscar):

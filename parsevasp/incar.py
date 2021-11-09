@@ -113,7 +113,7 @@ class Incar(BaseParser):
 
         """
 
-        incar = utils.readlines_from_file(self._file_path, self._file_handler)
+        incar = utils.read_from_file(self._file_path, self._file_handler)
         return incar
 
     def _from_string(self):

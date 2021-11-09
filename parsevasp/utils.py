@@ -9,10 +9,11 @@ import numpy as np
 from parsevasp.base import BaseParser
 
 
-def readlines_from_file(file_name,
-                        input_file_handler,
-                        contains=None,
-                        logger=None):
+def read_from_file(file_name,
+                   input_file_handler,
+                   contains=None,
+                   lines=True,
+                   logger=None):
     """
     Read a file and return the whole file or specific lines.
 
@@ -26,14 +27,18 @@ def readlines_from_file(file_name,
     contains : list of str
         A list of string of identifiers for the lines that is to be
         returned. If None, the whole file is returned.
+    lines : bool, optional
+        If set to False, this method will just return the read() from supplied path or handler.
+        Defaults to True.
     logger : object, optional
         A logger object to use.
 
     Returns
     -------
-    lines : list of str
-        The list of strings containing the whole or specific
-        lines from a file.
+    parsed : list of str or a str 
+        If `lines` is True, the list of strings containing the whole or specific
+        lines from a file is returned. If `lines` is False, a string of all the content
+        is returned.
 
     """
 
@@ -42,13 +47,22 @@ def readlines_from_file(file_name,
 
     if input_file_handler is not None:
         inputfile = input_file_handler
+        if not lines:
+            # Only want a string of file content, return.
+            return inputfile.read()
         file_data = inputfile.readlines()
     else:
         inputfile = file_handler(file_name=file_name, status='r', logger=logger)
-        file_data = inputfile.readlines()
+        if not lines:
+            # Only want a string of file content, return.
+            file_data = inputfile.read()
+        else:
+            file_data = inputfile.readlines()
         file_handler(logger, file_handler=inputfile, logger=logger)
+        if not lines:
+            return file_data
 
-    lines = []
+    parsed = []
 
     # first check if contains is a list
     is_list = is_sequence(contains)
@@ -60,14 +74,14 @@ def readlines_from_file(file_name,
             if is_list:
                 for element in contains:
                     if element in line:
-                        lines.append(line)
+                        parsed.append(line)
             else:
                 if contains in line:
-                    lines = line
+                    parsed = line
     else:
-        lines = file_data
+        parsed = file_data
 
-    return lines
+    return parsed
 
 
 def file_handler(file_name='', file_handler=None, status=None, logger=None):

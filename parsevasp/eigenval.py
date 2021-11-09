@@ -72,7 +72,7 @@ class Eigenval(BaseParser):
 
         """
 
-        eigenval = utils.readlines_from_file(self._file_path, self._file_handler)
+        eigenval = utils.read_from_file(self._file_path, self._file_handler)
         self._from_list(eigenval)
 
     def _from_list(self, eigenval):
