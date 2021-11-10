@@ -181,7 +181,7 @@ class Stream(BaseParser):
 
         """
 
-        stream = utils.readlines_from_file(self._file_path, self._file_handler)
+        stream = utils.read_from_file(self._file_path, self._file_handler)
         self._from_list(stream)
 
     def _from_list(self, stream):

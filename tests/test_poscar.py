@@ -57,7 +57,7 @@ def poscar_parser_vel():
 
     return poscar
 
-@pytest.mark.parametrize('poscar_parser', [[True]], indirect=True)
+@pytest.mark.parametrize('poscar_parser', [(True,)], indirect=True)
 def test_poscar_exist(poscar_parser):
     """Check if poscar_parser exists.
 
@@ -65,7 +65,7 @@ def test_poscar_exist(poscar_parser):
 
     assert poscar_parser.get_dict()
 
-@pytest.mark.parametrize('poscar_parser', [[True]], indirect=True)
+@pytest.mark.parametrize('poscar_parser', [(True,)], indirect=True)
 def test_poscar_write(tmp_path, poscar_parser):
     """Test that the POSCAR writes correctly."""
     poscar = poscar_parser.get_dict()
@@ -82,7 +82,7 @@ def test_poscar_write(tmp_path, poscar_parser):
         poscar_reloaded = Poscar(file_handler=handler).get_dict()
     compare_poscars(poscar, poscar_reloaded)    
     
-@pytest.mark.parametrize('poscar_parser', [False], indirect=True)
+@pytest.mark.parametrize('poscar_parser', [(False,)], indirect=True)
 def test_poscar_cartesian(tmp_path, poscar_parser):
     """Test that the POSCAR writes and reads positional cartesian coordinates correctly."""
     poscar = poscar_parser.get_dict()
@@ -112,7 +112,7 @@ def test_poscar_cartesian(tmp_path, poscar_parser):
         assert np.allclose(site['predictors'], reloaded['predictors'])
         assert site['direct'] == reloaded['direct']    
 
-@pytest.mark.parametrize('poscar_parser', [True], indirect=True)
+@pytest.mark.parametrize('poscar_parser', [(True,)], indirect=True)
 def test_poscar_scaling(tmp_path, poscar_parser):
     """Test that the scaling factor works when reading a POSCAR file."""
     poscar = poscar_parser.get_dict()
@@ -191,7 +191,7 @@ def test_poscar_entries(poscar_parser_names):
     }
     assert sites[8]['specie'] == test['specie']
 
-@pytest.mark.parametrize('poscar_parser', [[True]], indirect=True)
+@pytest.mark.parametrize('poscar_parser', [(True,)], indirect=True)
 def test_poscar_entries(poscar_parser):
     """Check POSCAR entries.
 
@@ -421,7 +421,7 @@ def test_poscar_entries_dict():
     assert sites[0]['direct']
 
 
-@pytest.mark.parametrize('poscar_parser', [[True]], indirect=True)
+@pytest.mark.parametrize('poscar_parser', [(True,)], indirect=True)
 def test_poscar_cartesian(poscar_parser):
     """Check that get_dict can return cartesian coordinates.
 

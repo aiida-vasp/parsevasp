@@ -132,7 +132,7 @@ class Kpoints(BaseParser):
 
         """
 
-        kpoints = utils.readlines_from_file(self._file_path,
+        kpoints = utils.read_from_file(self._file_path,
                                             self._file_handler)
         kpoints_dict = self._from_list(kpoints)
         return kpoints_dict

@@ -122,7 +122,7 @@ class Outcar(BaseParser):
         file and store them in the this instance's data dictionary.
         """
 
-        outcar = utils.readlines_from_file(self._file_path, self._file_handler)
+        outcar = utils.read_from_file(self._file_path, self._file_handler)
         self._from_list(outcar)
 
     def _from_list(self, outcar):
