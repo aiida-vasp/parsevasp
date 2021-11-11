@@ -49,24 +49,15 @@ class Outcar(BaseParser):
                 'total': None
             },
             'symmetry': {
+                'num_space_group_operations': {
+                    'static': [],
+                    'dynamic': []
+                },
                 'original_cell_type': {
                     'static': [],
                     'dynamic': []
                 },
                 'symmetrized_cell_type': {
-                    'static': [],
-                    'dynamic': []
-                },
-                'num_space_group_operations': {
-                    'static': [],
-                    'dynamic': []
-                },
-                'site_symmetry_at_origin': {
-                    'static': [],
-                    'dynamic': []
-                },
-                'primitive_translations': [],
-                'point_group': {
                     'static': [],
                     'dynamic': []
                 }
@@ -184,23 +175,6 @@ class Outcar(BaseParser):
                 if line.strip().startswith('Subroutine GETGRP returns'):
                     self._data['symmetry']['num_space_group_operations'][
                         config].append(int(line.strip().split()[4]))
-                if ('configuration has the point symmetry') in line:
-                    self._data['symmetry']['site_symmetry_at_origin'][
-                        config].append(line.strip().split()[7])
-                    next_line = outcar[index + 1].strip().split()
-                    if next_line:
-                        # Point group only available in recent versions
-                        self._data['symmetry']['point_group'][config].append(
-                            next_line[10])
-                    else:
-                        self._data['symmetry']['point_group'][config].append(
-                            None)
-                    config = ''
-
-            if line.strip().startswith('Subroutine INISYM returns'):
-                prim_line = outcar[index + 2].strip().split()
-                self._data['symmetry']['primitive_translations'].append(
-                    int(prim_line[2]))
 
             # then the elastic tensors etc. in kBar
             if line.strip().startswith('ELASTIC MODULI  (kBar)'):
