@@ -5,9 +5,7 @@ from parsevasp.outcar import Outcar
 
 @pytest.fixture
 def outcar_parser(request):
-    """Load OUTCAR file.
-
-    """
+    """A fixture that loads OUTCAR."""
     try: 
         name = request.param
     except AttributeError:
@@ -21,9 +19,7 @@ def outcar_parser(request):
 
 @pytest.fixture
 def outcar_parser_file_objects(request):
-    """Load OUTCAR file from a file object.
-
-    """
+    """A fixture that loads OUTCAR using file object."""
     try: 
         name = request.param
     except AttributeError:
@@ -38,9 +34,7 @@ def outcar_parser_file_objects(request):
     return outcar
 
 def test_outcar_symmetry(outcar_parser):
-    """Check if outcar_parser returns correct symmetry entries.
-
-    """
+    """Check if parser returns correct symmetry entries."""
 
     symmetry = outcar_parser.get_symmetry()
 
@@ -77,9 +71,7 @@ def test_outcar_symmetry(outcar_parser):
 
 
 def test_outcar_elastic(outcar_parser):
-    """Check if outcar_parser returns correct elastic moduli entries.
-
-    """
+    """Check if parser returns correct elastic moduli entries."""
 
     elastic = outcar_parser.get_elastic_moduli()
     test = np.array([[
@@ -124,9 +116,7 @@ def test_outcar_elastic(outcar_parser):
 
 
 def test_outcar_elastic_file_object(outcar_parser_file_objects):
-    """Check if outcar_parser returns correct elastic moduli entries.
-
-    """
+    """Check if parser returns correct elastic moduli entries using the file object."""
 
     elastic = outcar_parser_file_objects.get_elastic_moduli()
     test = np.array([[
@@ -172,8 +162,7 @@ def test_outcar_elastic_file_object(outcar_parser_file_objects):
 
 @pytest.mark.parametrize('outcar_parser', (['OUTCAR_MAG']), indirect=['outcar_parser'])
 def test_outcar_magnetization(outcar_parser):
-    """Check if outcar_magnetization_parser returns the correct magnetization
-    """
+    """Check if the magnetization parser returns the correct magnetization."""
 
     magnetization = outcar_parser.get_magnetization()
     test = {
@@ -245,8 +234,9 @@ def test_outcar_magnetization(outcar_parser):
 
 @pytest.mark.parametrize('outcar_parser', ['OUTCAR_MAG_SINGLE'], indirect=['outcar_parser'])
 def test_outcar_magnetization_single(outcar_parser):
-    """Check if outcar_magnetization_parser returns the correct magnetization
-    for a single atom in the unit cell
+    """Check if the magnetization parser returns the correct magnetization 
+    for a single atom in the unit cell.
+    
     """
 
     magnetization = outcar_parser.get_magnetization()
@@ -302,8 +292,7 @@ def test_outcar_magnetization_single(outcar_parser):
 
 
 def test_outcar_elastic_file_object(outcar_parser_file_objects):
-    """Check if outcar_parser returns correct timing information.
-    """
+    """Check if outcar_parser returns correct timing information."""
 
     timings = outcar_parser_file_objects.get_run_stats()
     assert timings['total_cpu_time_used'] == 89.795
