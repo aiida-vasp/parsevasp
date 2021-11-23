@@ -100,11 +100,7 @@ class Outcar(BaseParser):
 
     def _parse(self):
         """Perform the actual parsing."""
-
-        if self._file_path is None and self._file_handler is None:
-            return
-
-        # create dictionary from a file
+        # Create dictionary from a file
         self._from_file()
 
     def _from_file(self):
@@ -126,7 +122,6 @@ class Outcar(BaseParser):
             A list of strings containing each line in the OUTCAR file.
 
         """
-
         config = ''
         s_orb = {0: 's', 1: 'p', 2: 'd', 3: 'f'}
         params = {'ibrion': -1}
@@ -250,6 +245,7 @@ class Outcar(BaseParser):
                             mag_found = True
                         _counter = _counter + 1
             if line.strip().startswith('number of electron'):
+                # Only take the last value
                 self._data['magnetization']['full_cell'] = [
                     float(_val) for _val in outcar[index].strip().split()[5:]
                 ]
@@ -364,7 +360,7 @@ class Outcar(BaseParser):
         """
         Return the run time statistics information. 
         
-        The existence of timing information also signals the calculation terminate
+        The existence of timing and memory information also signals the calculation terminate
         gracefully.
 
         Parameters
@@ -373,12 +369,17 @@ class Outcar(BaseParser):
 
         Returns
         -------
-        timings : dict
-            A dictionary containing the timing information.
+        stats : dict
+            A dictionary containing timing and memory consumption information
+            that are parsed from the end of the OUTCAR file. The key names are
+            mostly preserved, except for the memory which is prefixed with `mem_usage_`.
+            Units are preserved from OUTCAR and there are some differences between
+            VASP 5 and 6.
+
         """
 
-        timings = self._data['run_stats']
-        return timings
+        stats = self._data['run_stats']
+        return stats
 
     def get_run_status(self):
         """
@@ -394,7 +395,15 @@ class Outcar(BaseParser):
         Returns
         -------
         status : dict
-            A dictionary containing the timing information.
+            A dictionary containing the keys `finished`, which is True if the VASP calculation 
+            contain timing information in the end of the OUTCAR. The key `ionic_converged` is 
+            True if the number of ionic steps detected is smaller than the supplied NSW.
+            The key `electronic_converged` is True if the number of electronic steps is smaller than
+            NELM (defaults to 60 in VASP). It is also possible to check if all the ionic steps
+            did reached NELM and thus did not converged if the key `consistent_nelm_breach` is True,
+            while `contains_nelm_breach` is True if one or more ionic steps reached NELM and thus
+            did not converge electronically.
+
         """
 
         status = self._data['run_status']
