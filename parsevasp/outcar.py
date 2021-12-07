@@ -9,6 +9,12 @@ from parsevasp.base import BaseParser
 
 
 class Outcar(BaseParser):
+    ERROR_NO_ITERATIONS = 600
+    BaseParser.ERROR_MESSAGES.update({
+        ERROR_NO_ITERATIONS: 'A crash detected before the first SCF step.'
+    })
+    ERROR_MESSAGES = BaseParser.ERROR_MESSAGES
+
     def __init__(self,
                  file_path=None,
                  file_handler=None,
@@ -126,6 +132,7 @@ class Outcar(BaseParser):
         s_orb = {0: 's', 1: 'p', 2: 'd', 3: 'f'}
         params = {'ibrion': -1}
         finished = False
+        iter_counter = None
         nelec_steps = {}
 
         for index, line in enumerate(outcar):
@@ -249,6 +256,11 @@ class Outcar(BaseParser):
                 self._data['magnetization']['full_cell'] = [
                     float(_val) for _val in outcar[index].strip().split()[5:]
                 ]
+
+        # Check if SCF iterations are contained in the file
+        if iter_counter is None:
+            self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_ITERATIONS])
+            sys.exit(self.ERROR_NO_ITERATIONS)
 
         # Work out if the ionic relaxation and electronic steps are to be considered converged
         run_status = self._data['run_status']

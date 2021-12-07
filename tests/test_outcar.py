@@ -334,3 +334,11 @@ def test_run_status(outcar_parser, expected):
     assert run_status['electronic_converged'] is expected[2]
     assert run_status['consistent_nelm_breach'] is expected[3]
     assert run_status['contains_nelm_breach'] is expected[4]
+
+
+def test_crashed_outcar(outcar_parser):
+    """Test incomplete OUTCAR"""
+    testdir = os.path.dirname(__file__)
+    outcarfile = os.path.join(testdir, 'OUTCAR.crashed')
+    with pytest.raises(SystemExit):
+        outcar = Outcar(file_path=outcarfile)
