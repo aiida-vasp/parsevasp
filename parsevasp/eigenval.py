@@ -44,7 +44,7 @@ class Eigenval(BaseParser):
             sys.exit(self.ERROR_USE_ONE_ARGUMENT)
 
         self._data = {
-            'bands': None,
+            'eigenvalues': None,
             'kpoints': None,
             'metadata': None
         }
@@ -77,7 +77,7 @@ class Eigenval(BaseParser):
 
     def _from_list(self, eigenval):
         """
-        Go through the list and extract bands, kpoints and metadata.
+        Go through the list and extract eigenvalues, kpoints and metadata.
 
         Parameters
         ----------
@@ -95,7 +95,7 @@ class Eigenval(BaseParser):
         # Read system
         system = utils.line_to_type(eigenval[4], no_split=True)
 
-        # Read number of kpoints and bands
+        # Read number of kpoints and number of bands
         param_0, num_kp, num_bands = utils.line_to_type(eigenval[5], int)
 
         # Read the rest of the data
@@ -110,7 +110,7 @@ class Eigenval(BaseParser):
         data = re.split(utils.empty_line, data)
         data = [[line.split() for line in block.splitlines()] for block in data]
         kpoints = np.zeros((num_kp, 4))
-        bands = np.zeros((num_spins, num_kp, num_bands))
+        eigenvalues = np.zeros((num_spins, num_kp, num_bands))
         # Iterate over blocks, pr. k-point
         for k, field in enumerate(data):
             # Remove empty lines
@@ -120,7 +120,14 @@ class Eigenval(BaseParser):
             kpoints[k] = kpi
             # The rest is the band energies
             for point in kpbs:
-                bands[:, k, int(point[0]) - 1] = point[1:num_spins + 1]
+                eigenvalues[:, k, int(point[0]) - 1] = point[1:num_spins + 1]
+        # If spin is present, designate first index to the up spin channel and set dictionary
+        eigenvaluesdict = {}
+        if eigenvalues.shape[0] > 1:
+            eigenvaluesdict['up'] = eigenvalues[0]
+            eigenvaluesdict['down'] = eigenvalues[1]
+        else:
+            eigenvaluesdict['total'] = eigenvalues[0]
 
         # Create the metadata dict
         metadata = {}
@@ -139,7 +146,7 @@ class Eigenval(BaseParser):
 
         # Store
         self._data['metadata'] = metadata
-        self._data['bands'] = bands
+        self._data['eigenvalues'] = eigenvalues
         self._data['kpoints'] = kpoints
 
     def get_metadata(self):
@@ -161,9 +168,9 @@ class Eigenval(BaseParser):
         metadata = self._data['metadata']
         return metadata
 
-    def get_bands(self):
+    def get_eigenvalues(self):
         """
-        Return the bands.
+        Return the eigenvalues.
 
         Parameters
         ----------
@@ -171,14 +178,14 @@ class Eigenval(BaseParser):
 
         Returns
         -------
-        elastic : nparray
-            A numpy array containing the bands. First index is spin, second k-points and the last,
-            the band index.
+        eigenvalues : dict
+            A dict containing NumPy array with the eigenvalues. Key ``up`` contain the first spin index
+            while ``down`` contain the second spin index. First index of NumPy array is k-points and the last,
 
         """
 
-        bands = self._data['bands']
-        return bands
+        eigenvalues = self._data['eigenvalues']
+        return eigenvalues
 
     def get_kpoints(self):
         """
