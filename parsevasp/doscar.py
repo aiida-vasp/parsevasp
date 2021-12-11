@@ -13,41 +13,46 @@ DTYPES_DOS = {
     5: np.dtype([('energy', float), ('total', float, (2,)), ('integrated', float, (2,))]),
 }
 
-# Map from the number of columns in DDSCAR to dtype for the partial density of states.
-DTYPES_PDOS = {
+# Map from the number of columns in DOSCAR to dtype for the partial density of states.
+DTYPES_PDOS_COLLINEAR = {
     # l-decomposed
     4:
         np.dtype([('energy', float), ('s', float), ('p', float), ('d', float)]),
     7:
         np.dtype([('energy', float), ('s', float, (2,)), ('p', float, (2,)), ('d', float, (2,))]),
-    13:
-        np.dtype([('energy', float), ('s', float, (4,)), ('p', float, (4,)), ('d', float, (4,))]),
     5:
         np.dtype([('energy', float), ('s', float), ('p', float), ('d', float), ('f', float)]),
     9:
         np.dtype([('energy', float), ('s', float, (2,)), ('p', float, (2,)), ('d', float, (2,)), ('f', float, (2,))]),
-    17:
-        np.dtype([('energy', float), ('s', float, (4,)), ('p', float, (4,)), ('d', float, (4,)), ('f', float, (4,))]),
     # lm-decomposed
     10:
         np.dtype([('energy', float), ('s', float), ('py', float), ('px', float), ('pz', float), ('dxy', float), ('dyz', float),
                   ('dz2', float), ('dxz', float), ('dx2-y2', float)]),
-    18:
+    17:
         np.dtype([('energy', float), ('s', float), ('py', float), ('px', float), ('pz', float), ('dxy', float), ('dyz', float),
                   ('dz2', float), ('dxz', float), ('dx2-y2', float), ('fy(3x2-y2)', float), ('fxyz', float), ('fyz2', float),
                   ('fz3', float), ('fxz2', float), ('fz(x2-y2)', float), ('fx(x2-3y2)', float)]),
     19:
         np.dtype([('energy', float), ('s', float, (2,)), ('py', float, (2,)), ('px', float, (2,)), ('pz', float, (2,)),
                   ('dxy', float, (2,)), ('dyz', float, (2,)), ('dz2', float, (2,)), ('dxz', float, (2,)), ('dx2-y2', float, (2,))]),
-    35:
+    33:
         np.dtype([('energy', float), ('s', float, (2,)), ('py', float, (2,)), ('px', float, (2,)), ('pz', float, (2,)),
                   ('dxy', float, (2,)), ('dyz', float, (2,)), ('dz2', float, (2,)), ('dxz', float, (2,)), ('dx2-y2', float, (2,)),
                   ('fy(3x2-y2)', float, (2,)), ('fxyz', float, (2,)), ('fyz2', float, (2,)), ('fz3', float, (2,)), ('fxz2', float, (2,)),
                   ('fz(x2-y2)', float, (2,)), ('fx(x2-3y2)', float, (2,))]),
+}
+
+DTYPES_PDOS_NONCOLLINEAR = {
+    # l-decomposed
+    13:
+        np.dtype([('energy', float), ('s', float, (4,)), ('p', float, (4,)), ('d', float, (4,))]),
+    17:
+        np.dtype([('energy', float), ('s', float, (4,)), ('p', float, (4,)), ('d', float, (4,)), ('f', float, (4,))]),
+    # lm-decomposed
     37:
         np.dtype([('energy', float), ('s', float, (4,)), ('py', float, (4,)), ('px', float, (4,)), ('pz', float, (4,)),
                   ('dxy', float, (4,)), ('dyz', float, (4,)), ('dz2', float, (4,)), ('dxz', float, (4,)), ('x2-y2', float, (4,))]),
-    69:
+    65:
         np.dtype([('energy', float), ('s', float, (4,)), ('py', float, (4,)), ('px', float, (4,)), ('pz', float, (4,)),
                   ('dxy', float, (4,)), ('dyz', float, (4,)), ('dz2', float, (4,)), ('dxz', float, (4,)), ('dx2-y2', float, (4,)),
                   ('fy(3x2-y2)', float, (4,)), ('fxyz', float, (4,)), ('fyz2', float, (4,)), ('fz3', float, (4,)), ('fxz2', float, (4,)),
@@ -55,15 +60,56 @@ DTYPES_PDOS = {
 }
 
 # Mapping between the number of columns to the number of spins.
-COLSPIN_MAP = {7: 2, 9: 2, 19: 2, 35: 2, 13: 4, 17: 4, 37: 4, 69: 4, 4: 1, 5: 1, 10: 1, 18: 1}
+COLSPIN_MAP_COLLINEAR = {
+    7: 2,
+    9: 2,
+    19: 2,
+    33: 2,
+    4: 1,
+    5: 1,
+    10: 1,
+    17: 1,
+}
+
+COLSPIN_MAP_NONCOLLINEAR = {
+    13: 4,
+    17: 4,
+    37: 4,
+    65: 4,
+}
+
+
+def _get_num_spin(count: int, non_collinear: bool) -> int:
+    num_spin = None
+    if non_collinear:
+        num_spin = COLSPIN_MAP_NONCOLLINEAR.get(count)
+    else:
+        num_spin = COLSPIN_MAP_COLLINEAR.get(count)
+
+    if num_spin is None:
+        raise ValueError(f'Unkown column count: {count} in DOSCAR')
+    return num_spin
+
+
+def _get_dtype_pdos(count: int, non_collinear: bool) -> np.dtype:
+    dtype_pdos = None
+    if non_collinear:
+        dtype_pdos = DTYPES_PDOS_NONCOLLINEAR.get(count)
+    else:
+        dtype_pdos = DTYPES_PDOS_COLLINEAR.get(count)
+
+    if dtype_pdos is None:
+        raise ValueError(f'Unkown column count: {count} in DOSCAR')
+    return dtype_pdos
 
 
 class Doscar(BaseParser):
-    
+
     def __init__(self,
                  file_path=None,
                  file_handler=None,
-                 logger=None):
+                 logger=None,
+                 non_collinear=False):
         """
         Initialize an DOSCAR object and set content as a dictionary.
 
@@ -74,7 +120,8 @@ class Doscar(BaseParser):
         logger : object
             A logger object if you would like to use an external logger for messages
             ejected inside this parser.
-
+        non_collinear: boolean
+            If non-collinear calculation is performed, set this flag True.
         """
 
         super(Doscar, self).__init__(file_path=file_path,
@@ -91,6 +138,8 @@ class Doscar(BaseParser):
             self._logger.error(
                 self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
             sys.exit(self.ERROR_USE_ONE_ARGUMENT)
+
+        self._non_collinear = non_collinear
 
         self._data = {
             'dos': None,
@@ -136,7 +185,7 @@ class Doscar(BaseParser):
 
         # Figure out if we have a partial density of states
         partial = bool(int(part))
-        
+
         # Volume of cell (AA^3), length of basis vectors (meters) and POTIMS
         line_0 = utils.line_to_type(doscar[1], float)
 
@@ -156,7 +205,7 @@ class Doscar(BaseParser):
 
         # The rest of the file is density of states data, convert to float
         data = [utils.line_to_type(line, d_type=float) for line in doscar[6:]]
-        
+
         # Get the number of columns for the total dos section to figure out
         # if data is spin decomposed
         count = len(data[ndos - 1])
@@ -188,13 +237,12 @@ class Doscar(BaseParser):
             pdos_data = np.array(pdos_items)
 
             # Adjust the spin according to the column definitions
-            num_spin = COLSPIN_MAP.get(count)
-            if num_spin is None:
-                raise ValueError(f'Unkown column count: {count} in DOSCAR')
+            num_spin = _get_num_spin(count, self._non_collinear)
 
-            pdos = np.zeros((pdos_data.shape[0], pdos_data.shape[1]), DTYPES_PDOS[count])
+            dtype_pdos = _get_dtype_pdos(count, self._non_collinear)
+            pdos = np.zeros((pdos_data.shape[0], pdos_data.shape[1]), dtype_pdos)
             pdos['energy'] = pdos_data[:, :, 0]
-            for i, name in enumerate(DTYPES_PDOS[count].names[1:]):
+            for i, name in enumerate(dtype_pdos.names[1:]):
                 if num_spin == 1:  # Only squeeze if there is only one spin component
                     pdos[name] = np.squeeze(pdos_data[:, :, i + 1:i + 1 + num_spin], axis=2)
                 else:
@@ -247,7 +295,7 @@ class Doscar(BaseParser):
         -------
         dos : nparray
             A numpy array containing the total density of states. First index is the
-            energy samples, while the last index if composed of the energy sample, total 
+            energy samples, while the last index if composed of the energy sample, total
             density of states and integrated density of states at that energy sample, respectively.
 
         """
