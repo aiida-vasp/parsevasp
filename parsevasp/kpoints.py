@@ -934,7 +934,7 @@ class Kpoints(BaseParser):
             utils.remove_newline(file_handler)
 
 
-class Kpoint(object):
+class Kpoint():
     def __init__(self, point, weight, direct=True, logger=None):
         """
         A site, typically a position in POSCAR.

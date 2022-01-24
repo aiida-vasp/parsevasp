@@ -48,8 +48,9 @@ class Stream(BaseParser):
         """
 
         super(Stream, self).__init__(file_path=file_path,
-                                        file_handler=file_handler,
-                                        logger=logger)
+                                     file_handler=file_handler,
+                                     logger=logger)
+
         self._file_path = file_path
         self._file_handler = file_handler
         self._history = history
@@ -84,7 +85,7 @@ class Stream(BaseParser):
         """Define representation to list number of streams found."""
         return f'StreamScanner found {len(self._streams)} streams'
 
-    def __str__():
+    def __str__(self):
         """Define a string representation for the class which can be used for reporting purposes."""
         return f"We detected {self.number_of_entries} unique {', '.join(self._stream_kinds)}'s"
 
