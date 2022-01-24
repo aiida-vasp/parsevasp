@@ -6,7 +6,7 @@ import os
 from parsevasp import utils
 
 
-class BaseParser():
+class BaseParser:
 
     ERROR_USE_ONE_ARGUMENT = 10
     ERROR_NO_ENTRIES = 11

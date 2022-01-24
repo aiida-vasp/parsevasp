@@ -976,7 +976,7 @@ class Poscar(BaseParser):
                                                            width=self._width))
 
 
-class Site():
+class Site:
     def __init__(self,
                  specie,
                  position,

@@ -456,7 +456,7 @@ class Incar(BaseParser):
             file_handler.write(string)
 
 
-class IncarItem():
+class IncarItem:
     ERROR_VALUES_NOT_SAME_TYPE = 104
     ERROR_INVALID_TYPE = 105
 
