@@ -63,14 +63,15 @@ def doscar_parser(request):
     """Load DOSCAR file.
 
     """
-    try: 
-        name = request.param
+    try:
+        name, non_collinear = request.param
     except AttributeError:
         # Test not parametrized
         name = 'DOSCAR'
+        non_collinear = False
     testdir = os.path.dirname(__file__)
     doscarfile = testdir + '/' + name
-    doscar = Doscar(file_path=doscarfile)
+    doscar = Doscar(file_path=doscarfile, non_collinear=non_collinear)
 
     return doscar
 
@@ -79,7 +80,7 @@ def doscar_parser_file_object(request):
     """Load DOSCAR file from a file object.
 
     """
-    try: 
+    try:
         name = request.param
     except AttributeError:
         # Test not parametrized
@@ -107,14 +108,14 @@ def test_doscar_file_objcet(doscar_parser_file_object):
     for item in dos.dtype.names:
         assert np.allclose(dos[item], compare_total_dos[item])
 
-@pytest.mark.parametrize('doscar_parser', ['DOSCAR.nopdos'], indirect=['doscar_parser'])
+@pytest.mark.parametrize('doscar_parser', [('DOSCAR.nopdos', False)], indirect=['doscar_parser'])
 def test_doscar_nopdos(doscar_parser):
     """Test that the content returned by the DOSCAR parser returns total density of states."""
     dos = doscar_parser.get_dos()
     for item in dos.dtype.names:
         assert np.allclose(dos[item], compare_total_dos[item])
     assert not doscar_parser.get_pdos()
-        
+
 def test_doscar_partial(doscar_parser):
     """Test that the content returned by the DOSCAR parser returns the partial density of states."""
     pdos = doscar_parser.get_pdos()
@@ -125,10 +126,10 @@ def test_doscar_header(doscar_parser):
     """Test that the header of the DOSCAR parser returns correct keys and values."""
     assert compare_metadata == doscar_parser.get_metadata()
 
-@pytest.mark.parametrize('doscar_parser', ['DOSCAR.spin'], indirect=['doscar_parser'])
+@pytest.mark.parametrize('doscar_parser', [('DOSCAR.spin', False), ('DOSCAR.spin_pdos', False)], indirect=['doscar_parser'])
 def test_doscar_spin(doscar_parser):
     """
-    Test that the content returned by the DOSCAR parser returns 
+    Test that the content returned by the DOSCAR parser returns
     the correct dimensions for spin density of states
     """
     dos = doscar_parser.get_dos()
@@ -139,12 +140,12 @@ def test_doscar_spin(doscar_parser):
     assert len(pdos.dtype) == 10
     assert pdos[0]['px'].shape == (301, 2)
 
-@pytest.mark.parametrize('doscar_parser', ['DOSCAR.ncl'], indirect=['doscar_parser'])
+@pytest.mark.parametrize('doscar_parser', [('DOSCAR.ncl', True)], indirect=['doscar_parser'])
 def test_doscar_spin(doscar_parser):
     """
-    Test that the content returned by the DOSCAR parser returns 
-    the correct dimensions for density of states for colinear calculations.
-    """    
+    Test that the content returned by the DOSCAR parser returns
+    the correct dimensions for density of states for non-collinear calculations.
+    """
     dos = doscar_parser.get_dos()
     assert len(dos.dtype) == 3
     assert dos['total'].shape == (301,)
@@ -152,3 +153,22 @@ def test_doscar_spin(doscar_parser):
     pdos = doscar_parser.get_pdos()
     assert len(pdos.dtype) == 10
     assert pdos[0]['px'].shape == (301, 4)
+
+
+def test_dtypes_pdos():
+    from parsevasp.doscar import DTYPES_PDOS_COLLINEAR, DTYPES_PDOS_NONCOLLINEAR
+
+    def _check(dtype_pdos):
+        count = 0
+        for name in dtype_pdos.names:
+            shape = dtype_pdos[name].shape
+            if shape is tuple():
+                count += 1
+            else:
+                count += shape[0]
+        return count
+
+    for key, dtype_pdos in DTYPES_PDOS_COLLINEAR.items():
+        assert _check(dtype_pdos) == key
+    for key, dtype_pdos in DTYPES_PDOS_NONCOLLINEAR.items():
+        assert _check(dtype_pdos) == key
