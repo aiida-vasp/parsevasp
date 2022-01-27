@@ -1,6 +1,9 @@
+"""Test stream."""
 import os
-import pytest
+
 import numpy as np
+import pytest
+
 from parsevasp.stream import Stream
 
 
@@ -34,7 +37,7 @@ def test_stream(stream_parser):
     """Check if stream_parser returns expected results.
 
     """
-    
+
     entries = stream_parser.entries
     assert stream_parser.configured_streams
     assert stream_parser.number_of_entries == 1
@@ -47,16 +50,23 @@ def test_stream_override(stream_parser):
     import re
     testdir = os.path.dirname(__file__)
     stream_file = testdir + '/stdout'
-    stream = Stream(file_path=stream_file, config={'ibzkpt': {'kind': 'WARNING',
-                                                              'regex': 'internal error',
-                                                              'message': 'some error',
-                                                              'suggestion': 'none',
-                                                              'location': 'STDOUT',
-                                                              'recover': True}})
+    stream = Stream(
+        file_path=stream_file,
+        config={
+            'ibzkpt': {
+                'kind': 'WARNING',
+                'regex': 'internal error',
+                'message': 'some error',
+                'suggestion': 'none',
+                'location': 'STDOUT',
+                'recover': True
+            }
+        }
+    )
     assert len(stream.entries) == 1
     assert stream.entries[0].kind == 'WARNING'
     assert stream.entries[0].regex == re.compile('internal error')
     assert stream.entries[0].message == 'some error'
-    assert stream.entries[0].suggestion == 'none' 
+    assert stream.entries[0].suggestion == 'none'
     assert stream.entries[0].location == stream_parser.entries[0].location
     assert stream.entries[0].recover == stream_parser.entries[0].recover

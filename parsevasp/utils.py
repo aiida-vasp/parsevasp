@@ -1,19 +1,16 @@
-#!/usr/bin/env python
-# python specifics
-import sys
+"""Utiles."""
 import logging
+import math
 import os
 import re
-import math
+import sys
+
 import numpy as np
-from parsevasp.base import BaseParser
+
+from parsevasp.base import open_close_file_handler
 
 
-def read_from_file(file_name,
-                   input_file_handler,
-                   contains=None,
-                   lines=True,
-                   logger=None):
+def read_from_file(file_name, input_file_handler, contains=None, lines=True, logger=None):
     """
     Read a file and return the whole file or specific lines.
 
@@ -35,7 +32,7 @@ def read_from_file(file_name,
 
     Returns
     -------
-    parsed : list of str or a str 
+    parsed : list of str or a str
         If `lines` is True, the list of strings containing the whole or specific
         lines from a file is returned. If `lines` is False, a string of all the content
         is returned.
@@ -43,7 +40,7 @@ def read_from_file(file_name,
     """
 
     if logger is None:
-        logger = logging.getLogger(sys._getframe().f_code.co_name)
+        logger = logging.getLogger(sys._getframe().f_code.co_name)  # pylint: disable=W0212
 
     if input_file_handler is not None:
         inputfile = input_file_handler
@@ -52,13 +49,13 @@ def read_from_file(file_name,
             return inputfile.read()
         file_data = inputfile.readlines()
     else:
-        inputfile = file_handler(file_name=file_name, status='r', logger=logger)
+        inputfile = open_close_file_handler(file_name=file_name, status='r', logger=logger)
         if not lines:
             # Only want a string of file content, return.
             file_data = inputfile.read()
         else:
             file_data = inputfile.readlines()
-        file_handler(logger, file_handler=inputfile, logger=logger)
+        open_close_file_handler(logger, file_handler=inputfile, logger=logger)
         if not lines:
             return file_data
 
@@ -70,7 +67,7 @@ def read_from_file(file_name,
     if contains is not None:
         # this can be a bit faster (comprehension), but do not care for this
         # now
-        for line_index, line in enumerate(file_data):
+        for _, line in enumerate(file_data):
             if is_list:
                 for element in contains:
                     if element in line:
@@ -82,52 +79,6 @@ def read_from_file(file_name,
         parsed = file_data
 
     return parsed
-
-
-def file_handler(file_name='', file_handler=None, status=None, logger=None):
-    """
-    Open and close files.
-
-    Parameters
-    ----------
-    file_name : str, optional
-        The name of the file to be handled (defaults to '').
-    file_handler : object, optional
-        An existing `file` object. If not supplied a file is
-        created. Needed for file close, otherwise not.
-    status : str, optional
-        The string containing the status to write, read, append etc.
-        If not supplied, assume file close and `file_handler` need
-        to be supplied.
-    logger : object, optional
-        A logger object to use.
-
-    Returns
-    -------
-    file_handler : object
-        If `status` is supplied
-        A `file` object
-
-    """
-
-    if logger is None:
-        logger = logging.getLogger(sys._getframe().f_code.co_name)
-
-    if status is None:
-        if file_handler is None:
-            logger.error(
-                BaseParser.ERROR_MESSAGES[BaseParser.ERROR_EMPTY_HANDLER])
-            sys.exit(BaseParser.ERROR_EMPTY_HANDLER)
-        file_handler.close()
-    else:
-        try:
-            file_handler = open(file_name, status)
-            return file_handler
-        except IOError:
-            logger.error(
-                BaseParser.ERROR_MESSAGES[BaseParser.ERROR_FILE_NOT_FOUND] +
-                ' The file in question is: {}'.format(file_name))
-            sys.exit(BaseParser.ERROR_FILE_NOT_FOUND)
 
 
 def file_exists(file_path, logger=None):
@@ -146,13 +97,13 @@ def file_exists(file_path, logger=None):
     status : bool
         If file does not exists or `file_path` empty, else False.
     """
+    from parsevasp.base import BaseParser
 
     if logger is None:
-        logger = logging.getLogger(sys._getframe().f_code.co_name)
+        logger = logging.getLogger(sys._getframe().f_code.co_name)  # pylint: disable=W0212
 
     if not file_path:
-        logger.error(
-            BaseParser.ERROR_MESSAGES[BaseParser.ERROR_EMPTY_FILE_PATH])
+        logger.error(BaseParser.ERROR_MESSAGES[BaseParser.ERROR_EMPTY_FILE_PATH])
         sys.exit(BaseParser.ERROR_EMPTY_FILE_PATH)
 
     status = True
@@ -160,8 +111,8 @@ def file_exists(file_path, logger=None):
         os.stat(file_path)
     except OSError:
         logger.error(
-            BaseParser.ERROR_MESSAGES(BaseParser.ERROR_FILE_NOT_FOUND) +
-            ' The file in question is: {}'.format(file_path))
+            f'{BaseParser.ERROR_MESSAGES[BaseParser.ERROR_FILE_NOT_FOUND]} The file in question is: {file_path}'
+        )
         status = False
 
     return status
@@ -183,10 +134,11 @@ def is_sequence(arg):
 
     """
 
-    sequence = (not hasattr(arg, 'strip') and hasattr(arg, '__getitem__')
-                or hasattr(arg, '__iter__'))
-
-    return sequence
+    if not hasattr(arg, 'strip') and hasattr(arg, '__getitem__'):
+        return True
+    if hasattr(arg, '__iter__'):
+        return True
+    return False
 
 
 def test_string_content(string):
@@ -215,7 +167,7 @@ def test_string_content(string):
         return 'string'
 
 
-def is_numbers(s, splitter=' '):
+def is_numbers(string, splitter=' '):
     """
     Check if a string only contains numbers.
 
@@ -234,7 +186,7 @@ def is_numbers(s, splitter=' '):
 
     """
 
-    entries = s.split(splitter)
+    entries = string.split(splitter)
     is_nums = True
     for entry in entries:
         if not is_number(entry):
@@ -244,7 +196,7 @@ def is_numbers(s, splitter=' '):
     return is_nums
 
 
-def is_number(s):
+def is_number(string):
     """
     Check if a string is a number.
 
@@ -261,7 +213,7 @@ def is_number(s):
     """
 
     try:
-        float(s)
+        float(string)
         is_num = True
     except ValueError:
         is_num = False
@@ -290,16 +242,14 @@ def remove_newline(fobj, num_newlines=1):
     remove_chars = len(os.linesep) + num_newlines - 1
     fobj.truncate(fobj.tell() - remove_chars)
 
-    return
 
-
-def dir_to_cart(v, lattice):
+def dir_to_cart(vector, lattice):
     """
     Convert direct coordinates to cartesian.
 
     Parameters
     ----------
-    v : ndarray
+    vector : ndarray
         | Dimension: (3)
 
         The direct vector to be converted.
@@ -318,18 +268,18 @@ def dir_to_cart(v, lattice):
 
     """
 
-    cart = np.dot(v, lattice)
+    cart = np.dot(vector, lattice)
 
     return cart
 
 
-def cart_to_dir(v, lattice):
+def cart_to_dir(vector, lattice):
     """
     Convert cartesian coordinates to direct.
 
     Parameters
     ----------
-    v : ndarray
+    vectir : ndarray
         | Dimension: (3)
 
         The cartersian vector.
@@ -346,13 +296,13 @@ def cart_to_dir(v, lattice):
 
     """
 
-    direct = np.dot(v, np.linalg.inv(lattice))
+    direct = np.dot(vector, np.linalg.inv(lattice))
 
     return direct
 
 
 def lat_to_reclat(lattice):
-    """
+    r"""
     Convert the lattice to the reciprocal lattice.
 
     Parameters
@@ -405,10 +355,11 @@ def match_integer_param(inputs, key, string):
     if match:
         inputs[key.lower()] = int(match.group(1))
 
+
 def line_to_type(fobject_or_string, d_type=str, no_split=False):
     """
     Grab a line from a file like object or string and convert it to d_type (default: str).
-    
+
     Parameters
     ----------
     fobject_or_string : object
@@ -417,7 +368,7 @@ def line_to_type(fobject_or_string, d_type=str, no_split=False):
         The dtype one want to convert to. The standard Python dtypes are supported.
     no_splot : bool
         If True do not split a string. Useful for comments etc. We still strip.
-    
+
     """
     if isinstance(fobject_or_string, str):
         line = fobject_or_string
@@ -431,5 +382,6 @@ def line_to_type(fobject_or_string, d_type=str, no_split=False):
     if len(result) == 1:
         return result[0]
     return result
+
 
 empty_line = re.compile(r'[\r\n]\s*[\r\n]')

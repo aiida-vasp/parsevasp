@@ -1,17 +1,17 @@
-#!/usr/bin/python
-import sys
+"""Handle INCAR."""
+import io
 import logging
-from io import StringIO
+import sys
 
-from six import iteritems
 from past.builtins import basestring
+from six import iteritems
 
-from parsevasp import utils
-from parsevasp import constants
+from parsevasp import constants, utils
 from parsevasp.base import BaseParser
 
 
 class Incar(BaseParser):
+    """Class to handle INCAR."""
 
     ERROR_UNSUPPORTED_TAG = 100
     ERROR_TWO_EQUALS = 101
@@ -33,14 +33,16 @@ class Incar(BaseParser):
     })
     ERROR_MESSAGES = BaseParser.ERROR_MESSAGES
 
-    def __init__(self,
-                 incar_string=None,
-                 incar_dict=None,
-                 file_path=None,
-                 file_handler=None,
-                 logger=None,
-                 prec=None,
-                 validate_tags=True):  # pylint: disable=too-many-arguments
+    def __init__(
+        self,
+        incar_string=None,
+        incar_dict=None,
+        file_path=None,
+        file_handler=None,
+        logger=None,
+        prec=None,
+        validate_tags=True
+    ):  # pylint: disable=too-many-arguments
         """Initialize an INCAR object and set content as a dictionary.
 
         Parameters
@@ -58,9 +60,7 @@ class Incar(BaseParser):
 
         """
 
-        super(Incar, self).__init__(file_path=file_path,
-                                    file_handler=file_handler,
-                                    logger=logger)
+        super(Incar, self).__init__(file_path=file_path, file_handler=file_handler, logger=logger)
 
         self._incar_dict = incar_dict
         self._incar_string = incar_string
@@ -74,18 +74,19 @@ class Incar(BaseParser):
         self._width = self._prec + 4
 
         # Check that only one argument is supplied
-        if (self._incar_string is not None and self._incar_dict is not None) \
-           or (self._incar_string is not None and self._file_path is not None) \
-           or (self._incar_dict is not None and self._file_path is not None) and self._file_handler is not None: # pylint: disable=too-many-boolean-expressions
-            self._logger.error(
-                self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
+        # pylint: disable=R0916
+        if (self._incar_string is not None and self._incar_dict is not None) or (
+            self._incar_string is not None and self._file_path is not None
+        ) or (self._incar_dict is not None and self._file_path is not None) and self._file_handler is not None:
+            self._logger.error(self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
             sys.exit(self.ERROR_USE_ONE_ARGUMENT)
 
         # Check that at least one is supplied
-        if (self._incar_string is None and self._incar_dict is None
-                and self._file_path is None and self._file_handler is None):
-            self._logger.error(
-                self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
+        if (
+            self._incar_string is None and self._incar_dict is None and self._file_path is None and
+            self._file_handler is None
+        ):
+            self._logger.error(self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
             sys.exit(self.ERROR_USE_ONE_ARGUMENT)
 
         if self._file_path is not None or self._file_handler is not None:
@@ -171,13 +172,11 @@ class Incar(BaseParser):
                     if len(final_split) > 2:
                         self._logger.error(
                             '{} The following line contains the problem:\n\n {}'
-                            '\n\nPlease correct. Exiting.'.format(
-                                self.ERROR_MESSAGES[self.ERROR_TWO_EQUALS],
-                                ntry))
+                            '\n\nPlease correct. Exiting.'.format(self.ERROR_MESSAGES[self.ERROR_TWO_EQUALS], ntry)
+                        )
                         sys.exit(self.ERROR_TWO_EQUALS)
                     if len(final_split) == 1:
-                        self._logger.error(self.ERROR_MESSAGES[
-                            self.ERROR_INVALID_COMMENT_SIGN])
+                        self._logger.error(self.ERROR_MESSAGES[self.ERROR_INVALID_COMMENT_SIGN])
                         sys.exit(self.ERROR_INVALID_COMMENT_SIGN)
                     tag = final_split[0]
                     value = final_split[1]
@@ -185,11 +184,9 @@ class Incar(BaseParser):
                     entry = IncarItem(tag, value, comment, logger=self._logger)
                     clean_tag = entry.get_tag()
                     if clean_tag in incar_dict:
-                        self._logger.info('Tag {}'
-                                          ' already '
-                                          'found in the INCAR dictionary, '
-                                          'overwriting it.'.format(
-                                              entry.get_tag()))
+                        self._logger.info(
+                            f'Tag {entry.get_tag()} already found in the INCAR dictionary, overwriting it.'
+                        )
                     incar_dict[clean_tag] = entry
 
         return incar_dict
@@ -223,33 +220,28 @@ class Incar(BaseParser):
             if isinstance(value, str):
                 comment = value.split('#')
                 if len(comment) > 2:
-                    self._logger.info('{} The tag {} is affected.'.format(
-                        self.ERROR_MESSAGES[self.ERROR_MULTIPLE_COMMENTS],
-                        str(tag)))
+                    self._logger.info(
+                        f'{self.ERROR_MESSAGES[self.ERROR_MULTIPLE_COMMENTS]} The tag {str(tag)} is affected.'
+                    )
                     sys.exit(self.ERROR_MULTIPLE_COMMENTS)
                 if len(comment) == 1:
                     comment = None
             # Create new instance of entry
             if comment is not None:
                 if len(comment) == 2:
-                    entry = IncarItem(tag,
-                                      comment[0],
-                                      comment[1],
-                                      logger=self._logger)
+                    entry = IncarItem(tag, comment[0], comment[1], logger=self._logger)
                 else:
                     entry = IncarItem(tag, value, comment, logger=self._logger)
             else:
                 entry = IncarItem(tag, value, comment, logger=self._logger)
             clean_tag = entry.get_tag()
             if clean_tag in incar_dict:
-                self._logger.info('Tag {} already '
-                                  'found in the INCAR dictionary, '
-                                  'overwriting it.'.format(entry.get_tag()))
+                self._logger.info(f'Tag {entry.get_tag()} already found in the INCAR dictionary, overwriting it.')
             incar_dict[clean_tag] = entry
 
         return incar_dict
 
-    def _convert_value_to_string(self, value):
+    def _convert_value_to_string(self, value):  # pylint: disable=R0201
         """
         Converts a value for an INCAR entry to a string that
         is compatible with VASP.
@@ -275,15 +267,14 @@ class Incar(BaseParser):
         # 1.0 - float
         # [1.0, 2.0, 3.0] - list of floats
 
-        if type(value) is list:
+        if isinstance(value, list):
             # List of values (we know all are either string, int or float)
             string = ' '.join(map(str, value))
         else:
             if isinstance(value, bool):
                 if value:
                     return '.TRUE.'
-                else:
-                    return '.FALSE.'
+                return '.FALSE.'
             string = str(value)
 
         return string
@@ -305,11 +296,11 @@ class Incar(BaseParser):
             return
 
         allowed_keys = constants.incar_tags.keys()
-        for key, value in self.entries.items():
+        for key, _ in self.entries.items():
             if key not in allowed_keys:
                 self._logger.error(
-                    self.ERROR_MESSAGES[self.ERROR_UNSUPPORTED_TAG] +
-                    ' The tag in question is {}'.format(key.upper()))
+                    f'{self.ERROR_MESSAGES[self.ERROR_UNSUPPORTED_TAG]} The tag in question is {key.upper()}'
+                )
                 sys.exit(self.ERROR_UNSUPPORTED_TAG)
 
         return
@@ -382,8 +373,7 @@ class Incar(BaseParser):
 
         if comment:
             return value, com
-        else:
-            return value
+        return value
 
     def get_dict(self):
         """
@@ -416,7 +406,7 @@ class Incar(BaseParser):
 
         """
 
-        string_object = StringIO.StringIO()
+        string_object = io.StringIO()
         self._write(file_handler=string_object)
         incar_string = string_object.getvalue()
         string_object.close()
@@ -439,7 +429,7 @@ class Incar(BaseParser):
         """
 
         comments = kwargs.pop('comments', False)
-        
+
         # Write in alfabetical order
         keys = sorted(self.entries)
         entries = self.entries
@@ -457,6 +447,8 @@ class Incar(BaseParser):
 
 
 class IncarItem:
+    """Class to treat each entry in INCAR."""
+
     ERROR_VALUES_NOT_SAME_TYPE = 104
     ERROR_INVALID_TYPE = 105
 
@@ -485,19 +477,21 @@ class IncarItem:
             self._logger = logging.getLogger('IncarItem')
 
         # Clean tag and value
-        clean_tag, clean_value, clean_comment = self._clean_entry(
-            tag, value, comment)
+        clean_tag, clean_value, clean_comment = self._clean_entry(tag, value, comment)
         self.tag = clean_tag
         self.value = clean_value
         self.comment = clean_comment
 
     def get_tag(self):
+        """Return tag."""
         return self.tag
 
     def get_value(self):
+        """Return value."""
         return self.value
 
     def get_comment(self):
+        """Return comment."""
         return self.comment
 
     def _clean_entry(self, tag, value, comment):
@@ -548,7 +542,7 @@ class IncarItem:
 
         # Make sure we keep compatibility between Python 2 and 3
         if isinstance(value, basestring):
-            if clean_tag == 'system' or clean_tag == 'magmom':
+            if clean_tag in ('system', 'magmom'):
                 # If value is SYSTEM or MAGMOM (can contain asterix), treat it a bit special and
                 # leave its string intact but remove grub
                 clean_value = value.strip()
@@ -581,19 +575,21 @@ class IncarItem:
 
             # Check if all values are the same type (they should be)
             if not all(x == content_type[0] for x in content_type):
-                self._logger.error('All values of an INCAR tag are not of the same type. '
-                                   'Maybe you forgot to add # as a comment tag?'
-                                   ' The tag in question is: ' + clean_tag.upper())
+                self._logger.error(
+                    'All values of an INCAR tag are not of the same type. '
+                    'Maybe you forgot to add # as a comment tag?'
+                    f' The tag in question is: {clean_tag.upper()}'
+                )
                 sys.exit(self.ERROR_VALUES_NOT_SAME_TYPE)
 
         else:
             # If the user wants to assign an element as a list, int,
             # float or bool, accept this, including unicode
-
-            if not (isinstance(value, int) or isinstance(value, float)
-                    or isinstance(value, bool) or (type(value) is list)):
-                self._logger.error('The type one of the supplied values for the INCAR tag '
-                                   'is not recognized. The tag in question is: ' + clean_tag.upper())
+            if not isinstance(value, (bool, float, int, list)):
+                self._logger.error(
+                    'The type one of the supplied values for the INCAR tag '
+                    f'is not recognized. The tag in question is: {clean_tag.upper()}'
+                )
                 sys.exit(self.ERROR_INVALID_TYPE)
             clean_value = value
 
@@ -605,7 +601,7 @@ class IncarItem:
 
         return clean_tag, clean_value, clean_comment
 
-    def _test_string_for_bool(self, string):
+    def _test_string_for_bool(self, string):  # pylint: disable=R0201
         """
         Detects if string contains Fortran bool.
 
@@ -627,11 +623,10 @@ class IncarItem:
            or '.t.' in string \
            or '.T.' in string:
             return True
-        elif '.False.' in string \
+        if '.False.' in string \
              or '.FALSE.' in string \
              or '.false.' in string \
              or '.f.' in string \
              or '.F.' in string:
             return False
-        else:
-            return string
+        return string

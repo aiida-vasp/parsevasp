@@ -1,6 +1,9 @@
+"""Test incar."""
 import os
-import pytest
+
 import numpy as np
+import pytest
+
 from parsevasp.incar import Incar, IncarItem
 
 
@@ -10,12 +13,7 @@ def incar_dict():
 
     """
 
-    incar_dict = {
-        'encut': 350,
-        'Sigma': '.5e-1 #comment',
-        'lreal': False,
-        'PREC': 'Accurate'
-    }
+    incar_dict = {'encut': 350, 'Sigma': '.5e-1 #comment', 'lreal': False, 'PREC': 'Accurate'}
     return incar_dict
 
 
@@ -87,13 +85,14 @@ def test_incar_parser_parameters(incar_parser):
     assert dictionary['ismear'] == -5
     assert dictionary['algo'] == 'V'
 
+
 def test_incar_parser_write(incar_parser, tmp_path):
     """Check the write functions for both file paths and file objects.
 
     """
     incar = incar_parser.get_dict()
     # Write the content
-    incar_write_path = tmp_path / "INCAR"
+    incar_write_path = tmp_path / 'INCAR'
     incar_parser.write(file_path=incar_write_path)
     # Then reload and compare
     incar_reloaded = Incar(file_path=incar_write_path).get_dict()
@@ -105,7 +104,8 @@ def test_incar_parser_write(incar_parser, tmp_path):
     with open(incar_write_path, 'r') as handler:
         incar_reloaded = Incar(file_handler=handler).get_dict()
     assert incar == incar_reloaded
-    
+
+
 def test_incar_parser_parameters_file_object(incar_parser_file_object):
     """Check parameters of the INCAR using a file object
 
@@ -127,12 +127,7 @@ def test_incar_from_dict(incar_dict):
 
     """
     incar_io = Incar(incar_dict=incar_dict)
-    comp_dict = {
-        'encut': 350,
-        'sigma': 0.05,
-        'lreal': False,
-        'prec': 'Accurate'
-    }
+    comp_dict = {'encut': 350, 'sigma': 0.05, 'lreal': False, 'prec': 'Accurate'}
     assert str(sorted(incar_io.get_dict())) == str(sorted(comp_dict))
 
 

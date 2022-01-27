@@ -1,4 +1,6 @@
+"""Constants."""
 import os
+
 import yaml
 
 elements = {
@@ -123,7 +125,6 @@ elements = {
     'uuo': 118,
 }
 
-incar_tags = None
 file_path = os.path.dirname(os.path.abspath(__file__))
 incar_tags_file_path = os.path.join(file_path, 'incar.yml')
 with open(incar_tags_file_path, 'r') as stream:

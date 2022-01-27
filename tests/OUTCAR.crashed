@@ -1,5 +1,5 @@
- vasp.5.4.4.18Apr17-6-g9f103f2a35 (build Jun 11 2017 21:30:58) complex          
-  
+ vasp.5.4.4.18Apr17-6-g9f103f2a35 (build Jun 11 2017 21:30:58) complex
+
  executed on             LinuxIFC date 2021.12.05  12:01:41
  running on   16 total cores
  distrk:  each k-point on   16 cores,    1 groups
@@ -10,9 +10,9 @@
 
 
  INCAR:
- POTCAR:    PAW_PBE Si 05Jan2001                  
+ POTCAR:    PAW_PBE Si 05Jan2001
 
- ----------------------------------------------------------------------------- 
+ -----------------------------------------------------------------------------
 |                                                                             |
 |           W    W    AA    RRRRR   N    N  II  N    N   GGGG   !!!           |
 |           W    W   A  A   R    R  NN   N  II  NN   N  G    G  !!!           |
@@ -31,47 +31,47 @@
 |      Unfortunately you need to use the default for GW and RPA calculations. |
 |      (for HF NCORE is supported but not extensively tested yet)             |
 |                                                                             |
- ----------------------------------------------------------------------------- 
+ -----------------------------------------------------------------------------
 
- POTCAR:    PAW_PBE Si 05Jan2001                  
-   VRHFIN =Si: s2p2                                                             
-   LEXCH  = PE                                                                  
-   EATOM  =   103.0669 eV,    7.5752 Ry                                         
-                                                                                
-   TITEL  = PAW_PBE Si 05Jan2001                                                
-   LULTRA =        F    use ultrasoft PP ?                                      
-   IUNSCR =        1    unscreen: 0-lin 1-nonlin 2-no                           
-   RPACOR =    1.500    partial core radius                                     
-   POMASS =   28.085; ZVAL   =    4.000    mass and valenz                      
-   RCORE  =    1.900    outmost cutoff radius                                   
-   RWIGS  =    2.480; RWIGS  =    1.312    wigner-seitz radius (au A)           
-   ENMAX  =  245.345; ENMIN  =  184.009 eV                                      
-   ICORE  =        2    local potential                                         
-   LCOR   =        T    correct aug charges                                     
-   LPAW   =        T    paw PP                                                  
-   EAUG   =  322.069                                                            
-   DEXC   =    0.000                                                            
-   RMAX   =    1.950    core radius for proj-oper                               
-   RAUG   =    1.300    factor for augmentation sphere                          
-   RDEP   =    1.993    radius for radial grids                                 
-   RDEPT  =    1.837    core radius for aug-charge                              
-                                                                                
-   Atomic configuration                                                         
-    6 entries                                                                   
-     n  l   j            E        occ.                                          
-     1  0  0.50     -1785.8828   2.0000                                         
-     2  0  0.50      -139.4969   2.0000                                         
-     2  1  1.50       -95.5546   6.0000                                         
-     3  0  0.50       -10.8127   2.0000                                         
-     3  1  0.50        -4.0811   2.0000                                         
-     3  2  1.50        -4.0817   0.0000                                         
-   Description                                                                  
-     l       E           TYP  RCUT    TYP  RCUT                                 
-     0    -10.8127223     23  1.900                                             
-     0     -7.6451159     23  1.900                                             
-     1     -4.0811372     23  1.900                                             
-     1      2.4879257     23  1.900                                             
-     2     -4.0817478      7  1.900                                             
+ POTCAR:    PAW_PBE Si 05Jan2001
+   VRHFIN =Si: s2p2
+   LEXCH  = PE
+   EATOM  =   103.0669 eV,    7.5752 Ry
+
+   TITEL  = PAW_PBE Si 05Jan2001
+   LULTRA =        F    use ultrasoft PP ?
+   IUNSCR =        1    unscreen: 0-lin 1-nonlin 2-no
+   RPACOR =    1.500    partial core radius
+   POMASS =   28.085; ZVAL   =    4.000    mass and valenz
+   RCORE  =    1.900    outmost cutoff radius
+   RWIGS  =    2.480; RWIGS  =    1.312    wigner-seitz radius (au A)
+   ENMAX  =  245.345; ENMIN  =  184.009 eV
+   ICORE  =        2    local potential
+   LCOR   =        T    correct aug charges
+   LPAW   =        T    paw PP
+   EAUG   =  322.069
+   DEXC   =    0.000
+   RMAX   =    1.950    core radius for proj-oper
+   RAUG   =    1.300    factor for augmentation sphere
+   RDEP   =    1.993    radius for radial grids
+   RDEPT  =    1.837    core radius for aug-charge
+
+   Atomic configuration
+    6 entries
+     n  l   j            E        occ.
+     1  0  0.50     -1785.8828   2.0000
+     2  0  0.50      -139.4969   2.0000
+     2  1  1.50       -95.5546   6.0000
+     3  0  0.50       -10.8127   2.0000
+     3  1  0.50        -4.0811   2.0000
+     3  2  1.50        -4.0817   0.0000
+   Description
+     l       E           TYP  RCUT    TYP  RCUT
+     0    -10.8127223     23  1.900
+     0     -7.6451159     23  1.900
+     1     -4.0811372     23  1.900
+     1      2.4879257     23  1.900
+     2     -4.0817478      7  1.900
   local pseudopotential read in
   partial core-charges read in
   partial kinetic energy density read in
@@ -85,22 +85,22 @@
   non local Contribution for L=           1  read in
     real space projection operators read in
     PAW grid and wavefunctions read in
- 
+
    number of l-projection  operators is LMAX  =           4
    number of lm-projection operators is LMMAX =           8
- 
+
   PAW_PBE Si 05Jan2001                  :
  energy of atom  1       EATOM= -103.0669
  kinetic energy error for atom=    0.0107 (will be added to EATOM!!)
- 
- 
- POSCAR: # Compound: Si2. Old comment: Si2       
+
+
+ POSCAR: # Compound: Si2. Old comment: Si2
   positions in direct lattice
   No initial velocities read in
  exchange correlation table for  LEXCH =        8
    RHO(1)=    0.500       N(1)  =     2000
    RHO(2)=  100.500       N(2)  =     4000
- 
+
 
 
 --------------------------------------------------------------------------------------------------------
@@ -109,12 +109,12 @@
  ion  position               nearest neighbor table
    1  0.875  0.875  0.875-   2 2.35   2 2.35   2 2.35   2 2.35
    2  0.125  0.125  0.125-   1 2.35   1 2.35   1 2.35   1 2.35
- 
+
   LATTYP: Found a face centered cubic cell.
  ALAT       =     5.4310000000
-  
+
   Lattice vectors:
-  
+
  A1 = (   2.7155000000,   0.0000000000,   2.7155000000)
  A2 = (   2.7155000000,   2.7155000000,   0.0000000000)
  A3 = (   0.0000000000,   2.7155000000,   2.7155000000)
@@ -124,9 +124,9 @@ Analysis of symmetry for initial positions (statically):
 =====================================================================
  Subroutine PRICEL returns:
  Original cell was already a primitive cell.
- 
 
- Routine SETGRP: Setting up the symmetry group for a 
+
+ Routine SETGRP: Setting up the symmetry group for a
  face centered cubic supercell.
 
 
@@ -143,9 +143,9 @@ Analysis of symmetry for dynamics (positions and initial velocities):
 =====================================================================
  Subroutine PRICEL returns:
  Original cell was already a primitive cell.
- 
 
- Routine SETGRP: Setting up the symmetry group for a 
+
+ Routine SETGRP: Setting up the symmetry group for a
  face centered cubic supercell.
 
 
@@ -162,9 +162,9 @@ The dynamic configuration has the point symmetry D_3d.
  (whereof 12 operations are pure point group operations),
  and found     1 'primitive' translations
 
- 
- 
- KPOINTS: # No comment                            
+
+
+ KPOINTS: # No comment
   k-points in reciprocal lattice
 Space group operators:
  irot       det(A)        alpha          n_x          n_y          n_z        tau_x        tau_y        tau_z
@@ -217,7 +217,7 @@ Space group operators:
    47     1.000000   120.000000    -0.577350     0.577350     0.577350     0.000000     0.500000     0.000000
    48    -1.000000   120.000000    -0.577350     0.577350     0.577350     0.000000     0.500000     0.000000
 
- ----------------------------------------------------------------------------- 
+ -----------------------------------------------------------------------------
 |                                                                             |
 |     EEEEEEE  RRRRRR   RRRRRR   OOOOOOO  RRRRRR      ###     ###     ###     |
 |     E        R     R  R     R  O     O  R     R     ###     ###     ###     |
@@ -228,5 +228,4 @@ Space group operators:
 |     EEEEEEE  R     R  R     R  OOOOOOO  R     R     ###     ###     ###     |
 |                                                                             |
 |                                                                             |
- ----------------------------------------------------------------------------- 
-
+ -----------------------------------------------------------------------------

@@ -1,19 +1,16 @@
-#!/usr/bin/python
+"""Handle CHGCAR."""
 import sys
-import logging
-import re
+
 import numpy as np
 
 from parsevasp import utils
 from parsevasp.base import BaseParser
 
+
 class Chgcar(BaseParser):
-    
-    def __init__(self,
-                 file_path=None,
-                 file_handler=None,
-                 density=True,
-                 logger=None):
+    """Class to handle CHGCAR."""
+
+    def __init__(self, file_path=None, file_handler=None, logger=None):
         """
         Initialize an CHGCAR object and set content as a dictionary.
 
@@ -22,26 +19,22 @@ class Chgcar(BaseParser):
         file_handler : object, optional
             A file like object that acts as a handler for the content to be parsed.
         density : bool, optional
-            If True, we divide the read CHGCAR data by the unit cell volume.
+            If True, we divide the read CHGCAR data by the unit cell volume. (not implemented.)
         logger : object, optional
             A logger object if you would like to use an external logger for messages
             ejected inside this parser.
 
         """
 
-        super(Chgcar, self).__init__(file_path=file_path,
-                                     file_handler=file_handler,
-                                     logger=logger)
+        super(Chgcar, self).__init__(file_path=file_path, file_handler=file_handler, logger=logger)
 
         # check that at least one is supplied
         if self._file_path is None and self._file_handler is None:
-            self._logger.error(
-                self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
+            self._logger.error(self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
             sys.exit(self.ERROR_USE_ONE_ARGUMENT)
 
         if self._file_path is None and self._file_handler is None:
-            self._logger.error(
-                self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
+            self._logger.error(self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
             sys.exit(self.ERROR_USE_ONE_ARGUMENT)
 
         self._data = {
@@ -73,12 +66,12 @@ class Chgcar(BaseParser):
         header = temp[0]
         content = temp[1]
         header = header.split('\n')
-        comment = header[0]
+        # comment = header[0]
         scaling = float(header[1])
-        lattice_vectors = np.zeros((3,3))
+        lattice_vectors = np.zeros((3, 3))
         for i in range(3):
             # Read and scale lattice vectors
-            lattice_vectors[i] = scaling * np.array([float(item) for item in header[i+2].split()])
+            lattice_vectors[i] = scaling * np.array([float(item) for item in header[i + 2].split()])
             # Calculate volume for later scaling
         volume = 1.0
         if volume:
@@ -95,21 +88,25 @@ class Chgcar(BaseParser):
         content = content.split(ngf_string)
         num_datasets = len(content)
         # First dataset is always there
-        self._data['total'] = np.fromstring(content[0].split('augmentation occupancies')[0],
-                                            dtype=float, sep=' ').reshape(ngf)/volume                    
+        self._data['total'] = np.fromstring(content[0].split('augmentation occupancies')[0], dtype=float,
+                                            sep=' ').reshape(ngf) / volume
         if num_datasets == 2:
             # Collinear spin
-            self._data['magnetization'] = np.fromstring(content[1].split('augmentation occupancies')[0],
-                                                        dtype=float, sep=' ').reshape(ngf)/volume
+            self._data['magnetization'] = np.fromstring(
+                content[1].split('augmentation occupancies')[0], dtype=float, sep=' '
+            ).reshape(ngf) / volume
         elif num_datasets == 4:
             # Non-collinear spin
             self._data['magnetization'] = {}
-            self._data['magnetization']['x'] = np.fromstring(content[1].split('augmentation occupancies')[0],
-                                                             dtype=float, sep=' ').reshape(ngf)/volume
-            self._data['magnetization']['y'] = np.fromstring(content[2].split('augmentation occupancies')[0],
-                                                             dtype=float, sep=' ').reshape(ngf)/volume
-            self._data['magnetization']['z'] = np.fromstring(content[3].split('augmentation occupancies')[0],
-                                                             dtype=float, sep=' ').reshape(ngf)/volume
+            self._data['magnetization']['x'] = np.fromstring(
+                content[1].split('augmentation occupancies')[0], dtype=float, sep=' '
+            ).reshape(ngf) / volume
+            self._data['magnetization']['y'] = np.fromstring(
+                content[2].split('augmentation occupancies')[0], dtype=float, sep=' '
+            ).reshape(ngf) / volume
+            self._data['magnetization']['z'] = np.fromstring(
+                content[3].split('augmentation occupancies')[0], dtype=float, sep=' '
+            ).reshape(ngf) / volume
 
     @property
     def charge_density(self):
