@@ -24,6 +24,7 @@ class Kpoints(BaseParser):
     ERROR_TOO_LARGE_POINT_INDEX = 211
     ERROR_INVALID_CENTERING = 212
     ERROR_INVALID_MODE = 213
+    ERROR_ONLY_ONE_ARGUMENT = 214
     BaseParser.ERROR_MESSAGES.update({
         ERROR_KPOINTS_NOT_DIRECT:
         'Please supply the KPOINTS in direct coordinates.',
@@ -53,7 +54,9 @@ class Kpoints(BaseParser):
         ERROR_INVALID_CENTERING:
         "The supplied 'centering' have to be either 'Gamma' or 'Monkhorst-Pack'.",
         ERROR_INVALID_MODE:
-        "The supplied 'mode' have to be either explicit, automatic or line-mode."
+        "The supplied 'mode' have to be either explicit, automatic or line-mode.",
+        ERROR_ONLY_ONE_ARGUMENT:
+        'Only supply either `kpoints_string`, `kpoints_dict, `file_path` or `file_handler` as an argument.'
     })
     ERROR_MESSAGES = BaseParser.ERROR_MESSAGES
 
@@ -99,15 +102,15 @@ class Kpoints(BaseParser):
         if (self._kpoints_string is not None and self._kpoints_dict is not None) or (
             self._kpoints_string is not None and self._file_path is not None
         ) or (self._kpoints_dict is not None and self._file_path is not None and self._file_handler is not None):
-            self._logger.error(self.ERROR_MESSAGES[self.USE_ONE_ARGUMENT])
-            sys.exit(self.USE_ONE_ARGUMENT)
+            self._logger.error(self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
+            sys.exit(self.ERROR_USE_ONE_ARGUMENT)
         # Check that at least one is suplpied
         if (
             self._kpoints_string is None and self._kpoints_dict is None and self._file_path is None and
             self._file_handler is None
         ):
-            self._logger.error(self.ERROR_MESSAGES[self.USE_ONE_ARGUMENT])
-            sys.exit(self.USE_ONE_ARGUMENT)
+            self._logger.error(self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
+            sys.exit(self.ERROR_USE_ONE_ARGUMENT)
 
         if self._file_path is not None or self._file_handler is not None:
             # Create dictionary from a file
@@ -217,8 +220,8 @@ class Kpoints(BaseParser):
                         for tet in range(num_tetra):
                             con_line = kpoints[tet + loopmax].split()
                             if not len(con_line) == 5:
-                                self._logger.error(self.ERROR_MESSAGES[self.ERROR_TETRA_CON_FIVE])
-                                sys.exit(self.ERROR_TETRA_CON_FIVE)
+                                self._logger.error(self.ERROR_MESSAGES[self.ERROR_TETRA_FIVE])
+                                sys.exit(self.ERROR_TETRA_FIVE)
                             tetra.append([int(value) for value in con_line])
         if automatic:
             third_line_char = third_line[0].lower()

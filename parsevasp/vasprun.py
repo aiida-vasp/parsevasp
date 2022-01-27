@@ -49,6 +49,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
     ERROR_UNSUPPORTED_STATUS = 507
     ERROR_NO_SIZE = 508
     ERROR_OVERFLOW = 509
+    ERROR_ONLY_ONE_ARGUMENT = 510
     BaseParser.ERROR_MESSAGES.update({
         ERROR_NO_SPECIES:
         'Please extract the species first.',
@@ -70,7 +71,9 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
         ERROR_NO_SIZE:
         'Can not calculate size.',
         ERROR_OVERFLOW:
-        'Overflow detected in the XML file.'
+        'Overflow detected in the XML file.',
+        ERROR_ONLY_ONE_ARGUMENT:
+        'Only supply either `file_path` or `file_handler` as an argument.'
     })
     ERROR_MESSAGES = BaseParser.ERROR_MESSAGES
 
@@ -1957,10 +1960,6 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
         # same between each calculation we need to look at all the
         # children
         #
-        # TODO: check in the future if it is faster to fetch all scstep
-        # elements and then only how many scstep there is pr. calc
-        # and sort from there
-        #
 
         entries = self._findall(xml, './/calculation')
 
@@ -2379,7 +2378,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
         # then check if we have asigned nbands
         if self._parameters['nbands'] is None:
             self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_NBANDS])
-            sys.exit(self.ERROR_NO_NBADS)
+            sys.exit(self.ERROR_NO_NBANDS)
 
         # ispin
         # ispin = self._parameters['ispin']
