@@ -1,7 +1,7 @@
-#!/usr/bin/python
-import sys
-import logging
+"""Handle EIGENVAL."""
 import re
+import sys
+
 import numpy as np
 
 from parsevasp import utils
@@ -9,10 +9,9 @@ from parsevasp.base import BaseParser
 
 
 class Eigenval(BaseParser):
-    def __init__(self,
-                 file_path=None,
-                 file_handler=None,
-                 logger=None):
+    """Class to handle ENGENVAL."""
+
+    def __init__(self, file_path=None, file_handler=None, logger=None):
         """
         Initialize an EIGENVAL object and set content as a dictionary.
 
@@ -28,26 +27,18 @@ class Eigenval(BaseParser):
 
         """
 
-        super(Eigenval, self).__init__(file_path=file_path,
-                                     file_handler=file_handler,
-                                     logger=logger)
+        super(Eigenval, self).__init__(file_path=file_path, file_handler=file_handler, logger=logger)
 
         # check that at least one is supplied
         if self._file_path is None and self._file_handler is None:
-            self._logger.error(
-                self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
+            self._logger.error(self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
             sys.exit(self.ERROR_USE_ONE_ARGUMENT)
 
         if self._file_path is None and self._file_handler is None:
-            self._logger.error(
-                self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
+            self._logger.error(self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
             sys.exit(self.ERROR_USE_ONE_ARGUMENT)
 
-        self._data = {
-            'eigenvalues': None,
-            'kpoints': None,
-            'metadata': None
-        }
+        self._data = {'eigenvalues': None, 'kpoints': None, 'metadata': None}
 
         # parse parse parse
         self._parse()
@@ -154,7 +145,7 @@ class Eigenval(BaseParser):
         -------
         metadata : dict
             A dictionary containing the number of number of atoms, ions, spin flag,
-            coordinates etc.  
+            coordinates etc.
 
         """
 

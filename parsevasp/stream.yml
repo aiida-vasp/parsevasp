@@ -106,7 +106,7 @@ not_hermitian:
   message: Sub-space matrix not Hermitian in DAV
   recover: false
   regex: not Hermitian in DAV
-  suggestion: '' 
+  suggestion: ''
 psmaxn:
   kind: ERROR
   location: STDOUT
@@ -176,4 +176,4 @@ magmom:
   message: MAGMON is specified, but ISPIN is set to one
   recover: false
   regex: "Error reading item 'MAGMOM' from file INCAR"
-  suggestion: ''  
+  suggestion: ''

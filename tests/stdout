@@ -1,8 +1,8 @@
  running on    1 total cores
  distrk:  each k-point on    1 cores,    1 groups
  distr:  one band on    1 cores,    1 groups
- using from now: INCAR     
- vasp.5.4.4.18Apr17-6-g9f103f2a35 (build Aug  3 2020 11:46:08) complex           
+ using from now: INCAR
+ vasp.5.4.4.18Apr17-6-g9f103f2a35 (build Aug  3 2020 11:46:08) complex
  POSCAR found :  1 types and       2 ions
  scaLAPACK will be used
  LDA part: xc-table for Pade appr. of Perdew

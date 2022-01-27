@@ -1,11 +1,13 @@
 """Run coveralls only on travis."""
 import os
 import subprocess
+
 import click
 
 
 def echo_call(cmd):
-    click.echo('calling: {}'.format(' '.join(cmd)), err=True)
+    """Echo command."""
+    click.echo(f"calling: {' '.join(cmd)}", err=True)
 
 
 @click.command()

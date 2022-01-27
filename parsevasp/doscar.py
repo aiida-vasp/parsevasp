@@ -1,7 +1,6 @@
-#!/usr/bin/python
+"""Handle DOSCAR."""
 import sys
-import logging
-import re
+
 import numpy as np
 
 from parsevasp import utils
@@ -17,46 +16,48 @@ DTYPES_DOS = {
 DTYPES_PDOS_COLLINEAR = {
     # l-decomposed
     4:
-        np.dtype([('energy', float), ('s', float), ('p', float), ('d', float)]),
+    np.dtype([('energy', float), ('s', float), ('p', float), ('d', float)]),
     7:
-        np.dtype([('energy', float), ('s', float, (2,)), ('p', float, (2,)), ('d', float, (2,))]),
+    np.dtype([('energy', float), ('s', float, (2,)), ('p', float, (2,)), ('d', float, (2,))]),
     5:
-        np.dtype([('energy', float), ('s', float), ('p', float), ('d', float), ('f', float)]),
+    np.dtype([('energy', float), ('s', float), ('p', float), ('d', float), ('f', float)]),
     9:
-        np.dtype([('energy', float), ('s', float, (2,)), ('p', float, (2,)), ('d', float, (2,)), ('f', float, (2,))]),
+    np.dtype([('energy', float), ('s', float, (2,)), ('p', float, (2,)), ('d', float, (2,)), ('f', float, (2,))]),
     # lm-decomposed
     10:
-        np.dtype([('energy', float), ('s', float), ('py', float), ('px', float), ('pz', float), ('dxy', float), ('dyz', float),
-                  ('dz2', float), ('dxz', float), ('dx2-y2', float)]),
+    np.dtype([('energy', float), ('s', float), ('py', float), ('px', float), ('pz', float), ('dxy', float),
+              ('dyz', float), ('dz2', float), ('dxz', float), ('dx2-y2', float)]),
     17:
-        np.dtype([('energy', float), ('s', float), ('py', float), ('px', float), ('pz', float), ('dxy', float), ('dyz', float),
-                  ('dz2', float), ('dxz', float), ('dx2-y2', float), ('fy(3x2-y2)', float), ('fxyz', float), ('fyz2', float),
-                  ('fz3', float), ('fxz2', float), ('fz(x2-y2)', float), ('fx(x2-3y2)', float)]),
+    np.dtype([('energy', float), ('s', float), ('py', float), ('px', float), ('pz', float), ('dxy', float),
+              ('dyz', float), ('dz2', float), ('dxz', float), ('dx2-y2', float), ('fy(3x2-y2)', float), ('fxyz', float),
+              ('fyz2', float), ('fz3', float), ('fxz2', float), ('fz(x2-y2)', float), ('fx(x2-3y2)', float)]),
     19:
-        np.dtype([('energy', float), ('s', float, (2,)), ('py', float, (2,)), ('px', float, (2,)), ('pz', float, (2,)),
-                  ('dxy', float, (2,)), ('dyz', float, (2,)), ('dz2', float, (2,)), ('dxz', float, (2,)), ('dx2-y2', float, (2,))]),
+    np.dtype([('energy', float), ('s', float, (2,)), ('py', float, (2,)), ('px', float, (2,)), ('pz', float, (2,)),
+              ('dxy', float, (2,)), ('dyz', float, (2,)), ('dz2', float, (2,)), ('dxz', float, (2,)),
+              ('dx2-y2', float, (2,))]),
     33:
-        np.dtype([('energy', float), ('s', float, (2,)), ('py', float, (2,)), ('px', float, (2,)), ('pz', float, (2,)),
-                  ('dxy', float, (2,)), ('dyz', float, (2,)), ('dz2', float, (2,)), ('dxz', float, (2,)), ('dx2-y2', float, (2,)),
-                  ('fy(3x2-y2)', float, (2,)), ('fxyz', float, (2,)), ('fyz2', float, (2,)), ('fz3', float, (2,)), ('fxz2', float, (2,)),
-                  ('fz(x2-y2)', float, (2,)), ('fx(x2-3y2)', float, (2,))]),
+    np.dtype([('energy', float), ('s', float, (2,)), ('py', float, (2,)), ('px', float, (2,)), ('pz', float, (2,)),
+              ('dxy', float, (2,)), ('dyz', float, (2,)), ('dz2', float, (2,)), ('dxz', float, (2,)),
+              ('dx2-y2', float, (2,)), ('fy(3x2-y2)', float, (2,)), ('fxyz', float, (2,)), ('fyz2', float, (2,)),
+              ('fz3', float, (2,)), ('fxz2', float, (2,)), ('fz(x2-y2)', float, (2,)), ('fx(x2-3y2)', float, (2,))]),
 }
 
 DTYPES_PDOS_NONCOLLINEAR = {
     # l-decomposed
     13:
-        np.dtype([('energy', float), ('s', float, (4,)), ('p', float, (4,)), ('d', float, (4,))]),
+    np.dtype([('energy', float), ('s', float, (4,)), ('p', float, (4,)), ('d', float, (4,))]),
     17:
-        np.dtype([('energy', float), ('s', float, (4,)), ('p', float, (4,)), ('d', float, (4,)), ('f', float, (4,))]),
+    np.dtype([('energy', float), ('s', float, (4,)), ('p', float, (4,)), ('d', float, (4,)), ('f', float, (4,))]),
     # lm-decomposed
     37:
-        np.dtype([('energy', float), ('s', float, (4,)), ('py', float, (4,)), ('px', float, (4,)), ('pz', float, (4,)),
-                  ('dxy', float, (4,)), ('dyz', float, (4,)), ('dz2', float, (4,)), ('dxz', float, (4,)), ('x2-y2', float, (4,))]),
+    np.dtype([('energy', float), ('s', float, (4,)), ('py', float, (4,)), ('px', float, (4,)), ('pz', float, (4,)),
+              ('dxy', float, (4,)), ('dyz', float, (4,)), ('dz2', float, (4,)), ('dxz', float, (4,)),
+              ('x2-y2', float, (4,))]),
     65:
-        np.dtype([('energy', float), ('s', float, (4,)), ('py', float, (4,)), ('px', float, (4,)), ('pz', float, (4,)),
-                  ('dxy', float, (4,)), ('dyz', float, (4,)), ('dz2', float, (4,)), ('dxz', float, (4,)), ('dx2-y2', float, (4,)),
-                  ('fy(3x2-y2)', float, (4,)), ('fxyz', float, (4,)), ('fyz2', float, (4,)), ('fz3', float, (4,)), ('fxz2', float, (4,)),
-                  ('fz(x2-y2)', float, (4,)), ('fx(x2-3y2)', float, (4,))]),
+    np.dtype([('energy', float), ('s', float, (4,)), ('py', float, (4,)), ('px', float, (4,)), ('pz', float, (4,)),
+              ('dxy', float, (4,)), ('dyz', float, (4,)), ('dz2', float, (4,)), ('dxz', float, (4,)),
+              ('dx2-y2', float, (4,)), ('fy(3x2-y2)', float, (4,)), ('fxyz', float, (4,)), ('fyz2', float, (4,)),
+              ('fz3', float, (4,)), ('fxz2', float, (4,)), ('fz(x2-y2)', float, (4,)), ('fx(x2-3y2)', float, (4,))]),
 }
 
 # Mapping between the number of columns to the number of spins.
@@ -104,12 +105,9 @@ def _get_dtype_pdos(count: int, non_collinear: bool) -> np.dtype:
 
 
 class Doscar(BaseParser):
+    """Class to handle DOSCAR."""
 
-    def __init__(self,
-                 file_path=None,
-                 file_handler=None,
-                 logger=None,
-                 non_collinear=False):
+    def __init__(self, file_path=None, file_handler=None, logger=None, non_collinear=False):
         """
         Initialize an DOSCAR object and set content as a dictionary.
 
@@ -124,28 +122,20 @@ class Doscar(BaseParser):
             If non-collinear calculation is performed, set this flag True.
         """
 
-        super(Doscar, self).__init__(file_path=file_path,
-                                     file_handler=file_handler,
-                                     logger=logger)
+        super(Doscar, self).__init__(file_path=file_path, file_handler=file_handler, logger=logger)
 
         # check that at least one is supplied
         if self._file_path is None and self._file_handler is None:
-            self._logger.error(
-                self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
+            self._logger.error(self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
             sys.exit(self.ERROR_USE_ONE_ARGUMENT)
 
         if self._file_path is None and self._file_handler is None:
-            self._logger.error(
-                self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
+            self._logger.error(self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
             sys.exit(self.ERROR_USE_ONE_ARGUMENT)
 
         self._non_collinear = non_collinear
 
-        self._data = {
-            'dos': None,
-            'pdos': None,
-            'metadata': None
-        }
+        self._data = {'dos': None, 'pdos': None, 'metadata': None}
 
         # parse parse parse
         self._parse()
@@ -181,16 +171,16 @@ class Doscar(BaseParser):
         """
 
         # Set some metadata
-        num_ions, num_atoms, part, ncdij = utils.line_to_type(doscar[0], int)
+        num_ions, num_atoms, part, ncdij = utils.line_to_type(doscar[0], int)  # pylint: disable=W0612
 
         # Figure out if we have a partial density of states
-        partial = bool(int(part))
+        # partial = bool(int(part))
 
         # Volume of cell (AA^3), length of basis vectors (meters) and POTIMS
-        line_0 = utils.line_to_type(doscar[1], float)
+        # line_0 = utils.line_to_type(doscar[1], float)
 
         # The initial temperature
-        line_1 = utils.line_to_type(doscar[2], float)
+        # line_1 = utils.line_to_type(doscar[2], float)
 
         # Fetch coordinates used
         coord_type = utils.line_to_type(doscar[3])

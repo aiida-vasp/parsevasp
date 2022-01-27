@@ -1,7 +1,7 @@
-#!/usr/bin/python
-import sys
-import logging
+"""Handle OUTCAR."""
 import re
+import sys
+
 import numpy as np
 
 from parsevasp import utils
@@ -9,16 +9,13 @@ from parsevasp.base import BaseParser
 
 
 class Outcar(BaseParser):
+    """Class to handle OUTCAR."""
+
     ERROR_NO_ITERATIONS = 600
-    BaseParser.ERROR_MESSAGES.update({
-        ERROR_NO_ITERATIONS: 'A crash detected before the first SCF step.'
-    })
+    BaseParser.ERROR_MESSAGES.update({ERROR_NO_ITERATIONS: 'A crash detected before the first SCF step.'})
     ERROR_MESSAGES = BaseParser.ERROR_MESSAGES
 
-    def __init__(self,
-                 file_path=None,
-                 file_handler=None,
-                 logger=None):
+    def __init__(self, file_path=None, file_handler=None, logger=None):
         """Initialize an OUTCAR object and set content as a dictionary.
 
         Parameters
@@ -30,22 +27,18 @@ class Outcar(BaseParser):
         logger : object
             A logger object if you would like to use an external logger for messages
             ejected inside this parser.
-        
+
         """
 
-        super(Outcar, self).__init__(file_path=file_path,
-                                     file_handler=file_handler,
-                                     logger=logger)
+        super(Outcar, self).__init__(file_path=file_path, file_handler=file_handler, logger=logger)
 
         # check that at least one is supplied
         if self._file_path is None and self._file_handler is None:
-            self._logger.error(
-                self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
+            self._logger.error(self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
             sys.exit(self.ERROR_USE_ONE_ARGUMENT)
 
         if self._file_path is None and self._file_handler is None:
-            self._logger.error(
-                self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
+            self._logger.error(self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
             sys.exit(self.ERROR_USE_ONE_ARGUMENT)
 
         self._data = {
@@ -86,14 +79,15 @@ class Outcar(BaseParser):
                 'full_cell': {},
             },
             'run_stats': {},
-            'run_status': {'nelm': None,
-                           'nsw': None,
-                           'last_iteration_index': None,
-                           'finished': False,
-                           'ionic_converged': False,
-                           'electronic_converged': False,
-                           'consistent_nelm_breach': False,
-                           'contains_nelm_breach': False
+            'run_status': {
+                'nelm': None,
+                'nsw': None,
+                'last_iteration_index': None,
+                'finished': False,
+                'ionic_converged': False,
+                'electronic_converged': False,
+                'consistent_nelm_breach': False,
+                'contains_nelm_breach': False
             }
         }
 
@@ -118,7 +112,7 @@ class Outcar(BaseParser):
         outcar = utils.read_from_file(self._file_path, self._file_handler)
         self._from_list(outcar)
 
-    def _from_list(self, outcar):
+    def _from_list(self, outcar):  # pylint: disable=R0915
         """
         Go through the list and extract what is not present in the XML file.
 
@@ -135,7 +129,7 @@ class Outcar(BaseParser):
         iter_counter = None
         nelec_steps = {}
 
-        for index, line in enumerate(outcar):
+        for index, line in enumerate(outcar):  # pylint: disable=R1702
             # Check the iteration counter
             match = re.search(r'Iteration *(\d+)\( *(\d+)\)', line)
             if match:
@@ -153,10 +147,9 @@ class Outcar(BaseParser):
             # Test if the end of execution has reached
             if 'timing and accounting informations' in line:
                 self._data['run_status']['finished'] = True
-            
+
             # Fetch the symmetry
-            if line.strip().startswith(
-                    'Analysis of symmetry for initial positions (statically)'):
+            if line.strip().startswith('Analysis of symmetry for initial positions (statically)'):
                 config = 'static'
             if line.strip().startswith('Analysis of symmetry for dynamics'):
                 config = 'dynamic'
@@ -164,98 +157,70 @@ class Outcar(BaseParser):
                 if line.strip().startswith('Subroutine PRICEL returns'):
                     text = outcar[index + 1].strip().lower()
                     if text:
-                        self._data['symmetry']['original_cell_type'][
-                            config].append('primitive cell')
-                if ('primitive cells build up your supercell') in line:
-                    text = '{} primitive cells'.format(line.strip().split())
-                    self._data['symmetry']['original_cell_type'][
-                        config].append(text)
-                if line.strip().startswith(
-                        'Routine SETGRP: Setting up the symmetry group for a'):
-                    self._data['symmetry']['symmetrized_cell_type'][
-                        config].append(outcar[index + 1].strip().lower())
+                        self._data['symmetry']['original_cell_type'][config].append('primitive cell')
+                if 'primitive cells build up your supercell' in line:
+                    text = f'{line.strip().split()} primitive cells'
+                    self._data['symmetry']['original_cell_type'][config].append(text)
+                if line.strip().startswith('Routine SETGRP: Setting up the symmetry group for a'):
+                    self._data['symmetry']['symmetrized_cell_type'][config].append(outcar[index + 1].strip().lower())
                 if line.strip().startswith('Subroutine GETGRP returns'):
-                    self._data['symmetry']['num_space_group_operations'][
-                        config].append(int(line.strip().split()[4]))
+                    self._data['symmetry']['num_space_group_operations'][config].append(int(line.strip().split()[4]))
 
             # then the elastic tensors etc. in kBar
             if line.strip().startswith('ELASTIC MODULI  (kBar)'):
                 tensor = []
                 for idx in range(3, 9):
-                    tensor.append([
-                        float(item)
-                        for item in outcar[index + idx].strip().split()[1:]
-                    ])
-                self._data['elastic_moduli']['non_symmetrized'] = np.asarray(
-                    tensor)
+                    tensor.append([float(item) for item in outcar[index + idx].strip().split()[1:]])
+                self._data['elastic_moduli']['non_symmetrized'] = np.asarray(tensor)
             if line.strip().startswith('SYMMETRIZED ELASTIC MODULI'):
                 tensor = []
                 for idx in range(3, 9):
-                    tensor.append([
-                        float(item)
-                        for item in outcar[index + idx].strip().split()[1:]
-                    ])
-                self._data['elastic_moduli']['symmetrized'] = np.asarray(
-                    tensor)
+                    tensor.append([float(item) for item in outcar[index + idx].strip().split()[1:]])
+                self._data['elastic_moduli']['symmetrized'] = np.asarray(tensor)
             if line.strip().startswith('TOTAL ELASTIC MODULI'):
                 tensor = []
                 for idx in range(3, 9):
-                    tensor.append([
-                        float(item)
-                        for item in outcar[index + idx].strip().split()[1:]
-                    ])
+                    tensor.append([float(item) for item in outcar[index + idx].strip().split()[1:]])
                 self._data['elastic_moduli']['total'] = np.asarray(tensor)
             for _proj in ['x', 'y', 'z']:
-                if line.strip().startswith('magnetization ({})'.format(_proj)):
+                if line.strip().startswith(f'magnetization ({_proj})'):
                     _counter = 0
                     mag_found = False
                     while not mag_found:
                         if outcar[index + 4 + _counter].strip().split():
-                            if not outcar[index + 4 + _counter].strip(
-                            ).startswith('-') and not outcar[
-                                    index + 4 +
-                                    _counter].strip().startswith('tot'):
+                            if not outcar[index + 4 + _counter].strip().startswith('-') and not outcar[
+                                index + 4 + _counter].strip().startswith('tot'):
                                 mag_line = outcar[index + 4 + _counter].split()
-                                self._data['magnetization']['sphere'][
-                                    '{}'.format(_proj)]['site_moment'][int(
-                                        mag_line[0])] = dict()
+                                self._data['magnetization']['sphere'][f'{_proj}']['site_moment'][int(mag_line[0])
+                                                                                                 ] = dict()
                                 for _count, orb in enumerate(mag_line[1:-1]):
-                                    self._data['magnetization']['sphere'][
-                                        '{}'.format(_proj)]['site_moment'][int(
-                                            mag_line[0])][
-                                                s_orb[_count]] = float(orb)
-                                self._data['magnetization']['sphere'][
-                                    '{}'.format(_proj)]['site_moment'][int(
-                                        mag_line[0])]['tot'] = float(
-                                            mag_line[-1])
-                            if outcar[index + 4 +
-                                      _counter].strip().startswith('tot'):
+                                    self._data['magnetization']['sphere'][f'{_proj}']['site_moment'][int(
+                                        mag_line[0]
+                                    )][s_orb[_count]] = float(orb)
+                                self._data['magnetization']['sphere'][f'{_proj}']['site_moment'][int(
+                                    mag_line[0]
+                                )]['tot'] = float(mag_line[-1])
+                            if outcar[index + 4 + _counter].strip().startswith('tot'):
                                 mag_line = outcar[index + 4 + _counter].split()
-                                self._data['magnetization']['sphere'][
-                                    '{}'.format(
-                                        _proj)]['total_magnetization'] = dict(
-                                        )
+                                self._data['magnetization']['sphere'][f'{_proj}']['total_magnetization'] = dict()
                                 for _count, orb in enumerate(mag_line[1:-1]):
-                                    self._data['magnetization']['sphere'][
-                                        '{}'.format(
-                                            _proj)]['total_magnetization'][
-                                                s_orb[_count]] = float(orb)
-                                self._data['magnetization']['sphere'][
-                                    '{}'.format(_proj)]['total_magnetization'][
-                                        'tot'] = float(mag_line[-1])
+                                    self._data['magnetization']['sphere'][f'{_proj}']['total_magnetization'][
+                                        s_orb[_count]] = float(orb)
+                                self._data['magnetization']['sphere'][f'{_proj}']['total_magnetization']['tot'] = float(
+                                    mag_line[-1]
+                                )
                                 mag_found = True
                         else:
-                            self._data['magnetization']['sphere']['{}'.format(
-                                _proj)]['total_magnetization'] = dict()
-                            self._data['magnetization']['sphere']['{}'.format(_proj)]['total_magnetization'] =\
-                                self._data['magnetization']['sphere']['{}'.format(_proj)]['site_moment'][list(self._data['magnetization']['sphere']['{}'.format(_proj)]['site_moment'].keys())[0]]
+                            self._data['magnetization']['sphere'][f'{_proj}']['total_magnetization'] = dict()
+                            self._data['magnetization']['sphere'][f'{_proj}']['total_magnetization'] = self._data[
+                                'magnetization']['sphere'][f'{_proj}']['site_moment'][list(
+                                    self._data['magnetization']['sphere'][f'{_proj}']['site_moment'].keys()
+                                )[0]]
                             mag_found = True
                         _counter = _counter + 1
             if line.strip().startswith('number of electron'):
                 # Only take the last value
-                self._data['magnetization']['full_cell'] = [
-                    float(_val) for _val in outcar[index].strip().split()[5:]
-                ]
+                self._data['magnetization']['full_cell'] = [float(_val) for _val in outcar[index].strip().split()[5:]]
 
         # Check if SCF iterations are contained in the file
         if iter_counter is None:
@@ -286,7 +251,9 @@ class Outcar(BaseParser):
                     # Sometimes we have no or only one ionic step, which makes it difficult to determine if the
                     # ionic relaxation is to be considered converged
                     self._logger.warning(
-                        f'IBRION = {ibrion} but NSW is {nsw} - cannot deterimine if the relaxation structure is converged!')
+                        f'IBRION = {ibrion} but NSW is {nsw}'
+                        ' - cannot deterimine if the relaxation structure is converged!'
+                    )
                     run_status['ionic_converged'] = None
             else:
                 # No ionic relaxation performed
@@ -301,8 +268,7 @@ class Outcar(BaseParser):
         # the relaxation, it will simply consider it converged. We need to detect this, which is done
         # by checking if there are any single run that have reached NELM in the history or if NELM
         # has been consistently reached.
-        mask = [value >= nelm
-                for sc_idx, value in sorted(nelec_steps.items(), key=lambda x: x[0])]
+        mask = [value >= nelm for sc_idx, value in sorted(nelec_steps.items(), key=lambda x: x[0])]
         if (finished and all(mask)) or \
            (not finished and all(mask[:-1]) and iter_counter[0] > 1):
             # We have consistently reached NELM. Excluded the last iteration,
@@ -370,14 +336,14 @@ class Outcar(BaseParser):
 
     def get_run_stats(self):
         """
-        Return the run time statistics information. 
-        
+        Return the run time statistics information.
+
         The existence of timing and memory information also signals the calculation terminate
         gracefully.
 
         Parameters
         ----------
-        None 
+        None
 
         Returns
         -------
@@ -396,19 +362,19 @@ class Outcar(BaseParser):
     def get_run_status(self):
         """
         Return the status of the run.
-        
+
         Contains information of the convergence of the ionic relaxation and electronics,
         in addition to information if the run has finished.
 
         Parameters
         ----------
-        None 
+        None
 
         Returns
         -------
         status : dict
-            A dictionary containing the keys `finished`, which is True if the VASP calculation 
-            contain timing information in the end of the OUTCAR. The key `ionic_converged` is 
+            A dictionary containing the keys `finished`, which is True if the VASP calculation
+            contain timing information in the end of the OUTCAR. The key `ionic_converged` is
             True if the number of ionic steps detected is smaller than the supplied NSW.
             The key `electronic_converged` is True if the number of electronic steps is smaller than
             NELM (defaults to 60 in VASP). It is also possible to check if all the ionic steps
@@ -420,7 +386,7 @@ class Outcar(BaseParser):
 
         status = self._data['run_status']
         return status
-    
+
     @staticmethod
     def _parse_timings_memory(timing_lines):
         """
@@ -436,14 +402,13 @@ class Outcar(BaseParser):
         info : dict
             A dictionary containing the timing information.
         """
-        import re
         info = {}
-        time_mem_pattern = re.compile(r"\((sec|kb)\)")
-        mem_pattern = re.compile(r":.*kBytes$")
+        time_mem_pattern = re.compile(r'\((sec|kb)\)')
+        mem_pattern = re.compile(r':.*kBytes$')
         for _, line in enumerate(timing_lines):
             if time_mem_pattern.search(line):
-                tokens = line.strip().split(":")
-                item_name = "_".join(tmp.lower() for tmp in tokens[0].strip().split()[:-1])
+                tokens = line.strip().split(':')
+                item_name = '_'.join(tmp.lower() for tmp in tokens[0].strip().split()[:-1])
                 # The entry can be empty (VASP6)
                 try:
                     info[item_name] = float(tokens[1].strip())
@@ -456,6 +421,5 @@ class Outcar(BaseParser):
                     info['mem_usage_' + tokens[0]] = float(tokens[-2])
                 except ValueError:
                     info['mem_usage_' + tokens[0]] = None
-            
-            
+
         return info

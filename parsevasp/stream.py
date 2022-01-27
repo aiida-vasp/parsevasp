@@ -2,31 +2,24 @@
 Standard stream parser for VASP.
 
 --------------------------------
-Contains parsers for the standard stream that originates from VASP. It fills a set with streams (e.g. 
+Contains parsers for the standard stream that originates from VASP. It fills a set with streams (e.g.
 errors and warnings as defined in the streams.yml file).
 """
 
-#!/usr/bin/python
-import sys
-import logging
-import numpy as np
-from pathlib import Path
-import yaml
 import re
+import sys
+from pathlib import Path
+
+import yaml
 
 from parsevasp import utils
 from parsevasp.base import BaseParser
 
 
-class Stream(BaseParser):
+class Stream(BaseParser):  # pylint: disable=R0902
+    """Class to handle standard stream."""
 
-    def __init__(self,
-                 file_path=None,
-                 file_handler=None,
-                 logger=None,
-                 stream='stdout',
-                 history=False,
-                 config=None):
+    def __init__(self, file_path=None, file_handler=None, logger=None, history=False, config=None):
         """Initialize an object that contain a standard stream composed of e.g. the standard output and error.
 
         Parameters
@@ -38,7 +31,7 @@ class Stream(BaseParser):
         logger: object
             A logger object.
         stream : string, optional
-            A string determining if a stdout, stderr or a combined stream is supplied.
+            A string determining if a stdout, stderr or a combined stream is supplied. Not implemented.
         history : bool, optional
             If True, keep track of all the stream elements in appearing order.
         config : dict, optional
@@ -47,9 +40,7 @@ class Stream(BaseParser):
 
         """
 
-        super(Stream, self).__init__(file_path=file_path,
-                                     file_handler=file_handler,
-                                     logger=logger)
+        super(Stream, self).__init__(file_path=file_path, file_handler=file_handler, logger=logger)
 
         self._file_path = file_path
         self._file_handler = file_handler
@@ -59,25 +50,23 @@ class Stream(BaseParser):
 
         # Check that at least file path or file handler is supplied
         if self._file_path is None and self._file_handler is None:
-            self._logger.error(
-                self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
+            self._logger.error(self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
             sys.exit(self.ERROR_USE_ONE_ARGUMENT)
 
         if self._file_path is None and self._file_handler is None:
-            self._logger.error(
-                self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
+            self._logger.error(self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
             sys.exit(self.ERROR_USE_ONE_ARGUMENT)
 
         # Load stream configuration from the supplied config or the standard config file
         self._stream_config = self._load_config()
-        
+
         # Now investigate the kinds of streams present in the config
         self._stream_kinds = self._set_streams()
 
         # Build list of error and warning objects and store the these as stream triggers on which
         # we will react if detected in the stream.
         self._stream_triggers = self._build_stream_triggers()
-        
+
         # Parse parse parse
         self._parse()
 
@@ -92,17 +81,17 @@ class Stream(BaseParser):
     def _write(self, *args, **kwargs):
         """Write not supported for standard streams."""
         raise NotImplementedError('Writing VASP standard streams files is not supported.')
-    
+
     @property
     def configured_streams(self):
         """Return the configured streams."""
         return self._stream_triggers
-    
+
     @property
     def kinds(self):
         """Return a list containing the different kinds."""
         return self._stream_kinds
-    
+
     @property
     def entries(self):
         """Return the found streams after parsing as a list."""
@@ -128,9 +117,9 @@ class Stream(BaseParser):
             stream_config.update(self._config)
 
         return stream_config
-    
-    def _load_config_from_file(self):
-        """Read the configuration of the errors and warnings from a yaml file and save it as the class method"""
+
+    def _load_config_from_file(self):  # pylint: disable=R0201
+        """Read the configuration of the errors and warnings from a yaml file and save it as the class method."""
 
         stream_config = None
         fname = Path(__file__).parent / 'stream.yml'
@@ -143,15 +132,16 @@ class Stream(BaseParser):
     def _set_streams(self):
         """Check the kinds of streams present in the config files."""
         stream_kinds = []
-        for key, value in self._stream_config.items():
+        for _, value in self._stream_config.items():
             kind = value['kind']
             if isinstance(kind, str):
-                if kind.upper() in VaspStream._ALLOWED_STREAMS:
-                    if not kind in stream_kinds: stream_kinds.append(kind)
+                if kind.upper() in VaspStream._ALLOWED_STREAMS:  # pylint: disable=W0212
+                    if not kind in stream_kinds:
+                        stream_kinds.append(kind)
             else:
-                raise ValueError(f'One of the kind entries is not a string.')
+                raise ValueError('One of the kind entries is not a string.')
         return stream_kinds
-            
+
     def _build_stream_triggers(self):
         """Here we use the stream configs to initialize the triggers"""
 
@@ -166,7 +156,7 @@ class Stream(BaseParser):
                     triggers[''.join([stream.lower(), 's'])].append(VaspStream(shortname=shortname, **config))
 
         return triggers
-                    
+
     def _parse(self):
         """Perform the actual parsing."""
 
@@ -197,7 +187,7 @@ class Stream(BaseParser):
         # Copy the dictionary as we will use pop when we do not want history to
         # remove items as we go
         stream_triggers = dict(self._stream_triggers)
-        for index, line in enumerate(stream):
+        for _, line in enumerate(stream):
             # Go though all entries in the stream triggers
             for kind, triggers in stream_triggers.items():
                 # Not check all the triggers of the given kind
@@ -211,14 +201,13 @@ class Stream(BaseParser):
                             stream_triggers[kind].pop(index)
 
 
-class VaspStream:
+class VaspStream:  # pylint: disable=R0902
     """Class representing stream elements given by VASP that we want to trigger on."""
 
     _ALLOWED_STREAMS = ['ERROR', 'WARNING']
     _ALLOWED_LOCATIONS = ['STDOUT', 'STDERR']
-    
-    def __init__(self, shortname, kind, regex, message,
-                 suggestion=None, location='STDOUT', recover=False):  # pylint: disable=too-many-arguments
+
+    def __init__(self, shortname, kind, regex, message, suggestion=None, location='STDOUT', recover=False):  # pylint: disable=too-many-arguments
         """
         Initialise a VaspStream object.
 
@@ -268,7 +257,8 @@ class VaspStream:
     def shortname(self, shrt):
         """Setter for the shortname that validates that it is a string."""
 
-        if not isinstance(shrt, str): raise ValueError(f'The supplied shortname is not of type string.')
+        if not isinstance(shrt, str):
+            raise ValueError('The supplied shortname is not of type string.')
         self._shortname = shrt
 
     @property
@@ -284,7 +274,9 @@ class VaspStream:
                 self._kind = knd
             else:
                 raise ValueError(
-                    f'The type of kind for {self._shortname} is not supported. Currently we support {self._ALLOWED_STREAMS}.')
+                    f'The type of kind for {self._shortname} is not supported. '
+                    f'Currently we support {self._ALLOWED_STREAMS}.'
+                )
         else:
             raise ValueError(f'The kind for {self._shortname} is not of type string.')
 
@@ -309,7 +301,8 @@ class VaspStream:
     @message.setter
     def message(self, mes):
         """Setter for message that validates if it is a string."""
-        if not isinstance(mes, str): raise ValueError('The message needs to be a string.')
+        if not isinstance(mes, str):
+            raise ValueError('The message needs to be a string.')
         self._message = mes
 
     @property
@@ -322,8 +315,8 @@ class VaspStream:
         """Setter for the suggestion which validated if it is a string."""
         if sug is not None:
             # Allow None
-            if not isinstance(sug, str): raise ValueError(
-                    f'The suggestion entry for {self._shortname} is not of type string.')
+            if not isinstance(sug, str):
+                raise ValueError(f'The suggestion entry for {self._shortname} is not of type string.')
         self._suggestion = sug
 
     @property
@@ -334,10 +327,12 @@ class VaspStream:
     @location.setter
     def location(self, loc):
         """Setter for the location that validates if it is an allowed value."""
-        if not loc in self._ALLOWED_LOCATIONS: raise ValueError(
-                f'The location entry for {self._shortname} is not one o fthe allowed values {self._ALLOWED_LOCATIONS}')
+        if not loc in self._ALLOWED_LOCATIONS:
+            raise ValueError(
+                f'The location entry for {self._shortname} is not one o fthe allowed values {self._ALLOWED_LOCATIONS}'
+            )
         self._location = loc
-        
+
     @property
     def recover(self):
         """Return the recover status."""
@@ -346,22 +341,23 @@ class VaspStream:
     @recover.setter
     def recover(self, rec):
         """Setter for the recover that validates if it is a boolean."""
-        if not isinstance(rec, bool): raise ValueError(
-                'The recover entry for {self._shortname is not of type string.}')
+        if not isinstance(rec, bool):
+            raise ValueError('The recover entry for {self._shortname is not of type string.}')
         self._recover = rec
 
     @property
     def recoverable(self):
         """True if the stream is marked as recoverable."""
         return self._recover
-        
+
     def check_line(self, line):
         """Check the stream in a line, return True the stream is found"""
         mch = self.regex.search(line)
         if mch:
             # Make a new instance for this particular error (in case we want
             # to save each and every error)
-            return VaspStream(self.shortname, self.kind, self.regex, self.message,
-                              self.suggestion, self.location, self.recover)
+            return VaspStream(
+                self.shortname, self.kind, self.regex, self.message, self.suggestion, self.location, self.recover
+            )
 
         return None

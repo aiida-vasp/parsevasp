@@ -5,7 +5,7 @@ Parsevasp - a parser for VASP
 .. image:: https://img.shields.io/pypi/v/parsevasp
 
 .. image:: https://img.shields.io/pypi/pyversions/parsevasp
-	   
+
 .. image:: https://github.com/aiida-vasp/parsevasp/workflows/parsevasp/badge.svg
   :target: https://github.com/aiida-vasp/parsevasp/actions
 

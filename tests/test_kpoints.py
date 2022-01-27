@@ -1,8 +1,11 @@
+"""Test kpoints."""
 import os
-import pytest
+
 import numpy as np
-from parsevasp.kpoints import Kpoints, Kpoint
+import pytest
 import utils
+
+from parsevasp.kpoints import Kpoint, Kpoints
 
 
 @pytest.fixture(scope='module')
