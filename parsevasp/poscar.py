@@ -961,8 +961,6 @@ class Site:
         direct : bool, optional
             True if the position is in direct coordinates. This is the
             default.
-        logger : object, optional
-            A standard Python logger object. Not implemented.
 
         """
 
