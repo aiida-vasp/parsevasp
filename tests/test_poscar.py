@@ -1,8 +1,11 @@
 """Test poscar."""
 import os
+import logging
+from turtle import pos
 
 import numpy as np
 import pytest
+from parsevasp import poscar
 
 from parsevasp.poscar import Poscar, Site
 
@@ -59,6 +62,13 @@ def poscar_parser_vel():
     poscar = Poscar(file_path=poscarfile)
 
     return poscar
+
+
+@pytest.mark.parametrize('poscar_parser', [(True,)], indirect=True)
+def test_poscar_log(poscar_parser):
+    """Test the logger"""
+    assert poscar_parser._logger.name == 'parsevasp.poscar.Poscar'
+    assert len(poscar_parser._logger.handlers) == 1
 
 
 @pytest.mark.parametrize('poscar_parser', [(True,)], indirect=True)

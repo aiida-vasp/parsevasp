@@ -50,7 +50,7 @@ class BaseParser(ABC):  # pylint: disable=R0903
 
     def _setup_logger(self, level):
         """Setup a logger for this class"""
-        logger = logging.getLogger(str(self.__class__))
+        logger = logging.getLogger(self.__module__ + '.' + self.__class__.__name__)
         logger.setLevel(level)
         if not logger.handlers:
             handler = logging.StreamHandler()
