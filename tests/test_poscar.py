@@ -1,11 +1,8 @@
 """Test poscar."""
 import os
-import logging
-from turtle import pos
 
 import numpy as np
 import pytest
-from parsevasp import poscar
 
 from parsevasp.poscar import Poscar, Site
 
