@@ -62,6 +62,13 @@ def poscar_parser_vel():
 
 
 @pytest.mark.parametrize('poscar_parser', [(True,)], indirect=True)
+def test_poscar_log(poscar_parser):
+    """Test the logger"""
+    assert poscar_parser._logger.name == 'parsevasp.poscar.Poscar'
+    assert len(poscar_parser._logger.handlers) == 1
+
+
+@pytest.mark.parametrize('poscar_parser', [(True,)], indirect=True)
 def test_poscar_exist(poscar_parser):
     """Check if poscar_parser exists.
 

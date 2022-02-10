@@ -46,8 +46,20 @@ class BaseParser(ABC):  # pylint: disable=R0903
         if logger is not None:
             self._logger = logger
         else:
-            logging.basicConfig(level=logging.DEBUG)
-            self._logger = logging.getLogger('ParsevaspParser')
+            self._logger = self._setup_logger(logging.DEBUG)
+
+    def _setup_logger(self, level):
+        """Setup a logger for this class"""
+        logger = logging.getLogger(self.__module__ + '.' + self.__class__.__name__)
+        logger.setLevel(level)
+        if not logger.handlers:
+            handler = logging.StreamHandler()
+            handler.setLevel(level)
+            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            handler.setFormatter(formatter)
+            logger.addHandler(handler)
+        return logger
+
 
     def write(self, **kwargs):
         """Write respective content as files using a path or handler.
