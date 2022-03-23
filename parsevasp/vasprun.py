@@ -1065,7 +1065,23 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
             force = None
         if not stress:
             stress = None
-        if not totens:
+
+        # Check totens for entries, if all arrays empty and no float detected set force totens to None
+        found_totens = False
+        for step, energies in totens.items():
+            for energy_type, value in energies.items():
+                try:
+                    if value.size != 0:
+                        # Fails if there is a float for value and if there is a float, there is a value, so
+                        # protected by try block, or we have entries for the array values.
+                        found_totens = True
+                        break
+                except AttributeError:
+                    found_totens = True
+            if found_totens:
+                break
+
+        if not found_totens:
             totens = None
 
         # Store
@@ -1506,7 +1522,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
             if structures is not None:
                 num_calcs = len(structures)
             else:
-                return None
+                return None, None, None, None
 
             num_entrycell = 0
             num_entrypos = 0
@@ -3233,6 +3249,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
         # the array would be staggered. In order to save on storage and still utilize
         # regular NumPy array functions, we flatten the array and store a separate array
         # that keeps track of the number of electronic steps per ionic step.
+
         for item in etype:
             # For the energies inside the electronic step sections.
             energies_per_etype = np.array([])
@@ -3604,10 +3621,8 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
             handler = self._file_handler
             mapping = mmap.mmap(handler.fileno(), 0, prot=mmap.PROT_READ)
         else:
-            handler = open(self._file_path)
-            with handler as source:
+            with open(self._file_path) as source:
                 mapping = mmap.mmap(source.fileno(), 0, prot=mmap.PROT_READ)
-
         last_line = mapping[mapping.rfind(b'\n', 0, -1) + 1:]
         if b'</modeling>' in last_line:
             return False
