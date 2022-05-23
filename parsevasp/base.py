@@ -1,4 +1,5 @@
 """Base class to handle VASP files."""
+# pylint: disable=consider-using-with
 import logging
 import os
 import sys
@@ -59,7 +60,6 @@ class BaseParser(ABC):  # pylint: disable=R0903
             handler.setFormatter(formatter)
             logger.addHandler(handler)
         return logger
-
 
     def write(self, **kwargs):
         """Write respective content as files using a path or handler.
@@ -127,7 +127,7 @@ class BaseParser(ABC):  # pylint: disable=R0903
         pass
 
 
-def open_close_file_handler(file_name='', file_handler=None, status=None, logger=None):
+def open_close_file_handler(file_name='', file_handler=None, status=None, encoding='utf8', logger=None):
     """
     Open and close files.
 
@@ -142,6 +142,8 @@ def open_close_file_handler(file_name='', file_handler=None, status=None, logger
         The string containing the status to write, read, append etc.
         If not supplied, assume file close and `file_handler` need
         to be supplied.
+    encoding : str, optional
+        Specify the encoding. Defaults to utf8.
     logger : object, optional
         A logger object to use.
 
@@ -163,7 +165,7 @@ def open_close_file_handler(file_name='', file_handler=None, status=None, logger
         file_handler.close()
     else:
         try:
-            file_handler = open(file_name, status)
+            file_handler = open(file_name, status, encoding=encoding)
             return file_handler
         except IOError:
             logger.error(

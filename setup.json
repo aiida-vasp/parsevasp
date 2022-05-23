@@ -16,7 +16,7 @@
     "description": "A general parser for VASP",
     "python_requires": ">=3.7",
     "extras_require": {
-        "dev": [
+        "tests": [
 	    "tox>=3.23.0",
 	    "virtualenv>20",
             "pytest",

@@ -1,4 +1,5 @@
 """Handle KPOINTS."""
+# pylint: disable=consider-using-f-string
 import io
 import sys
 
@@ -85,7 +86,7 @@ class Kpoints(BaseParser):
 
         """
 
-        super(Kpoints, self).__init__(file_path=file_path, file_handler=file_handler, logger=logger)
+        super().__init__(file_path=file_path, file_handler=file_handler, logger=logger)
 
         self._kpoints_dict = kpoints_dict
         self._kpoints_string = kpoints_string
@@ -243,7 +244,7 @@ class Kpoints(BaseParser):
             direct = False
             points = []
             reference = kpoints[3].split()[0][0].lower()
-            if reference == 'r' or 'd':
+            if reference in ('r', 'd'):
                 direct = True
             if not direct:
                 self._logger.error(self.ERROR_MESSAGES[self.ERROR_KPOINTS_NOT_DIRECT])

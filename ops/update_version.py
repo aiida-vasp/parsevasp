@@ -1,4 +1,5 @@
 """Update version numbers everywhere based on git tags."""
+# pylint: disable=consider-using-f-string
 import contextlib
 import fileinput
 import json
@@ -64,7 +65,7 @@ class VersionUpdater:
         """Write the updated version number to the setup file."""
         setup = json.load(self.setup_json)
         setup['version'] = str(self.version)
-        with open(self.setup_json.strpath, 'w') as setup_fo:
+        with open(self.setup_json.strpath, 'w', encoding='utf8') as setup_fo:
             json.dump(setup, setup_fo, indent=4, sort_keys=True)
 
     @property
@@ -87,7 +88,7 @@ class VersionUpdater:
             describe_byte_string = subprocess.check_output(['git', 'describe', '--tags', '--match', '*.*.*'])
             version_string = re.findall(self.version_pat, describe_byte_string.decode())[0]
         except subprocess.CalledProcessError:
-            with open(self.setup_json.strpath, 'r') as setup_fo:
+            with open(self.setup_json.strpath, 'r', encoding='utf8') as setup_fo:
                 setup = json.load(setup_fo)
                 version_string = setup['version']
         return version.parse(version_string)

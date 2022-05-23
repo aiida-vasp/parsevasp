@@ -10,7 +10,7 @@ import numpy as np
 from parsevasp.base import open_close_file_handler
 
 
-def read_from_file(file_name, input_file_handler, contains=None, lines=True, logger=None):
+def read_from_file(file_name, input_file_handler, contains=None, lines=True, encoding='utf8', logger=None):
     """
     Read a file and return the whole file or specific lines.
 
@@ -27,6 +27,8 @@ def read_from_file(file_name, input_file_handler, contains=None, lines=True, log
     lines : bool, optional
         If set to False, this method will just return the read() from supplied path or handler.
         Defaults to True.
+    encoding : str, optional
+        Specify the encoding. Defaults to utf8.
     logger : object, optional
         A logger object to use.
 
@@ -49,7 +51,7 @@ def read_from_file(file_name, input_file_handler, contains=None, lines=True, log
             return inputfile.read()
         file_data = inputfile.readlines()
     else:
-        inputfile = open_close_file_handler(file_name=file_name, status='r', logger=logger)
+        inputfile = open_close_file_handler(file_name=file_name, status='r', encoding=encoding, logger=logger)
         if not lines:
             # Only want a string of file content, return.
             file_data = inputfile.read()

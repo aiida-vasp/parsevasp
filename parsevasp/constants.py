@@ -127,5 +127,5 @@ elements = {
 
 file_path = os.path.dirname(os.path.abspath(__file__))
 incar_tags_file_path = os.path.join(file_path, 'incar.yml')
-with open(incar_tags_file_path, 'r') as stream:
+with open(incar_tags_file_path, 'r', encoding='utf8') as stream:
     incar_tags = yaml.safe_load(stream)
