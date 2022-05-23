@@ -26,6 +26,7 @@
 	    "virtualenv>20",
             "pytest",
             "pytest-cov",
+	    "coverage",
             "click"
         ]
     },

@@ -45,9 +45,6 @@ jobs:
         run: pip install virtualenv>20
       - name: Install Tox
         run: pip install tox
-      - name: Install codecov
-        if: matrix.python == '3.9'
-        run: pip install codecov pytest-cov
       - name: Remove dot in Python version for passing version to tox
         uses: frabert/replace-string-action@master
         id: tox
