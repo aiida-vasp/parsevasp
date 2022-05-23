@@ -19,8 +19,7 @@
 	"pre-commit": [
 	    "tox>=3.23.0",
 	    "virtualenv>20",
-	    "pre-commit~=2.2",
-	    "pylint~=2.11.1"
+	    "aiida-core[pre-commit]>=2.0.1,<3"
 	],
         "tests": [
 	    "tox>=3.23.0",

@@ -61,10 +61,8 @@ jobs:
           tox -e py${{ steps.tox.outputs.replaced }}-parsevasp --
           --cov=./parsevasp --cov-append --cov-report=xml
       - name: Run tox
+        if: matrix.python != '3.9'
         run: tox -e py${{ steps.tox.outputs.replaced }}-parsevasp
-      - name: Run coverage from coverage-python by running pytest yet again
-        if: ${{ matrix.python }} == '3.9'
-        run: pytest --cov-report=xml --cov-append --cov=parsevasp
       - name: Upload coverage to Codecov
         if: matrix.python == '3.9'
         uses: codecov/codecov-action@v2
