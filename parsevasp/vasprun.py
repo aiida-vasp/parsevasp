@@ -178,7 +178,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
     @property
     def truncated(self):
         """Return True of the xml parsed is truncated."""
-        return self._xml_recover
+        return self._xml_truncated
 
     def _parse(self):
         """Perform the actual parsing."""
@@ -186,23 +186,24 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
         # Check size of the XML file. For large files we need to
         # perform event driven parsing. For smaller files this is
         # not necessary and is too slow.
-        file_size = self._file_size()
-        if file_size is None:
+        self._set_file_size()
+        if self._file_size is None:
             return None
 
-        # Do a quick check to see if the XML file is not truncated
-        self._xml_recover = self._check_xml()
+        # Do a quick check to see status of truncation
+        self._set_xml_truncated()
 
-        if ((file_size < self._sizecutoff) or self._xml_recover) and \
+        file_size = self._file_size / 1048576.0
+        if ((file_size < self._sizecutoff) or self._xml_truncated) and \
            not self._event:
             # Run regular method (loads file into memory) and
             # enable recovery mode if necessary
-            self._parsew(self._xml_recover)
+            self._parsew(self._xml_truncated)
         else:
             # Event based, saves a bit of memory
             self._parsee()
 
-    def _parsew(self, xml_recover):
+    def _parsew(self, xml_truncated):
         """Performs parsing on the whole XML files. For smaller files."""
 
         self._logger.debug('Running parsew.')
@@ -217,9 +218,8 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
         # pretty sure there is a performance bottleneck running this
         # enabled at all times, so consider to add check for
         # truncated XML files and then enable
-
-        if USE_LXML and xml_recover:
-            if xml_recover:
+        if USE_LXML and xml_truncated:
+            if xml_truncated:
                 self._logger.debug('Running LXML in recovery mode.')
             parser = etree.XMLParser(recover=True)
             vaspxml = etree.parse(filer, parser=parser)
@@ -3582,12 +3582,12 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
             return None
         return entry
 
-    def _file_size(self):
+    def _set_file_size(self):
         """Returns the file size of a file.
 
         Returns
         -------
-        The file size in megabytes.
+        The file size in bytes.
 
         """
 
@@ -3600,30 +3600,47 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
                 self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_SIZE])
                 return None
 
+            # Size given in bytes, assuming it is a file and it sits in a filesystem
             file_size = os.stat(self._file_path).st_size
         else:
-            file_size = os.fstat(self._file_handler.fileno()).st_size
+            # f.seek(0, 2) moved the pointer to the end of the file, then
+            # f.tell will give the size in bytes from the start
+            self._file_handler.seek(0, 2)
+            file_size = self._file_handler.tell()
+            # Reset before returning
+            self._file_handler.seek(0)
+            
+        self._file_size = file_size
 
-        return file_size / 1048576.0
-
-    def _check_xml(self):
+    def _set_xml_truncated(self):
         """Do a primitive check of XML file to see if it is
         truncated.
 
         Returns
         -------
         bool
-            True if xml is truncated, False otherwise.
+            True if XML is truncated, False otherwise.
 
         """
 
-        if self._file_handler is not None:
-            handler = self._file_handler
-            mapping = mmap.mmap(handler.fileno(), 0, prot=mmap.PROT_READ)
-        else:
-            with open(self._file_path) as source:
-                mapping = mmap.mmap(source.fileno(), 0, prot=mmap.PROT_READ)
-        last_line = mapping[mapping.rfind(b'\n', 0, -1) + 1:]
-        if b'</modeling>' in last_line:
-            return False
-        return True
+        last_line = ''
+        xml_truncated = True
+        # We here use seek to get the last kilobyte of the file and check that
+        # it is truncated correctly. We can not use fileno as the file handler is not
+        # always on a file system.
+        shift = self._file_size - 1024
+        if shift > 0:
+            if self._file_handler is not None:
+                self._file_handler.seek(shift)
+                last_line = self._file_handler.readlines()[-1]
+                # Reset pointer
+                self._file_handler.seek(0)
+            else:
+                with open(self._file_path) as file_handler:
+                    file_handler.seek(shift)
+                    last_line = file_handler.readlines()[-1]
+            if b'</modeling>' in last_line:
+                # The XML file is not truncated.
+                xml_truncated = False
+
+        self._xml_truncated = xml_truncated
