@@ -2,7 +2,6 @@
 # pylint: disable=C0302
 import copy
 import logging
-import mmap
 import os
 import sys
 
@@ -105,7 +104,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
         The lxml library should be used and is required for large files.
         """
 
-        super(Xml, self).__init__(file_path=file_path, file_handler=file_handler, logger=logger)
+        super().__init__(file_path=file_path, file_handler=file_handler, logger=logger)
 
         self._sizecutoff = 500
         self._event = event
@@ -168,6 +167,14 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
         else:
             self._logger.info('We are not uitilizing lxml!')
 
+        # Check size of the XML file. For large files we need to
+        # perform event driven parsing. For smaller files this is
+        # not necessary and is too slow.
+        self._set_file_size()
+
+        # Do a quick check to see status of truncation
+        self._set_xml_truncated()
+
         # Parse parse parse
         self._parse()
 
@@ -183,15 +190,9 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
     def _parse(self):
         """Perform the actual parsing."""
 
-        # Check size of the XML file. For large files we need to
-        # perform event driven parsing. For smaller files this is
-        # not necessary and is too slow.
-        self._set_file_size()
         if self._file_size is None:
+            # Not able to estimate file size, so we return
             return None
-
-        # Do a quick check to see status of truncation
-        self._set_xml_truncated()
 
         file_size = self._file_size / 1048576.0
         if ((file_size < self._sizecutoff) or self._xml_truncated) and \
@@ -1068,8 +1069,8 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         # Check totens for entries, if all arrays empty and no float detected set force totens to None
         found_totens = False
-        for step, energies in totens.items():
-            for energy_type, value in energies.items():
+        for energies in totens.values():
+            for value in energies.values():
                 try:
                     if value.size != 0:
                         # Fails if there is a float for value and if there is a float, there is a value, so
@@ -3609,7 +3610,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
             file_size = self._file_handler.tell()
             # Reset before returning
             self._file_handler.seek(0)
-            
+
         self._file_size = file_size
 
     def _set_xml_truncated(self):
@@ -3636,7 +3637,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
                 # Reset pointer
                 self._file_handler.seek(0)
             else:
-                with open(self._file_path) as file_handler:
+                with open(self._file_path, 'rb') as file_handler:
                     file_handler.seek(shift)
                     last_line = file_handler.readlines()[-1]
             if b'</modeling>' in last_line:
