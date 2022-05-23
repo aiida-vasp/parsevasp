@@ -1,0 +1,14 @@
+[run]
+source = parsevasp
+parallel = True
+
+[report]
+omit =
+    *test*
+
+[html]
+directory = coverage/html
+
+[paths]
+source =
+    .tox/*/lib/python*/site-packages/parsevasp
