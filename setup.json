@@ -16,6 +16,12 @@
     "description": "A general parser for VASP",
     "python_requires": ">=3.7",
     "extras_require": {
+	"pre-commit": [
+	    "tox>=3.23.0",
+	    "virtualenv>20",
+	    "pre-commit~=2.2",
+	    "pylint~=2.11.1"
+	],
         "tests": [
 	    "tox>=3.23.0",
 	    "virtualenv>20",
