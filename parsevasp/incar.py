@@ -1,4 +1,5 @@
 """Handle INCAR."""
+# pylint: disable=consider-using-f-string
 import io
 import logging
 import sys
@@ -60,7 +61,7 @@ class Incar(BaseParser):
 
         """
 
-        super(Incar, self).__init__(file_path=file_path, file_handler=file_handler, logger=logger)
+        super().__init__(file_path=file_path, file_handler=file_handler, logger=logger)
 
         self._incar_dict = incar_dict
         self._incar_string = incar_string
@@ -114,7 +115,7 @@ class Incar(BaseParser):
 
         """
 
-        incar = utils.read_from_file(self._file_path, self._file_handler)
+        incar = utils.read_from_file(self._file_path, self._file_handler, encoding='utf8')
         return incar
 
     def _from_string(self):

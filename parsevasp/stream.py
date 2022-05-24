@@ -40,7 +40,7 @@ class Stream(BaseParser):  # pylint: disable=R0902
 
         """
 
-        super(Stream, self).__init__(file_path=file_path, file_handler=file_handler, logger=logger)
+        super().__init__(file_path=file_path, file_handler=file_handler, logger=logger)
 
         self._file_path = file_path
         self._file_handler = file_handler
@@ -124,7 +124,7 @@ class Stream(BaseParser):  # pylint: disable=R0902
         stream_config = None
         fname = Path(__file__).parent / 'stream.yml'
         # Read the config file
-        with open(fname, 'r') as file_handler:
+        with open(fname, 'r', encoding='utf8') as file_handler:
             stream_config = yaml.safe_load(file_handler)
 
         return stream_config
@@ -172,7 +172,7 @@ class Stream(BaseParser):  # pylint: disable=R0902
 
         """
 
-        stream = utils.read_from_file(self._file_path, self._file_handler)
+        stream = utils.read_from_file(self._file_path, self._file_handler, encoding='utf8')
         self._from_list(stream)
 
     def _from_list(self, stream):
@@ -189,7 +189,7 @@ class Stream(BaseParser):  # pylint: disable=R0902
         stream_triggers = dict(self._stream_triggers)
         for _, line in enumerate(stream):
             # Go though all entries in the stream triggers
-            for kind, triggers in stream_triggers.items():
+            for triggers in stream_triggers.values():
                 # Not check all the triggers of the given kind
                 for index, trigger in enumerate(triggers):
                     trigger_record = trigger.check_line(line)
@@ -198,7 +198,7 @@ class Stream(BaseParser):  # pylint: disable=R0902
                         if not self._history:
                             # Pop stream trigger if we do not want the
                             # full history of streams (e.g. multiple stream occurrences recorded)
-                            stream_triggers[kind].pop(index)
+                            triggers.pop(index)
 
 
 class VaspStream:  # pylint: disable=R0902

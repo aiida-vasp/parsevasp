@@ -1,4 +1,5 @@
 """Handle OUTCAR."""
+# pylint: disable=consider-using-f-string
 import re
 import sys
 
@@ -30,7 +31,7 @@ class Outcar(BaseParser):
 
         """
 
-        super(Outcar, self).__init__(file_path=file_path, file_handler=file_handler, logger=logger)
+        super().__init__(file_path=file_path, file_handler=file_handler, logger=logger)
 
         # check that at least one is supplied
         if self._file_path is None and self._file_handler is None:
@@ -109,7 +110,7 @@ class Outcar(BaseParser):
         file and store them in the this instance's data dictionary.
         """
 
-        outcar = utils.read_from_file(self._file_path, self._file_handler)
+        outcar = utils.read_from_file(self._file_path, self._file_handler, encoding='utf8')
         self._from_list(outcar)
 
     def _from_list(self, outcar):  # pylint: disable=R0915
@@ -191,8 +192,7 @@ class Outcar(BaseParser):
                             if not outcar[index + 4 + _counter].strip().startswith('-') and not outcar[
                                 index + 4 + _counter].strip().startswith('tot'):
                                 mag_line = outcar[index + 4 + _counter].split()
-                                self._data['magnetization']['sphere'][f'{_proj}']['site_moment'][int(mag_line[0])
-                                                                                                 ] = dict()
+                                self._data['magnetization']['sphere'][f'{_proj}']['site_moment'][int(mag_line[0])] = {}
                                 for _count, orb in enumerate(mag_line[1:-1]):
                                     self._data['magnetization']['sphere'][f'{_proj}']['site_moment'][int(
                                         mag_line[0]
@@ -202,7 +202,7 @@ class Outcar(BaseParser):
                                 )]['tot'] = float(mag_line[-1])
                             if outcar[index + 4 + _counter].strip().startswith('tot'):
                                 mag_line = outcar[index + 4 + _counter].split()
-                                self._data['magnetization']['sphere'][f'{_proj}']['total_magnetization'] = dict()
+                                self._data['magnetization']['sphere'][f'{_proj}']['total_magnetization'] = {}
                                 for _count, orb in enumerate(mag_line[1:-1]):
                                     self._data['magnetization']['sphere'][f'{_proj}']['total_magnetization'][
                                         s_orb[_count]] = float(orb)
@@ -211,7 +211,7 @@ class Outcar(BaseParser):
                                 )
                                 mag_found = True
                         else:
-                            self._data['magnetization']['sphere'][f'{_proj}']['total_magnetization'] = dict()
+                            self._data['magnetization']['sphere'][f'{_proj}']['total_magnetization'] = {}
                             self._data['magnetization']['sphere'][f'{_proj}']['total_magnetization'] = self._data[
                                 'magnetization']['sphere'][f'{_proj}']['site_moment'][list(
                                     self._data['magnetization']['sphere'][f'{_proj}']['site_moment'].keys()

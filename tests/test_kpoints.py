@@ -1,9 +1,9 @@
 """Test kpoints."""
+import math
 import os
 
 import numpy as np
 import pytest
-import utils
 
 from parsevasp.kpoints import Kpoint, Kpoints
 
@@ -121,16 +121,16 @@ def test_kpoints_params_explicit(kpoints_parser_explicit):
     np.testing.assert_allclose(points[1][0], np.array([0.0, 0.0, 0.5]))
     np.testing.assert_allclose(points[2][0], np.array([0.0, 0.5, 0.5]))
     np.testing.assert_allclose(points[3][0], np.array([0.5, 0.5, 0.5]))
-    assert utils.isclose(points[0][1], 1.0)
-    assert utils.isclose(points[1][1], 1.0)
-    assert utils.isclose(points[2][1], 2.0)
-    assert utils.isclose(points[3][1], 4.0)
+    assert math.isclose(points[0][1], 1.0, rel_tol=1e-07)
+    assert math.isclose(points[1][1], 1.0, rel_tol=1e-07)
+    assert math.isclose(points[2][1], 2.0, rel_tol=1e-07)
+    assert math.isclose(points[3][1], 4.0, rel_tol=1e-07)
     assert points[0][2]
     assert points[1][2]
     assert points[2][2]
     assert points[3][2]
     assert kpoints['tetra'] == [[6, 1, 2, 3, 4]]
-    assert utils.isclose(kpoints['tetra_volume'], 0.183333333333333)
+    assert math.isclose(kpoints['tetra_volume'], 0.183333333333333, rel_tol=1e-07)
 
 
 def test_kpoints_params_line(kpoints_parser_line):
@@ -152,12 +152,12 @@ def test_kpoints_params_line(kpoints_parser_line):
     np.testing.assert_allclose(points[3][0], np.array([0.5, 0.75, 0.25]))
     np.testing.assert_allclose(points[4][0], np.array([0.5, 0.75, 0.25]))
     np.testing.assert_allclose(points[5][0], np.array([0.0, 0.0, 0.0]))
-    assert utils.isclose(points[0][1], 1.0)
-    assert utils.isclose(points[1][1], 1.0)
-    assert utils.isclose(points[2][1], 1.0)
-    assert utils.isclose(points[3][1], 1.0)
-    assert utils.isclose(points[4][1], 1.0)
-    assert utils.isclose(points[5][1], 1.0)
+    assert math.isclose(points[0][1], 1.0, rel_tol=1e-07)
+    assert math.isclose(points[1][1], 1.0, rel_tol=1e-07)
+    assert math.isclose(points[2][1], 1.0, rel_tol=1e-07)
+    assert math.isclose(points[3][1], 1.0, rel_tol=1e-07)
+    assert math.isclose(points[4][1], 1.0, rel_tol=1e-07)
+    assert math.isclose(points[5][1], 1.0, rel_tol=1e-07)
     assert points[0][2]
     assert points[1][2]
     assert points[2][2]
@@ -208,16 +208,16 @@ def test_kpoints_write_explicit(kpoints_parser_explicit, tmpdir):
     np.testing.assert_allclose(points[1][0], np.array([0.0, 0.0, 0.5]))
     np.testing.assert_allclose(points[2][0], np.array([0.0, 0.5, 0.5]))
     np.testing.assert_allclose(points[3][0], np.array([0.5, 0.5, 0.5]))
-    assert utils.isclose(points[0][1], 1.0)
-    assert utils.isclose(points[1][1], 1.0)
-    assert utils.isclose(points[2][1], 2.0)
-    assert utils.isclose(points[3][1], 4.0)
+    assert math.isclose(points[0][1], 1.0, rel_tol=1e-07)
+    assert math.isclose(points[1][1], 1.0, rel_tol=1e-07)
+    assert math.isclose(points[2][1], 2.0, rel_tol=1e-07)
+    assert math.isclose(points[3][1], 4.0, rel_tol=1e-07)
     assert points[0][2]
     assert points[1][2]
     assert points[2][2]
     assert points[3][2]
     assert kpoints_temp['tetra'] == [[6, 1, 2, 3, 4]]
-    assert utils.isclose(kpoints_temp['tetra_volume'], 0.183333333333333)
+    assert math.isclose(kpoints_temp['tetra_volume'], 0.183333333333333, rel_tol=1e-07)
 
 
 def test_kpoints_write_line(kpoints_parser_line, tmpdir):
@@ -243,12 +243,12 @@ def test_kpoints_write_line(kpoints_parser_line, tmpdir):
     np.testing.assert_allclose(points[3][0], np.array([0.5, 0.75, 0.25]))
     np.testing.assert_allclose(points[4][0], np.array([0.5, 0.75, 0.25]))
     np.testing.assert_allclose(points[5][0], np.array([0.0, 0.0, 0.0]))
-    assert utils.isclose(points[0][1], 1.0)
-    assert utils.isclose(points[1][1], 1.0)
-    assert utils.isclose(points[2][1], 1.0)
-    assert utils.isclose(points[3][1], 1.0)
-    assert utils.isclose(points[4][1], 1.0)
-    assert utils.isclose(points[5][1], 1.0)
+    assert math.isclose(points[0][1], 1.0, rel_tol=1e-07)
+    assert math.isclose(points[1][1], 1.0, rel_tol=1e-07)
+    assert math.isclose(points[2][1], 1.0, rel_tol=1e-07)
+    assert math.isclose(points[3][1], 1.0, rel_tol=1e-07)
+    assert math.isclose(points[4][1], 1.0, rel_tol=1e-07)
+    assert math.isclose(points[5][1], 1.0, rel_tol=1e-07)
     assert points[0][2]
     assert points[1][2]
     assert points[2][2]
@@ -288,10 +288,10 @@ def test_kpoints_modify_explicit(kpoints_parser_explicit, tmpdir):
     np.testing.assert_allclose(points[1][0], np.array([0.0, 0.0, 0.5]))
     np.testing.assert_allclose(points[2][0], np.array([0.0, 0.5, 0.5]))
     np.testing.assert_allclose(points[3][0], np.array([0.5, 0.5, 0.5]))
-    assert utils.isclose(points[0][1], 1.0)
-    assert utils.isclose(points[1][1], 1.0)
-    assert utils.isclose(points[2][1], 2.0)
-    assert utils.isclose(points[3][1], 4.0)
+    assert math.isclose(points[0][1], 1.0, rel_tol=1e-07)
+    assert math.isclose(points[1][1], 1.0, rel_tol=1e-07)
+    assert math.isclose(points[2][1], 2.0, rel_tol=1e-07)
+    assert math.isclose(points[3][1], 4.0, rel_tol=1e-07)
     assert points[0][2]
     assert points[1][2]
     assert points[2][2]
@@ -310,10 +310,10 @@ def test_kpoints_modify_explicit(kpoints_parser_explicit, tmpdir):
     np.testing.assert_allclose(points[1][0], np.array([0.0, 0.0, 0.5]))
     np.testing.assert_allclose(points[2][0], np.array([0.0, 0.5, 0.5]))
     np.testing.assert_allclose(points[3][0], np.array([0.0, 0.0, 0.0]))
-    assert utils.isclose(points[0][1], 1.0)
-    assert utils.isclose(points[1][1], 1.0)
-    assert utils.isclose(points[2][1], 2.0)
-    assert utils.isclose(points[3][1], 1.0)
+    assert math.isclose(points[0][1], 1.0, rel_tol=1e-07)
+    assert math.isclose(points[1][1], 1.0, rel_tol=1e-07)
+    assert math.isclose(points[2][1], 2.0, rel_tol=1e-07)
+    assert math.isclose(points[3][1], 1.0, rel_tol=1e-07)
     assert points[0][2]
     assert points[1][2]
     assert points[2][2]
@@ -343,12 +343,12 @@ def test_kpoints_modify_line(kpoints_parser_line, tmpdir):
     np.testing.assert_allclose(points[3][0], np.array([0.5, 0.5, 0.25]))
     np.testing.assert_allclose(points[4][0], np.array([0.5, 0.5, 0.25]))
     np.testing.assert_allclose(points[5][0], np.array([0.0, 0.0, 0.0]))
-    assert utils.isclose(points[0][1], 1.0)
-    assert utils.isclose(points[1][1], 1.0)
-    assert utils.isclose(points[2][1], 1.0)
-    assert utils.isclose(points[3][1], 1.0)
-    assert utils.isclose(points[4][1], 1.0)
-    assert utils.isclose(points[5][1], 1.0)
+    assert math.isclose(points[0][1], 1.0, rel_tol=1e-07)
+    assert math.isclose(points[1][1], 1.0, rel_tol=1e-07)
+    assert math.isclose(points[2][1], 1.0, rel_tol=1e-07)
+    assert math.isclose(points[3][1], 1.0, rel_tol=1e-07)
+    assert math.isclose(points[4][1], 1.0, rel_tol=1e-07)
+    assert math.isclose(points[5][1], 1.0, rel_tol=1e-07)
     assert points[0][2]
     assert points[1][2]
     assert points[2][2]

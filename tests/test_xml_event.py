@@ -31,6 +31,7 @@ def test_xml_exist(xml_parser):
     """
     assert xml_parser.get_dict()
 
+
 @pytest.mark.parametrize('xml_parser', ['gw.xml'], indirect=True)
 def test_xml_energies_gw(xml_parser):
     """Check total energies not present for GW runs.
@@ -445,10 +446,15 @@ def test_xml_eigenvalues_gw(xml_parser):
 
     eigenvalues = xml_parser.get_eigenvalues()
     assert eigenvalues['total'].shape == (128, 16)
-    test = np.array([-6.6574, -6.3106, -5.3166, -4.3759, -6.1914, -5.3916, -4.2175, -4.5992, -5.7355,
-                     -4.7949, -3.6399, -3.4472, -2.5634, -4.4155, -3.4381, -2.4466])
+    test = np.array([
+        -6.6574, -6.3106, -5.3166, -4.3759, -6.1914, -5.3916, -4.2175, -4.5992, -5.7355, -4.7949, -3.6399, -3.4472,
+        -2.5634, -4.4155, -3.4381, -2.4466
+    ])
     np.testing.assert_allclose(eigenvalues['total'][0], test)
-    test = np.array([5.2533, 4.7998, 4.2211, 4.0084, 4.0428, 3.4609, 3.4213, 3.9127, 4.6678, 2.769, 2.625,  3.077,  2.3189, 2.9065, 2.4315, 1.5386])
+    test = np.array([
+        5.2533, 4.7998, 4.2211, 4.0084, 4.0428, 3.4609, 3.4213, 3.9127, 4.6678, 2.769, 2.625, 3.077, 2.3189, 2.9065,
+        2.4315, 1.5386
+    ])
     np.testing.assert_allclose(eigenvalues['total'][3], test)
 
 

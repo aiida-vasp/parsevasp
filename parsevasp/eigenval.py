@@ -27,7 +27,7 @@ class Eigenval(BaseParser):
 
         """
 
-        super(Eigenval, self).__init__(file_path=file_path, file_handler=file_handler, logger=logger)
+        super().__init__(file_path=file_path, file_handler=file_handler, logger=logger)
 
         # check that at least one is supplied
         if self._file_path is None and self._file_handler is None:
@@ -63,7 +63,7 @@ class Eigenval(BaseParser):
 
         """
 
-        eigenval = utils.read_from_file(self._file_path, self._file_handler)
+        eigenval = utils.read_from_file(self._file_path, self._file_handler, encoding='utf8')
         self._from_list(eigenval)
 
     def _from_list(self, eigenval):

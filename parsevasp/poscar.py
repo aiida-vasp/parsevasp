@@ -1,5 +1,5 @@
 """Handle POSCAR."""
-# pylint: disable=C0302
+# pylint: disable=C0302, consider-using-f-string
 import io
 import sys
 from collections import Counter
@@ -73,7 +73,7 @@ class Poscar(BaseParser):
 
         """
 
-        super(Poscar, self).__init__(file_path=file_path, file_handler=file_handler, logger=logger)
+        super().__init__(file_path=file_path, file_handler=file_handler, logger=logger)
 
         self._write_direct = write_direct
         self._poscar_dict = poscar_dict
@@ -126,7 +126,7 @@ class Poscar(BaseParser):
 
         """
 
-        poscar = utils.read_from_file(self._file_path, self._file_handler)
+        poscar = utils.read_from_file(self._file_path, self._file_handler, encoding='utf8')
         poscar_dict = self._from_list(poscar)
         return poscar_dict
 

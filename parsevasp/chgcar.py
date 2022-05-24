@@ -26,7 +26,7 @@ class Chgcar(BaseParser):
 
         """
 
-        super(Chgcar, self).__init__(file_path=file_path, file_handler=file_handler, logger=logger)
+        super().__init__(file_path=file_path, file_handler=file_handler, logger=logger)
 
         # check that at least one is supplied
         if self._file_path is None and self._file_handler is None:

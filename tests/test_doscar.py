@@ -133,7 +133,7 @@ def test_doscar_nopdos(doscar_parser):
     dos = doscar_parser.get_dos()
     for item in dos.dtype.names:
         assert np.allclose(dos[item], compare_total_dos[item])
-    assert not doscar_parser.get_pdos()
+    assert not doscar_parser.get_pdos().size > 0
 
 
 def test_doscar_partial(doscar_parser):
