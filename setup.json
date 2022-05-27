@@ -34,7 +34,6 @@
     "install_requires": [
         "numpy",
         "lxml",
-        "six",
         "future",
         "pyyaml"
     ],

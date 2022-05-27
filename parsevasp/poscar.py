@@ -5,7 +5,6 @@ import sys
 from collections import Counter
 
 import numpy as np
-from six import iteritems
 
 from parsevasp import utils
 from parsevasp.base import BaseParser
@@ -778,7 +777,7 @@ class Poscar(BaseParser):
         """
 
         dictionary = {}
-        for key, entry in iteritems(self.entries):
+        for key, entry in self.entries.items():
             if key == 'sites':
                 sites_temp = []
                 for element in entry:

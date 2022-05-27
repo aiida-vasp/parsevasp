@@ -177,3 +177,10 @@ magmom:
   recover: false
   regex: "Error reading item 'MAGMOM' from file INCAR"
   suggestion: ''
+bandocc:
+  kind: ERROR
+  location: STDOUT
+  message: The topmost band is occupied.
+  recover: false
+  regex: "TOO FEW BANDS"
+  suggestion: ''

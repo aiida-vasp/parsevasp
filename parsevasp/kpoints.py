@@ -4,7 +4,6 @@ import io
 import sys
 
 import numpy as np
-from six import iteritems
 
 from parsevasp import utils
 from parsevasp.base import BaseParser
@@ -768,7 +767,7 @@ class Kpoints(BaseParser):
         """
 
         dictionary = {}
-        for key, entry in iteritems(self.entries):
+        for key, entry in self.entries.items():
             if key == 'points':
                 if entry is not None:
                     dictionary[key] = [[element.get_point(),

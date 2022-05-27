@@ -145,10 +145,11 @@ class Outcar(BaseParser):
             utils.match_integer_param(self._data['run_status'], 'NSW', line)
             utils.match_integer_param(params, 'IBRION', line)
             utils.match_integer_param(self._data['run_status'], 'NELM', line)
+            if 'NBANDS=' in line:
+                self._data['run_status']['nbands'] = int(line.split('NBANDS=')[1].strip())
             # Test if the end of execution has reached
             if 'timing and accounting informations' in line:
                 self._data['run_status']['finished'] = True
-
             # Fetch the symmetry
             if line.strip().startswith('Analysis of symmetry for initial positions (statically)'):
                 config = 'static'
