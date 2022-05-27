@@ -40,5 +40,5 @@
     "license": "MIT",
     "name": "parsevasp",
     "url": "https://github.com/aiida-vasp/parsevasp",
-    "version": "3.0.0"
+    "version": "3.1.0"
 }
