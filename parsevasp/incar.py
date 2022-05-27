@@ -5,7 +5,6 @@ import logging
 import sys
 
 from past.builtins import basestring
-from six import iteritems
 
 from parsevasp import constants, utils
 from parsevasp.base import BaseParser
@@ -215,7 +214,7 @@ class Incar(BaseParser):
         """
 
         incar_dict = {}
-        for tag, value in iteritems(incar):
+        for tag, value in incar.items():
             # Check for comment in value, if so skip shuffle to comment
             comment = None
             if isinstance(value, str):
@@ -389,7 +388,7 @@ class Incar(BaseParser):
         """
 
         dictionary = {}
-        for key, entry in iteritems(self.entries):
+        for key, entry in self.entries.items():
             dictionary[key] = entry.get_value()
 
         return dictionary

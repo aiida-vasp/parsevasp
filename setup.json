@@ -19,7 +19,8 @@
 	"pre-commit": [
 	    "tox>=3.23.0",
 	    "virtualenv>20",
-	    "aiida-core[pre-commit]>=2.0.1,<3"
+	    "pre-commit~=2.2",
+	    "pylint~=2.11.1"
 	],
         "tests": [
 	    "tox>=3.23.0",
@@ -34,12 +35,11 @@
     "install_requires": [
         "numpy",
         "lxml",
-        "six",
         "future",
         "pyyaml"
     ],
     "license": "MIT",
     "name": "parsevasp",
     "url": "https://github.com/aiida-vasp/parsevasp",
-    "version": "3.0.0"
+    "version": "3.1.0"
 }
