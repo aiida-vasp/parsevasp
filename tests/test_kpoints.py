@@ -421,7 +421,8 @@ def test_kpoints_dict(tmpdir):
         'centering': 'Gamma',
         'tetra': None,
         'tetra_volume': None,
-        'num_kpoints': 0
+        'num_kpoints': 0,
+        'gen_lat_vecs': None
     }
     temp_file = str(tmpdir.join('KPOINTS'))
     kpoints_parser_auto_temp = Kpoints(kpoints_dict=kpoints_dict)

@@ -330,6 +330,8 @@ class Kpoints(BaseParser):
                 self._check_comment(comment=value)
             if entry == 'divisions':
                 self._check_divisions(divisions=value)
+            if entry == 'gen_lat_vecs':
+                self._check_gen_lat_vecs(gen_lat_vecs=value)
             if entry == 'shifts':
                 self._check_shifts(shifts=value)
             if entry == 'tetra':
@@ -600,6 +602,44 @@ class Kpoints(BaseParser):
                         )
                         sys.exit(self.ERROR_KEY_INVALID_TYPE)
 
+    def _check_gen_lat_vecs(self, gen_lat_vecs=None):
+        """
+        Check that the gen_lat_vecs are either None or a list of three lists of three floats.
+
+        Parameters
+        ----------
+        gen_lat_vecs : list of lists, optional
+            The reciprocal mode of generating lattice vectors to be checked.
+
+        """
+
+        if gen_lat_vecs is None:
+            try:
+                gen_lat_vecs = self.entries['gen_lat_vecs']
+            except KeyError:
+                self._logger.error(f"{self.ERROR_MESSAGES[self.ERROR_NO_KEY]} The key in question is 'gen_lat_vecs'.")
+                sys.exit(self.ERROR_NO_KEY)
+        if gen_lat_vecs is not None:
+            if not isinstance(gen_lat_vecs, list):
+                self._logger.error(
+                    f"{self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE]} The key 'gen_lat_vecs' should be a list."
+                )
+                sys.exit(self.ERROR_KEY_INVALID_TYPE)
+            else:
+                for vec in gen_lat_vecs:
+                    if not isinstance(vec, list):
+                        self._logger.error(
+                            f"{self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE]} The key 'gen_lat_vecs' should be a list of lists."
+                        )
+                        sys.exit(self.ERROR_KEY_INVALID_TYPE)
+                    for element in vec:
+                        if not isinstance(element, float):
+                            self._logger.error(
+                                f'{self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE]} '
+                                "The elements in the key 'gen_lat_vecs' should be floats."
+                            )
+                            sys.exit(self.ERROR_KEY_INVALID_TYPE)
+
     def _check_tetra(self, tetra=None):
         """
         Check that tetra are either None or a list of four integers.
@@ -718,12 +758,12 @@ class Kpoints(BaseParser):
         """Validate the content of entries
 
         """
-
         self._check_dict()
         self._check_comment()
         self._check_points()
         self._check_centering()
         self._check_divisions()
+        self._check_gen_lat_vecs()
         self._check_shifts()
         self._check_mode()
         self._check_num_kpoints()
