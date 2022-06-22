@@ -172,6 +172,7 @@ class Kpoints(BaseParser):
         comment = kpoints[0].replace('#', '').strip()
         num_kpoints = int(kpoints[1].split()[0])
         divisions = None
+        gen_lat_vecs = None
         shifts = None
         tetra = None
         tetra_vol = None
@@ -236,6 +237,12 @@ class Kpoints(BaseParser):
                 divisions = [int(element) for element in kpoints[3].split()]
                 if len(kpoints) == 5:
                     shifts = [float(element) for element in kpoints[4].split()]
+            elif third_line_char == 'r':
+                centering = 'Reciprocal'
+                gen_lat_vecs = []
+                for line_no in range(3, 6):
+                    gen_lat_vecs.append([float(element) for element in kpoints[line_no].split()])
+                shifts = [float(element) for element in kpoints[6].split()]
             elif third_line_char in ('d', 'c'):
                 self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_EXPERT])
                 sys.exit(self.ERROR_NO_EXPERT)
@@ -265,6 +272,7 @@ class Kpoints(BaseParser):
         kpoints_dict = {}
         kpoints_dict['comment'] = comment
         kpoints_dict['divisions'] = divisions
+        kpoints_dict['gen_lat_vecs'] = gen_lat_vecs
         kpoints_dict['shifts'] = shifts
         kpoints_dict['points'] = points
         kpoints_dict['tetra'] = tetra
@@ -381,8 +389,8 @@ class Kpoints(BaseParser):
 
         # Check that at least divisions or points are set
         # to something else than None
-        if (self.entries['divisions'] is None) \
-           and (self.entries['points'] is None):
+        if ((self.entries['divisions'] is None) and (self.entries['points'] is None) and
+            (self.entries['gen_lat_vecs'] is None)):
             self._logger.error(self.ERROR_MESSAGES[self.ERROR_DIVISIONS])
             sys.exit(self.ERROR_DIVISIONS)
 
@@ -655,7 +663,7 @@ class Kpoints(BaseParser):
                 sys.exit(self.ERROR_NO_KEY)
         if centering is not None:
             # allow None
-            if not centering in ('Gamma', 'Monkhorst-Pack'):
+            if not centering in ('Gamma', 'Monkhorst-Pack', 'Reciprocal'):
                 self._logger.error(self.ERROR_MESSAGES[self.ERROR_INVALID_CENTERING])
                 sys.exit(self.ERROR_INVALID_CENTERING)
 
@@ -869,11 +877,19 @@ class Kpoints(BaseParser):
             file_handler.write('0\n')
             file_handler.write(entries['centering'] + '\n')
             divisions = entries['divisions']
-            file_handler.write(
-                '{:{width}d} {:{width}d} {:{width}d}\n'.format(
-                    divisions[0], divisions[1], divisions[2], width=self._width
+            if divisions is not None:
+                file_handler.write(
+                    '{:{width}d} {:{width}d} {:{width}d}\n'.format(
+                        divisions[0], divisions[1], divisions[2], width=self._width
+                    )
                 )
-            )
+            gen_lat_vecs = entries['gen_lat_vecs']
+            if gen_lat_vecs is not None:
+                for vec in gen_lat_vecs:
+                    file_handler.write(
+                        '{:{width}.{prec}f} {:{width}.{prec}f} '
+                        '{:{width}.{prec}f}\n'.format(vec[0], vec[1], vec[2], prec=self._prec, width=self._width)
+                    )
             shifts = entries['shifts']
             if shifts is not None:
                 file_handler.write(
