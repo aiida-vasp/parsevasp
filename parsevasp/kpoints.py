@@ -629,7 +629,8 @@ class Kpoints(BaseParser):
                 for vec in gen_lat_vecs:
                     if not isinstance(vec, list):
                         self._logger.error(
-                            f"{self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE]} The key 'gen_lat_vecs' should be a list of lists."
+                            f'{self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE]} '
+                            "The key 'gen_lat_vecs' should be a list of lists."
                         )
                         sys.exit(self.ERROR_KEY_INVALID_TYPE)
                     for element in vec:
