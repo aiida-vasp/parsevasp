@@ -172,7 +172,7 @@ class Kpoints(BaseParser):
         comment = kpoints[0].replace('#', '').strip()
         num_kpoints = int(kpoints[1].split()[0])
         divisions = None
-        gen_lat_vecs = None
+        generating_vectors = None
         shifts = None
         tetra = None
         tetra_vol = None
@@ -239,9 +239,9 @@ class Kpoints(BaseParser):
                     shifts = [float(element) for element in kpoints[4].split()]
             elif third_line_char == 'r':
                 centering = 'Reciprocal'
-                gen_lat_vecs = []
+                generating_vectors = []
                 for line_no in range(3, 6):
-                    gen_lat_vecs.append([float(element) for element in kpoints[line_no].split()])
+                    generating_vectors.append([float(element) for element in kpoints[line_no].split()])
                 shifts = [float(element) for element in kpoints[6].split()]
             elif third_line_char in ('d', 'c'):
                 self._logger.error(self.ERROR_MESSAGES[self.ERROR_NO_EXPERT])
@@ -272,7 +272,7 @@ class Kpoints(BaseParser):
         kpoints_dict = {}
         kpoints_dict['comment'] = comment
         kpoints_dict['divisions'] = divisions
-        kpoints_dict['gen_lat_vecs'] = gen_lat_vecs
+        kpoints_dict['generating_vectors'] = generating_vectors
         kpoints_dict['shifts'] = shifts
         kpoints_dict['points'] = points
         kpoints_dict['tetra'] = tetra
@@ -330,8 +330,8 @@ class Kpoints(BaseParser):
                 self._check_comment(comment=value)
             if entry == 'divisions':
                 self._check_divisions(divisions=value)
-            if entry == 'gen_lat_vecs':
-                self._check_gen_lat_vecs(gen_lat_vecs=value)
+            if entry == 'generating_vectors':
+                self._check_generating_vectors(generating_vectors=value)
             if entry == 'shifts':
                 self._check_shifts(shifts=value)
             if entry == 'tetra':
@@ -392,7 +392,7 @@ class Kpoints(BaseParser):
         # Check that at least divisions or points are set
         # to something else than None
         if ((self.entries['divisions'] is None) and (self.entries['points'] is None) and
-            (self.entries['gen_lat_vecs'] is None)):
+            (self.entries['generating_vectors'] is None)):
             self._logger.error(self.ERROR_MESSAGES[self.ERROR_DIVISIONS])
             sys.exit(self.ERROR_DIVISIONS)
 
@@ -602,42 +602,44 @@ class Kpoints(BaseParser):
                         )
                         sys.exit(self.ERROR_KEY_INVALID_TYPE)
 
-    def _check_gen_lat_vecs(self, gen_lat_vecs=None):
+    def _check_generating_vectors(self, generating_vectors=None):
         """
-        Check that the gen_lat_vecs are either None or a list of three lists of three floats.
+        Check that the generating_vectors are either None or a list of three lists of three floats.
 
         Parameters
         ----------
-        gen_lat_vecs : list of lists, optional
+        generating_vectors : list of lists, optional
             The reciprocal mode of generating lattice vectors to be checked.
 
         """
 
-        if gen_lat_vecs is None:
+        if generating_vectors is None:
             try:
-                gen_lat_vecs = self.entries['gen_lat_vecs']
+                generating_vectors = self.entries['generating_vectors']
             except KeyError:
-                self._logger.error(f"{self.ERROR_MESSAGES[self.ERROR_NO_KEY]} The key in question is 'gen_lat_vecs'.")
-                sys.exit(self.ERROR_NO_KEY)
-        if gen_lat_vecs is not None:
-            if not isinstance(gen_lat_vecs, list):
                 self._logger.error(
-                    f"{self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE]} The key 'gen_lat_vecs' should be a list."
+                    f"{self.ERROR_MESSAGES[self.ERROR_NO_KEY]} The key in question is 'generating_vectors'."
+                )
+                sys.exit(self.ERROR_NO_KEY)
+        if generating_vectors is not None:
+            if not isinstance(generating_vectors, list):
+                self._logger.error(
+                    f"{self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE]} The key 'generating_vectors' should be a list."
                 )
                 sys.exit(self.ERROR_KEY_INVALID_TYPE)
             else:
-                for vec in gen_lat_vecs:
+                for vec in generating_vectors:
                     if not isinstance(vec, list):
                         self._logger.error(
                             f'{self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE]} '
-                            "The key 'gen_lat_vecs' should be a list of lists."
+                            "The key 'generating_vectors' should be a list of lists."
                         )
                         sys.exit(self.ERROR_KEY_INVALID_TYPE)
                     for element in vec:
                         if not isinstance(element, float):
                             self._logger.error(
                                 f'{self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE]} '
-                                "The elements in the key 'gen_lat_vecs' should be floats."
+                                "The elements in the key 'generating_vectors' should be floats."
                             )
                             sys.exit(self.ERROR_KEY_INVALID_TYPE)
 
@@ -764,7 +766,7 @@ class Kpoints(BaseParser):
         self._check_points()
         self._check_centering()
         self._check_divisions()
-        self._check_gen_lat_vecs()
+        self._check_generating_vectors()
         self._check_shifts()
         self._check_mode()
         self._check_num_kpoints()
@@ -924,9 +926,9 @@ class Kpoints(BaseParser):
                         divisions[0], divisions[1], divisions[2], width=self._width
                     )
                 )
-            gen_lat_vecs = entries['gen_lat_vecs']
-            if gen_lat_vecs is not None:
-                for vec in gen_lat_vecs:
+            generating_vectors = entries['generating_vectors']
+            if generating_vectors is not None:
+                for vec in generating_vectors:
                     file_handler.write(
                         '{:{width}.{prec}f} {:{width}.{prec}f} '
                         '{:{width}.{prec}f}\n'.format(vec[0], vec[1], vec[2], prec=self._prec, width=self._width)

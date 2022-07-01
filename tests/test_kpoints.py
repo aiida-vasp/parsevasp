@@ -187,7 +187,7 @@ def test_kpoints_params_GRG(kpoints_parser_GRG):
     kpoints = kpoints_parser_GRG.get_dict()
     assert kpoints['mode'] == 'automatic'
     assert kpoints['comment'] == 'Example file'
-    np.testing.assert_allclose(kpoints['gen_lat_vecs'], [[0.25, 0.0, 0.0], [0.0, 0.25, 0.0], [0.0, 0.0, 0.25]])
+    np.testing.assert_allclose(kpoints['generating_vectors'], [[0.25, 0.0, 0.0], [0.0, 0.25, 0.0], [0.0, 0.0, 0.25]])
     np.testing.assert_allclose(kpoints['shifts'], [0.5, 0.5, 0.5])
     assert kpoints['points'] == None
     assert kpoints['centering'] == 'Reciprocal'
@@ -422,7 +422,7 @@ def test_kpoints_dict(tmpdir):
         'tetra': None,
         'tetra_volume': None,
         'num_kpoints': 0,
-        'gen_lat_vecs': None
+        'generating_vectors': None
     }
     temp_file = str(tmpdir.join('KPOINTS'))
     kpoints_parser_auto_temp = Kpoints(kpoints_dict=kpoints_dict)
