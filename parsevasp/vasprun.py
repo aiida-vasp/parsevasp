@@ -3156,12 +3156,12 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         Paramaeters
         -----------
-        status : {'all', 'initial', 'final'}
+        status : {'all', 'initial', 'last'}
             A string containing which positions to return. For `all`, positionss for all ionic steps
-            are returned. For `initial` and `final`, the positions for the first and last ionic step
+            are returned. For `initial` and `last`, the positions for the first and last ionic step
             is returned, respectively.
-        etype : {'energy_extrapolated', 'energy_free', 'energy_no_entropy'}
-            The type of total energy to return. The `energy_extrapolated`, `energy_free` and
+        etype : list
+            A list containing the type of total energies to return. The `energy_extrapolated`, `energy_free` and
             `energy_no_entropy` transfers to `e_0_energy`, `e_fr_energy` and `energy_no_entropy`
             as printed in the XML file.
         nosc : bool
@@ -3193,6 +3193,11 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         if etype is None:
             etype = ['energy_extrapolated']
+
+        if not isinstance(etype, list):
+            # The supplied etype is not a list
+            raise ValueError(f'The supplied etype: {etype} is not a list.')
+
         # Check if the supplied etype is in the support list
         for item in etype:
             if item not in _SUPPORTED_TOTAL_ENERGIES.keys():
