@@ -1,5 +1,5 @@
 """Handle KPOINTS."""
-# pylint: disable=consider-using-f-string
+# pylint: disable=consider-using-f-string, disable=too-many-lines
 import io
 import sys
 
