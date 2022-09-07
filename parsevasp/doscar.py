@@ -218,9 +218,10 @@ class Doscar(BaseParser):
         pdos_items = []
         pdos = np.array([])  # Partial dos is empty by default
         if line_2 in data:
+            start = data.index(line_2) + 1
             for _ in range(num_ions):
-                start = data.index(line_2) + 1
                 pdos_items += [data[start:start + ndos]]
+                start += (ndos+1)
 
             # Get the number of columns for the pdos section.
             count = len(pdos_items[-1][-1])
