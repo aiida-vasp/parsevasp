@@ -221,7 +221,7 @@ class Doscar(BaseParser):
             start = data.index(line_2) + 1
             for _ in range(num_ions):
                 pdos_items += [data[start:start + ndos]]
-                start += (ndos+1)
+                start += (ndos + 1)
 
             # Get the number of columns for the pdos section.
             count = len(pdos_items[-1][-1])
