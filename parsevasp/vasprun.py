@@ -1141,7 +1141,8 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         """
 
-        entry = self._find(xml, './/parameters/separator[@name="symmetry"]/' 'i[@name="SYMPREC"]')
+        entry = self._find(xml, './/parameters/separator[@name="symmetry"]/'
+                           'i[@name="SYMPREC"]')
 
         if entry is None:
             return None
@@ -1237,7 +1238,8 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         """
 
-        entry = self._find(xml, './/parameters/separator[@name="ionic"]/' 'i[@name="NSW"]')
+        entry = self._find(xml, './/parameters/separator[@name="ionic"]/'
+                           'i[@name="NSW"]')
 
         if entry is None:
             return None
@@ -1331,7 +1333,8 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         """
 
-        entry = self._find(xml, './/parameters/separator[@name="electronic"]/' 'i[@name="NBANDS"]')
+        entry = self._find(xml, './/parameters/separator[@name="electronic"]/'
+                           'i[@name="NBANDS"]')
         if entry is None:
             return None
 
@@ -1359,7 +1362,8 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         """
 
-        entry = self._find(xml, './/parameters/separator[@name="electronic"]/' 'i[@name="NELECT"]')
+        entry = self._find(xml, './/parameters/separator[@name="electronic"]/'
+                           'i[@name="NELECT"]')
 
         if entry is None:
             return None
@@ -1388,7 +1392,8 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         """
 
-        entry = self._find(xml, './/parameters/separator[@name="general"]/' 'i[@name="SYSTEM"]')
+        entry = self._find(xml, './/parameters/separator[@name="general"]/'
+                           'i[@name="SYSTEM"]')
 
         if entry is None:
             return None
@@ -1414,7 +1419,8 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         """
 
-        entry = self._findall(xml, './/calculation/array[@name="born_charges"]/' 'set/v')
+        entry = self._findall(xml, './/calculation/array[@name="born_charges"]/'
+                              'set/v')
 
         if entry is None:
             return None
@@ -1623,7 +1629,8 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         """
 
-        entry = self._findall(xml, './/atominfo/' 'array[@name="atoms"]/set/rc/c')
+        entry = self._findall(xml, './/atominfo/'
+                              'array[@name="atoms"]/set/rc/c')
 
         if entry is None:
             return None
@@ -1648,7 +1655,8 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         """
 
-        entry = self._findall(xml, './/calculation/dynmat/' 'varray[@name="hessian"]/v')
+        entry = self._findall(xml, './/calculation/dynmat/'
+                              'varray[@name="hessian"]/v')
 
         if entry is None:
             return None
@@ -1682,7 +1690,8 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         """
 
-        entry = self._find(xml, './/calculation/dynmat/' 'v[@name="eigenvalues"]')
+        entry = self._find(xml, './/calculation/dynmat/'
+                           'v[@name="eigenvalues"]')
 
         if entry is None:
             return None
@@ -1698,7 +1707,8 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         eigenvalues = self._convert_array_f(entry)
 
-        entry = self._find(xml, './/calculation/dynmat/' 'varray[@name="eigenvectors"]')
+        entry = self._find(xml, './/calculation/dynmat/'
+                           'varray[@name="eigenvectors"]')
 
         if entry is None:
             return None
@@ -1809,10 +1819,12 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
         """
 
         # Spin 1
-        entry_ispin1 = self._findall(xml, './/calculation/eigenvalues/array/set/' 'set[@comment="spin 1"]/set/r')
+        entry_ispin1 = self._findall(xml, './/calculation/eigenvalues/array/set/'
+                                     'set[@comment="spin 1"]/set/r')
 
         # Spin 2
-        entry_ispin2 = self._findall(xml, './/calculation/eigenvalues/array/set/' 'set[@comment="spin 2"]/set/r')
+        entry_ispin2 = self._findall(xml, './/calculation/eigenvalues/array/set/'
+                                     'set[@comment="spin 2"]/set/r')
 
         # If we do not find spin 1 entries return right away
         if entry_ispin1 is None:
@@ -1943,10 +1955,12 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
         """
 
         # Projectors spin 1
-        entry_ispin1 = self._findall(xml, './/calculation/projected/array/set/' 'set[@comment="spin1"]/set/set/r')
+        entry_ispin1 = self._findall(xml, './/calculation/projected/array/set/'
+                                     'set[@comment="spin1"]/set/set/r')
 
         # Projectors spin 2
-        entry_ispin2 = self._findall(xml, './/calculation/projected/array/set/' 'set[@comment="spin2"]/set/set/r')
+        entry_ispin2 = self._findall(xml, './/calculation/projected/array/set/'
+                                     'set[@comment="spin2"]/set/set/r')
 
         # If we do not find spin 1 entries return right away
         if entry_ispin1 is None:

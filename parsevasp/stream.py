@@ -204,7 +204,7 @@ class Stream(BaseParser):  # pylint: disable=R0902
 class VaspStream:  # pylint: disable=R0902
     """Class representing stream elements given by VASP that we want to trigger on."""
 
-    _ALLOWED_STREAMS = ['ERROR', 'WARNING']
+    _ALLOWED_STREAMS = ['ERROR', 'WARNING', 'INFO']
     _ALLOWED_LOCATIONS = ['STDOUT', 'STDERR']
 
     def __init__(self, shortname, kind, regex, message, suggestion=None, location='STDOUT', recover=False):  # pylint: disable=too-many-arguments

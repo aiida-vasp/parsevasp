@@ -40,9 +40,18 @@ def test_stream(stream_parser):
 
     entries = stream_parser.entries
     assert stream_parser.configured_streams
-    assert stream_parser.number_of_entries == 1
+    assert stream_parser.number_of_entries == 2
     assert stream_parser.has_entries
-    assert str(entries[0]) == '(ERROR) ibzkpt: Error with the k-points'
+    assert str(entries[1]) == '(ERROR) ibzkpt: Error with the k-points.'
+
+
+def test_executed(stream_parser):
+    """Check if stream_parser returns expected results for execution checks.
+
+    """
+
+    entries = stream_parser.entries
+    assert entries[0].shortname == 'started'
 
 
 def test_stream_override(stream_parser):
@@ -63,10 +72,10 @@ def test_stream_override(stream_parser):
             }
         }
     )
-    assert len(stream.entries) == 1
-    assert stream.entries[0].kind == 'WARNING'
-    assert stream.entries[0].regex == re.compile('internal error')
-    assert stream.entries[0].message == 'some error'
-    assert stream.entries[0].suggestion == 'none'
-    assert stream.entries[0].location == stream_parser.entries[0].location
-    assert stream.entries[0].recover == stream_parser.entries[0].recover
+    assert len(stream.entries) == 2
+    assert stream.entries[1].kind == 'WARNING'
+    assert stream.entries[1].regex == re.compile('internal error')
+    assert stream.entries[1].message == 'some error'
+    assert stream.entries[1].suggestion == 'none'
+    assert stream.entries[1].location == stream_parser.entries[1].location
+    assert stream.entries[1].recover == stream_parser.entries[1].recover

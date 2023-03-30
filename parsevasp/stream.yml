@@ -7,180 +7,188 @@
 # location: Can be found in which stream (STDOUT/STDERR)
 # recover: If False, always break when this error appears, there is no point in recovering
 
+# A special one to detect if VASP have been started
+started:
+  kind: INFO
+  location: STDOUT
+  message: "VASP has been started."
+  recover: false
+  regex: "vasp."
+  suggestion: ""
 # There can be multiple IBZKPT errors, some are actually warnings but all printed as "internal error...."
-# Here I let recover=True since if it is the fatal ones VASP do stop execution.
+# Here we let recover=True since if it is the fatal ones VASP do stop execution.
 ibzkpt:
   kind: ERROR
   location: STDOUT
-  message: Error with the k-points
+  message: "Error with the k-points."
   recover: true
-  regex: internal error in subroutine IBZKPT
-  suggestion: ''
+  regex: "internal error in subroutine IBZKPT"
+  suggestion: ""
 brmix:
   kind: ERROR
   location: STDOUT
-  message: Error in BRMIX
+  message: "Error in BRMIX."
   recover: false
-  regex: 'BRMIX: very serious problems'
-  suggestion: ''
+  regex: "BRMIX: very serious problems"
+  suggestion: ""
 cnormn:
   kind: ERROR
   location: STDOUT
-  message: Error in CNORMN
+  message: "Error in CNORMN."
   recover: false
-  regex: 'WARNING: CNORMN'
-  suggestion: ''
+  regex: "WARNING: CNORMN"
+  suggestion: ""
 denmp:
   kind: ERROR
   location: STDOUT
-  message: Error in DENMP
+  message: "Error in DENMP."
   recover: false
-  regex: 'WARNING: DENMP: can''t reach specified precision'
-  suggestion: ''
+  regex: "WARNING: DENMP: can't reach specified precision"
+  suggestion: ""
 dentet:
   kind: ERROR
   location: STDOUT
-  message: Error with DENTET
+  message: "Error with DENTET."
   recover: false
-  regex: 'WARNING: DENTET'
-  suggestion: ''
+  regex: "WARNING: DENTET"
+  suggestion: ""
 edddav_zhegv:
   kind: ERROR
   location: STDOUT
-  message: Error in ZHEGV from EDDAV
+  message: "Error in ZHEGV from EDDAV."
   recover: false
-  regex: 'Error EDDDAV: Call to ZHEGV failed'
-  suggestion: ''
+  regex: "Error EDDDAV: Call to ZHEGV failed"
+  suggestion: ""
 eddrmm_zhegv:
   kind: ERROR
   location: STDOUT
-  message: Error in EDDRMM
+  message: "Error in EDDRMM."
   recover: false
-  regex: 'WARNING in EDDRMM: call to ZHEGV failed'
-  suggestion: ''
+  regex: "WARNING in EDDRMM: call to ZHEGV failed"
+  suggestion: ""
 edwav:
   kind: ERROR
   location: STDOUT
-  message: Error in EDWAV
+  message: "Error in EDWAV."
   recover: false
-  regex: 'EDWAV: internal error'
-  suggestion: ''
+  regex: "EDWAV: internal error"
+  suggestion: ""
 fexcp:
   kind: ERROR
   location: STDOUT
-  message: Error in FEXCP
+  message: "Error in FEXCP."
   recover: false
-  regex: 'ERROR FEXCP: supplied Exchange'
-  suggestion: ''
+  regex: "ERROR FEXCP: supplied Exchange"
+  suggestion: ""
 fock_acc:
   kind: ERROR
   location: STDERR
-  message: Error in FOCK_ACC
+  message: "Error in FOCK_ACC."
   recover: false
-  regex: internal error in FOCK_ACC
-  suggestion: ''
+  regex: "internal error in FOCK_ACC"
+  suggestion: ""
 invgrp:
   kind: ERROR
   location: STDOUT
-  message: Error in INVGRP
+  message: "Error in INVGRP."
   recover: false
-  regex: internal error in subroutine INVGRP
-  suggestion: ''
+  regex: "internal error in subroutine INVGRP"
+  suggestion: ""
 kpoints_trans:
   kind: ERROR
   location: STDERR
-  message: Error in GENERATE_KPOINTS_TRANS
+  message: "Error in GENERATE_KPOINTS_TRANS."
   recover: false
-  regex: internal error in GENERATE_KPOINTS_TRANS
-  suggestion: ''
+  regex: "internal error in GENERATE_KPOINTS_TRANS"
+  suggestion: ""
 non_collinear:
   kind: ERROR
   location: STDOUT
-  message: Using a collinear spin executable for a non-colinear calculation
+  message: "Using a collinear spin executable for a non-colinear calculation."
   recover: false
-  regex: 'ERROR: non collinear calculations require'
+  regex: "ERROR: non collinear calculations require"
   suggestion: Please make sure to use the VASP executable that has been compiled with the non-colinear functionality (ncl flavor, consult build instructions)
 not_hermitian:
   kind: ERROR
   location: STDOUT
-  message: Sub-space matrix not Hermitian in DAV
+  message: "Sub-space matrix not Hermitian in DAV."
   recover: false
-  regex: not Hermitian in DAV
-  suggestion: ''
+  regex: "not Hermitian in DAV"
+  suggestion: ""
 psmaxn:
   kind: ERROR
   location: STDOUT
-  message: Error in PSMAXN
+  message: "Error in PSMAXN."
   recover: false
-  regex: PSMAXN for non-local potential too small
-  suggestion: ''
+  regex: "PSMAXN for non-local potential too small"
+  suggestion: ""
 pssyevx:
   kind: ERROR
   location: STDOUT
-  message: Error in PSSYEVX
+  message: "Error in PSSYEVX."
   recover: false
-  regex: Error in subspace rotation PSSYEVX
-  suggestion: ''
+  regex: "Error in subspace rotation PSSYEVX"
+  suggestion: ""
 pzstein:
   kind: ERROR
   location: STDOUT
-  message: Error in PZSETIN
+  message: "Error in PZSETIN"
   recover: false
-  regex: PZSTEIN parameter number had an illegal value
-  suggestion: ''
+  regex: "PZSTEIN parameter number had an illegal value"
+  suggestion: ""
 real_optlay:
   kind: ERROR
   location: STDOUT
-  message: Error in REAL_OPTLAY
+  message: "Error in REAL_OPTLAY."
   recover: false
-  regex: 'REAL_OPTLAY: internal error'
-  suggestion: ''
+  regex: "REAL_OPTLAY: internal error"
+  suggestion: ""
 rhosyg:
   kind: ERROR
   location: STDOUT
-  message: Error in RHOSYG
+  message: "Error in RHOSYG"
   recover: false
-  regex: 'RHOSYG: internal error'
-  suggestion: ''
+  regex: "RHOSYG: internal error"
+  suggestion: ""
 rspher:
   kind: ERROR
   location: STDOUT
   message: Error in RSPHER
   recover: false
-  regex: Internal ERROR RSPHER
-  suggestion: ''
+  regex: "Internal ERROR RSPHER."
+  suggestion: ""
 set_indpw_full:
   kind: ERROR
   location: STDOUT
-  message: 'Error in INDPW: insufficient memory'
+  message: "Error in INDPW: insufficient memory."
   recover: false
-  regex: 'internal error in SET_INDPW_FULL: insufficient'
-  suggestion: ''
+  regex: "internal error in SET_INDPW_FULL: insufficient"
+  suggestion: ""
 sgrcon:
   kind: ERROR
   location: STDOUT
-  message: Error in SGRCON
+  message: "Error in SGRCON"
   recover: false
-  regex: internal error in subroutine SGRCON
-  suggestion: ''
+  regex: "internal error in subroutine SGRCON"
+  suggestion: ""
 no_potim:
   kind: ERROR
   location: STDOUT
-  message: NSW specified, but no POTIM or IBRION set
+  message: "NSW specified, but no POTIM or IBRION set."
   recover: false
-  regex: 'Fatal error! IBRION=0, but no entry for POTIM on file INCAR. MUST be specified!!'
-  suggestion: ''
+  regex: "Fatal error! IBRION=0, but no entry for POTIM on file INCAR. MUST be specified!!"
+  suggestion: ""
 magmom:
   kind: ERROR
   location: STDOUT
-  message: MAGMON is specified, but ISPIN is set to one
+  message: "MAGMON is specified, but ISPIN is set to one."
   recover: false
   regex: "Error reading item 'MAGMOM' from file INCAR"
-  suggestion: ''
+  suggestion: ""
 bandocc:
   kind: ERROR
   location: STDOUT
-  message: The topmost band is occupied.
+  message: "The topmost band is occupied."
   recover: false
   regex: "TOO FEW BANDS"
-  suggestion: ''
+  suggestion: ""
