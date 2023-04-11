@@ -1,19 +1,20 @@
 # File containing the definition of different streams that VASP generate.
 # Each key is an unique short name of the error
 # kind: What kind of stream is it (ERROR/WARNING)
-# regex: The string printed by VASP (what we search for when we parse the stream)
+# regex: The string printed by VASP (what we search for when we parse the stream line by line)
 # message: A human readable interpretation of the regex
 # suggestion: A human readable suggestion on how to act
 # location: Can be found in which stream (STDOUT/STDERR)
 # recover: If False, always break when this error appears, there is no point in recovering
 
-# A special one to detect if VASP have been started
-started:
-  kind: INFO
+# This is a special one we use to detect if VASP have not been started
+nostart:
+  kind: ERROR
   location: STDOUT
-  message: "VASP has been started."
+  message: "VASP has not been started."
   recover: false
   regex: "vasp."
+  inverse: True
   suggestion: ""
 # There can be multiple IBZKPT errors, some are actually warnings but all printed as "internal error...."
 # Here we let recover=True since if it is the fatal ones VASP do stop execution.
