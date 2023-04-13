@@ -20,7 +20,8 @@
 	    "tox>=3.23.0",
 	    "virtualenv>20",
 	    "pre-commit~=2.2",
-	    "pylint~=2.11.1"
+	    "pylint~=2.11.1",
+	    "py"
 	],
         "tests": [
 	    "tox>=3.23.0",
