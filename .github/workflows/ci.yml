@@ -27,7 +27,7 @@ jobs:
       - name: Install Tox
         run: pip install tox
       - name: Run pre-commit in Tox
-        run: tox -e pre-commit
+        run: tox -e py310-pre-commit
   tests:
     needs: [pre-commit]
     runs-on: ubuntu-latest
