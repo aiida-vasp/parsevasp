@@ -104,6 +104,7 @@ class Potcar(BaseParser):
             'LPAW': lambda val: re.match(r'^\.?([TFtf])[A-Za-z]*\.?', val).group(1).lower() in ['t'],
             'IUNSCR': lambda val: int(re.match(r'^-?[0-9]+', val).group(0)),
             'NDATA': lambda val: int(re.match(r'^-?[0-9]+', val).group(0)),
+            'ICORE': lambda val: int(re.match(r'^-?[0-9]+', val).group(0)),
             'EATOM': lambda val: float(re.search(r'^-?\d*\.?\d*[eE]?-?\d*', val).group(0)),
             'RPACOR': lambda val: float(re.search(r'^-?\d*\.?\d*[eE]?-?\d*', val).group(0)),
             'POMASS': lambda val: float(re.search(r'^-?\d*\.?\d*[eE]?-?\d*', val).group(0)),
