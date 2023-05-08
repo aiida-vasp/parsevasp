@@ -200,4 +200,4 @@ class Potcar(BaseParser):
             raise AttributeError(attribute) from exc
 
     def _write(self, file_handler, **kwargs):
-        return super()._write(file_handler, **kwargs)  #pylint: disable=useless-super-delegation
+        pass
