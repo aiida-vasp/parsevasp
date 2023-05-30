@@ -44,17 +44,15 @@ Source = "https://github.com/aiida-vasp/parsevasp"
 tests = [
       "tox>=3.23.0",
       "virtualenv>20",
-      "pytest",
-      "pytest-cov",
-      "coverage",
-      "click"
+      "pytest~=7.0",
+      "pytest-cov~=2.7,<2.11",
+      "coverage~=6.0"
 ]
 pre-commit = [
 	   "tox>=3.23.0",
 	   "virtualenv>20",
 	   "pre-commit~=2.2",
-	   "pylint~=2.11.1",
-	   "py"
+	   "pylint~=2.11.1"
 ]
 
 [tool.flit.module]
