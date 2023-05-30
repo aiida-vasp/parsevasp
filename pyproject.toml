@@ -4,11 +4,10 @@ requires = ["flit_core >=3.4,<4"]
 build-backend = "flit_core.buildapi"
 
 [project]
-# See https://www.python.org/dev/peps/pep-0621/
 name = "parsevasp"
 dynamic = ["version"]  # read from parsevasp/__init__.py
 description = "A general parser for VASP"
-authors = [{name = "Espen Flage-Larsen	", email = "espen.flage-larsen@sintef.no"}]
+authors = [{name = "Espen Flage-Larsen	", email = "espen.flage-larsen@sigma2.no"}]
 readme = "README.rst"
 license = {file = "LICENSE.txt"}
 classifiers = [
