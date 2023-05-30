@@ -2,12 +2,12 @@
 Authors
 =======
 
-Parsevasp is maintained by Espen Flage-Larsen, SINTEF Materials Physics, Norway.
+Parsevasp is maintained by Espen Flage-Larsen, Sigma2, Norway.
 
 
 Development Team
 ----------------
-* Espen Flage-Larsen, SINTEF (maintainer)
+* Espen Flage-Larsen, Sigma2 (maintainer)
 
 Acknowledgements
 ----------------
