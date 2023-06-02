@@ -223,8 +223,8 @@ class Poscar(BaseParser):
             unitcell = scaling * unitcell
             spec = poscar[5].split()
             atoms = [int(x) for x in poscar[6].split()]
-            for i, _ in enumerate(atoms):
-                nions = nions + atoms[i]
+            for num_ions in atoms:
+                nions = nions + num_ions
             if poscar[7][0].lower() == 's':
                 selective = True
                 loopmax = 9
@@ -678,12 +678,12 @@ class Poscar(BaseParser):
                 num_species.append(1)
         return sites, species_concat, num_species, selective, velocities, predictors
 
-    def _get_key(self, item):  # pylint: disable=R0201
+    def _get_key(self, item):
         """Key fetcher for the sorted function."""
 
         return item[0]
 
-    def _to_direct(self, position_cart, unitcell):  # pylint: disable=R0201
+    def _to_direct(self, position_cart, unitcell):
         """
         Transforms the position from cartesian to direct
         coordinates.
@@ -710,7 +710,7 @@ class Poscar(BaseParser):
 
         return position
 
-    def _to_cart(self, position_dir, unitcell):  # pylint: disable=R0201
+    def _to_cart(self, position_dir, unitcell):
         """
         Transforms the position from direct to cartesian
         coordinates.

@@ -773,11 +773,11 @@ class Kpoints(BaseParser):
         self._check_tetra()
         self._check_tetra_volume()
 
-    def _to_direct(self, point):  # pylint: disable=R0201
+    def _to_direct(self, point):
 
         return point
 
-    def _to_cart(self, point):  # pylint: disable=R0201
+    def _to_cart(self, point):
 
         return point
 
