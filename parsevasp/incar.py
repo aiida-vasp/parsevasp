@@ -4,8 +4,6 @@ import io
 import logging
 import sys
 
-from past.builtins import basestring
-
 from parsevasp import constants, utils
 from parsevasp.base import BaseParser
 
@@ -241,7 +239,7 @@ class Incar(BaseParser):
 
         return incar_dict
 
-    def _convert_value_to_string(self, value):  # pylint: disable=R0201
+    def _convert_value_to_string(self, value):
         """
         Converts a value for an INCAR entry to a string that
         is compatible with VASP.
@@ -540,8 +538,7 @@ class IncarItem:
         # However, let us also open for the fact that users might
         # give a value what they would in INCAR
 
-        # Make sure we keep compatibility between Python 2 and 3
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             if clean_tag in ('system', 'magmom', 'm_constr'):
                 # If value is SYSTEM or MAGMOM (can contain asterix), treat it a bit special and
                 # leave its string intact but remove grub
@@ -601,7 +598,7 @@ class IncarItem:
 
         return clean_tag, clean_value, clean_comment
 
-    def _test_string_for_bool(self, string):  # pylint: disable=R0201
+    def _test_string_for_bool(self, string):
         """
         Detects if string contains Fortran bool.
 

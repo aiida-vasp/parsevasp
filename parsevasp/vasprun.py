@@ -3214,7 +3214,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         # Check if the supplied etype is in the support list
         for item in etype:
-            if item not in _SUPPORTED_TOTAL_ENERGIES.keys():
+            if item not in _SUPPORTED_TOTAL_ENERGIES.keys():  # pylint: disable=consider-iterating-dictionary
                 raise ValueError(f'The supplied total energy type: {item} is not supported.')
 
         return self._get_energies(status, etype, nosc)
@@ -3554,7 +3554,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
             )
             sys.exit(self.ERROR_UNSUPPORTED_STATUS)
 
-    def _find(self, xml, locator):  # pylint: disable=R0201
+    def _find(self, xml, locator):
         """Wrapper to check if the request returns something.
 
         Parameters
@@ -3578,7 +3578,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
             return None
         return entry
 
-    def _findall(self, xml, locator):  # pylint: disable=R0201
+    def _findall(self, xml, locator):
         """Wrapper to check if the request returns something.
 
         Parameters

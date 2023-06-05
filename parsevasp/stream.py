@@ -122,7 +122,7 @@ class Stream(BaseParser):  # pylint: disable=R0902
 
         return stream_config
 
-    def _load_config_from_file(self):  # pylint: disable=R0201
+    def _load_config_from_file(self):
         """Read the configuration of the errors and warnings from a yaml file and save it as the class method."""
 
         stream_config = None
