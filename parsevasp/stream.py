@@ -46,6 +46,7 @@ class Stream(BaseParser):  # pylint: disable=R0902
         self._file_handler = file_handler
         self._history = history
         self._streams = []
+        self._inverse_streams = []
         self._config = config
 
         # Check that at least file path or file handler is supplied
@@ -65,10 +66,13 @@ class Stream(BaseParser):  # pylint: disable=R0902
 
         # Build list of error and warning objects and store the these as stream triggers on which
         # we will react if detected in the stream.
-        self._stream_triggers = self._build_stream_triggers()
+        self._stream_triggers, self._inverse_stream_triggers = self._build_stream_triggers()
 
         # Parse parse parse
         self._parse()
+
+        # Add inverse triggers not detected during parsing
+        self._add_inverse_triggers()
 
     def __repr__(self):
         """Define representation to list number of streams found."""
@@ -118,7 +122,7 @@ class Stream(BaseParser):  # pylint: disable=R0902
 
         return stream_config
 
-    def _load_config_from_file(self):  # pylint: disable=R0201
+    def _load_config_from_file(self):
         """Read the configuration of the errors and warnings from a yaml file and save it as the class method."""
 
         stream_config = None
@@ -147,15 +151,25 @@ class Stream(BaseParser):  # pylint: disable=R0902
 
         # Define container for the triggers
         triggers = {}
+        inverse_triggers = {}
         for stream in self._stream_kinds:
             triggers[''.join([stream.lower(), 's'])] = []
+            inverse_triggers[''.join([stream.lower(), 's'])] = []
 
         for stream in self._stream_kinds:
             for shortname, config in self._stream_config.items():
                 if config['kind'] == stream:
-                    triggers[''.join([stream.lower(), 's'])].append(VaspStream(shortname=shortname, **config))
+                    try:
+                        inverse = config['inverse']
+                    except KeyError:
+                        inverse = False
+                    if not inverse:
+                        triggers[''.join([stream.lower(), 's'])].append(VaspStream(shortname=shortname, **config))
+                    else:
+                        inverse_triggers[''.join([stream.lower(),
+                                                  's'])].append(VaspStream(shortname=shortname, **config))
 
-        return triggers
+        return triggers, inverse_triggers
 
     def _parse(self):
         """Perform the actual parsing."""
@@ -184,21 +198,52 @@ class Stream(BaseParser):  # pylint: disable=R0902
             A list of strings containing each line in the standard stream.
 
         """
-        # Copy the dictionary as we will use pop when we do not want history to
-        # remove items as we go
-        stream_triggers = dict(self._stream_triggers)
-        for _, line in enumerate(stream):
+        # Make sure we access all triggers
+        stream_triggers = {}
+        for kind in self._stream_kinds:
+            key = ''.join([kind.lower(), 's'])
+            stream_triggers[key] = self._stream_triggers[key]
+            stream_triggers[key].extend(self._inverse_stream_triggers[key])
+
+        # Ignore list to avoid multiple occurrences if not requested (default)
+        ignore = {}
+        for kind, _ in stream_triggers.items():
+            ignore[kind] = []
+        for _, line in enumerate(stream):  # pylint: disable=too-many-nested-blocks
             # Go though all entries in the stream triggers
-            for triggers in stream_triggers.values():
+            for kind, triggers in stream_triggers.items():
                 # Not check all the triggers of the given kind
                 for index, trigger in enumerate(triggers):
-                    trigger_record = trigger.check_line(line)
-                    if trigger_record:
-                        self._streams.append(trigger_record)
-                        if not self._history:
-                            # Pop stream trigger if we do not want the
-                            # full history of streams (e.g. multiple stream occurrences recorded)
-                            triggers.pop(index)
+                    if index not in ignore[kind]:
+                        trigger_record = trigger.check_line(line)
+                        if trigger_record is not None:
+                            if not trigger_record.inverse:
+                                # Store the streams that we trigger on and want to store.
+                                self._streams.append(trigger_record)
+                            else:
+                                # Keep track of streams detected that we trigger on, but do not want stored.
+                                self._inverse_streams.append(trigger_record.shortname)
+                            if not self._history:
+                                # Add index to avoid storing same trigger multiple times if we do not want the
+                                # full history of streams (e.g. multiple stream occurrences recorded)
+                                ignore[kind].append(index)
+
+    def _add_inverse_triggers(self):
+        """Adds the triggers that are marked as inverse and are not detected, meaning they should be
+        included in the returned streams.
+
+        """
+
+        for _, triggers in self._inverse_stream_triggers.items():
+            for trigger in triggers:
+                if trigger.shortname not in self._inverse_streams:
+                    # Only add inverse triggers if they was not detected during parsing.
+                    self._streams.append(
+                        VaspStream(
+                            trigger.shortname, trigger.kind, trigger.regex, trigger.message, trigger.suggestion,
+                            trigger.location, trigger.recover, trigger.inverse
+                        )
+                    )
 
 
 class VaspStream:  # pylint: disable=R0902
@@ -207,7 +252,17 @@ class VaspStream:  # pylint: disable=R0902
     _ALLOWED_STREAMS = ['ERROR', 'WARNING']
     _ALLOWED_LOCATIONS = ['STDOUT', 'STDERR']
 
-    def __init__(self, shortname, kind, regex, message, suggestion=None, location='STDOUT', recover=False):  # pylint: disable=too-many-arguments
+    def __init__(
+        self,
+        shortname,
+        kind,
+        regex,
+        message,
+        suggestion=None,
+        location='STDOUT',
+        recover=False,
+        inverse=False
+    ):  # pylint: disable=too-many-arguments
         """
         Initialise a VaspStream object.
 
@@ -227,6 +282,8 @@ class VaspStream:  # pylint: disable=R0902
             The location of the stream (typically STDOUT or STDERR). Defaults to STDOUT.
         recover : bool, optional
             True if the stream indicates that we are able to recover using some measures. Defaults to False.
+        inverse : bool, optional
+            If True, the stream should only be triggered on if we do not detect it.
 
         """
         self.shortname = shortname
@@ -239,10 +296,14 @@ class VaspStream:  # pylint: disable=R0902
         self.suggestion = suggestion
         self.location = location
         self.recover = recover
+        self.inverse = inverse
 
     def __repr__(self):
         """Set the representation."""
-        return f'VaspStream(kind={self.kind}, re={self.regex}, message={self.message}, recover={self.recover})'
+        return (
+            f'VaspStream(kind={self.kind}, re={self.regex}, message={self.message}, '
+            f'recover={self.recover}, inverse={self.inverse})'
+        )
 
     def __str__(self):
         """Set string representation of the stream entry that can be used in a human readable report."""
@@ -316,7 +377,7 @@ class VaspStream:  # pylint: disable=R0902
         if sug is not None:
             # Allow None
             if not isinstance(sug, str):
-                raise ValueError(f'The suggestion entry for {self._shortname} is not of type string.')
+                raise ValueError(f'The suggestion entry {sug} is not of type string.')
         self._suggestion = sug
 
     @property
@@ -328,9 +389,7 @@ class VaspStream:  # pylint: disable=R0902
     def location(self, loc):
         """Setter for the location that validates if it is an allowed value."""
         if not loc in self._ALLOWED_LOCATIONS:
-            raise ValueError(
-                f'The location entry for {self._shortname} is not one o fthe allowed values {self._ALLOWED_LOCATIONS}'
-            )
+            raise ValueError(f'The location entry {loc} is not one of the allowed values {self._ALLOWED_LOCATIONS}')
         self._location = loc
 
     @property
@@ -342,13 +401,25 @@ class VaspStream:  # pylint: disable=R0902
     def recover(self, rec):
         """Setter for the recover that validates if it is a boolean."""
         if not isinstance(rec, bool):
-            raise ValueError('The recover entry for {self._shortname is not of type string.}')
+            raise ValueError(f'The recover entry {rec} is not of type bool.')
         self._recover = rec
 
     @property
     def recoverable(self):
         """True if the stream is marked as recoverable."""
         return self._recover
+
+    @property
+    def inverse(self):
+        """Return the inverse status."""
+        return self._inverse
+
+    @inverse.setter
+    def inverse(self, inv):
+        """Setter for the inverse that validates if it is a boolean."""
+        if not isinstance(inv, bool):
+            raise ValueError(f'The recover entry {inv} is not of type bool.')
+        self._inverse = inv
 
     def check_line(self, line):
         """Check the stream in a line, return True the stream is found"""
@@ -357,7 +428,8 @@ class VaspStream:  # pylint: disable=R0902
             # Make a new instance for this particular error (in case we want
             # to save each and every error)
             return VaspStream(
-                self.shortname, self.kind, self.regex, self.message, self.suggestion, self.location, self.recover
+                self.shortname, self.kind, self.regex, self.message, self.suggestion, self.location, self.recover,
+                self.inverse
             )
 
         return None

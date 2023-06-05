@@ -3,6 +3,22 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0] - 2023-06-05
+
+### Added
+- Added a way to parse generalized k-point grid, where the generators are typically used.
+- `POTCAR` metadata parser from `pymatgen` to not having to install `pymatgen` as dependency.
+
+### Changed
+- Bugfix in the partial density of states parsing from `DOSCAR`.
+- Improved detection of a successful VASP start (not full execution).
+- Moved to a `toml` description of the package.
+- Changed contact info for maintainer.
+- Dependencies of the `tests` and `pre-commit` extras follow versions of `aiida-vasp` and `aiida-core`. Except for this release where we use a more recent `pylint>=2.15`.
+
+### Removed
+- Future and past dependency. Old backwards compatibility for Python 2 that was dormant in the code.
+
 ## [3.1.0] - 2022-05-27
 
 ### Added

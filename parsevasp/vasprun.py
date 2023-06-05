@@ -1141,7 +1141,8 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         """
 
-        entry = self._find(xml, './/parameters/separator[@name="symmetry"]/' 'i[@name="SYMPREC"]')
+        entry = self._find(xml, './/parameters/separator[@name="symmetry"]/'
+                           'i[@name="SYMPREC"]')
 
         if entry is None:
             return None
@@ -1237,7 +1238,8 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         """
 
-        entry = self._find(xml, './/parameters/separator[@name="ionic"]/' 'i[@name="NSW"]')
+        entry = self._find(xml, './/parameters/separator[@name="ionic"]/'
+                           'i[@name="NSW"]')
 
         if entry is None:
             return None
@@ -1331,7 +1333,8 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         """
 
-        entry = self._find(xml, './/parameters/separator[@name="electronic"]/' 'i[@name="NBANDS"]')
+        entry = self._find(xml, './/parameters/separator[@name="electronic"]/'
+                           'i[@name="NBANDS"]')
         if entry is None:
             return None
 
@@ -1359,7 +1362,8 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         """
 
-        entry = self._find(xml, './/parameters/separator[@name="electronic"]/' 'i[@name="NELECT"]')
+        entry = self._find(xml, './/parameters/separator[@name="electronic"]/'
+                           'i[@name="NELECT"]')
 
         if entry is None:
             return None
@@ -1388,7 +1392,8 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         """
 
-        entry = self._find(xml, './/parameters/separator[@name="general"]/' 'i[@name="SYSTEM"]')
+        entry = self._find(xml, './/parameters/separator[@name="general"]/'
+                           'i[@name="SYSTEM"]')
 
         if entry is None:
             return None
@@ -1414,7 +1419,8 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         """
 
-        entry = self._findall(xml, './/calculation/array[@name="born_charges"]/' 'set/v')
+        entry = self._findall(xml, './/calculation/array[@name="born_charges"]/'
+                              'set/v')
 
         if entry is None:
             return None
@@ -1623,7 +1629,8 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         """
 
-        entry = self._findall(xml, './/atominfo/' 'array[@name="atoms"]/set/rc/c')
+        entry = self._findall(xml, './/atominfo/'
+                              'array[@name="atoms"]/set/rc/c')
 
         if entry is None:
             return None
@@ -1648,7 +1655,8 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         """
 
-        entry = self._findall(xml, './/calculation/dynmat/' 'varray[@name="hessian"]/v')
+        entry = self._findall(xml, './/calculation/dynmat/'
+                              'varray[@name="hessian"]/v')
 
         if entry is None:
             return None
@@ -1682,7 +1690,8 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         """
 
-        entry = self._find(xml, './/calculation/dynmat/' 'v[@name="eigenvalues"]')
+        entry = self._find(xml, './/calculation/dynmat/'
+                           'v[@name="eigenvalues"]')
 
         if entry is None:
             return None
@@ -1698,7 +1707,8 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         eigenvalues = self._convert_array_f(entry)
 
-        entry = self._find(xml, './/calculation/dynmat/' 'varray[@name="eigenvectors"]')
+        entry = self._find(xml, './/calculation/dynmat/'
+                           'varray[@name="eigenvectors"]')
 
         if entry is None:
             return None
@@ -1809,10 +1819,12 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
         """
 
         # Spin 1
-        entry_ispin1 = self._findall(xml, './/calculation/eigenvalues/array/set/' 'set[@comment="spin 1"]/set/r')
+        entry_ispin1 = self._findall(xml, './/calculation/eigenvalues/array/set/'
+                                     'set[@comment="spin 1"]/set/r')
 
         # Spin 2
-        entry_ispin2 = self._findall(xml, './/calculation/eigenvalues/array/set/' 'set[@comment="spin 2"]/set/r')
+        entry_ispin2 = self._findall(xml, './/calculation/eigenvalues/array/set/'
+                                     'set[@comment="spin 2"]/set/r')
 
         # If we do not find spin 1 entries return right away
         if entry_ispin1 is None:
@@ -1943,10 +1955,12 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
         """
 
         # Projectors spin 1
-        entry_ispin1 = self._findall(xml, './/calculation/projected/array/set/' 'set[@comment="spin1"]/set/set/r')
+        entry_ispin1 = self._findall(xml, './/calculation/projected/array/set/'
+                                     'set[@comment="spin1"]/set/set/r')
 
         # Projectors spin 2
-        entry_ispin2 = self._findall(xml, './/calculation/projected/array/set/' 'set[@comment="spin2"]/set/set/r')
+        entry_ispin2 = self._findall(xml, './/calculation/projected/array/set/'
+                                     'set[@comment="spin2"]/set/set/r')
 
         # If we do not find spin 1 entries return right away
         if entry_ispin1 is None:
@@ -3156,12 +3170,12 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         Paramaeters
         -----------
-        status : {'all', 'initial', 'final'}
+        status : {'all', 'initial', 'last'}
             A string containing which positions to return. For `all`, positionss for all ionic steps
-            are returned. For `initial` and `final`, the positions for the first and last ionic step
+            are returned. For `initial` and `last`, the positions for the first and last ionic step
             is returned, respectively.
-        etype : {'energy_extrapolated', 'energy_free', 'energy_no_entropy'}
-            The type of total energy to return. The `energy_extrapolated`, `energy_free` and
+        etype : list
+            A list containing the type of total energies to return. The `energy_extrapolated`, `energy_free` and
             `energy_no_entropy` transfers to `e_0_energy`, `e_fr_energy` and `energy_no_entropy`
             as printed in the XML file.
         nosc : bool
@@ -3193,9 +3207,14 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         if etype is None:
             etype = ['energy_extrapolated']
+
+        if not isinstance(etype, list):
+            # The supplied etype is not a list
+            raise ValueError(f'The supplied etype: {etype} is not a list.')
+
         # Check if the supplied etype is in the support list
         for item in etype:
-            if item not in _SUPPORTED_TOTAL_ENERGIES.keys():
+            if item not in _SUPPORTED_TOTAL_ENERGIES.keys():  # pylint: disable=consider-iterating-dictionary
                 raise ValueError(f'The supplied total energy type: {item} is not supported.')
 
         return self._get_energies(status, etype, nosc)
@@ -3535,7 +3554,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
             )
             sys.exit(self.ERROR_UNSUPPORTED_STATUS)
 
-    def _find(self, xml, locator):  # pylint: disable=R0201
+    def _find(self, xml, locator):
         """Wrapper to check if the request returns something.
 
         Parameters
@@ -3559,7 +3578,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
             return None
         return entry
 
-    def _findall(self, xml, locator):  # pylint: disable=R0201
+    def _findall(self, xml, locator):
         """Wrapper to check if the request returns something.
 
         Parameters

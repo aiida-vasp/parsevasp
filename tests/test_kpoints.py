@@ -62,6 +62,19 @@ def kpoints_parser_line():
     return kpoints
 
 
+@pytest.fixture(scope='module')
+def kpoints_parser_GRG():
+    """Load KPOINTS file of generalized regular grid (Reciprocal).
+
+    """
+
+    testdir = os.path.dirname(__file__)
+    kpointsfile = testdir + '/KPOINTSGRG'
+    kpoints = Kpoints(file_path=kpointsfile)
+
+    return kpoints
+
+
 def test_kpoints_exist(kpoints_parser_auto):
     """Check if kpoints_parser exists.
 
@@ -164,6 +177,23 @@ def test_kpoints_params_line(kpoints_parser_line):
     assert points[3][2]
     assert points[4][2]
     assert points[5][2]
+
+
+def test_kpoints_params_GRG(kpoints_parser_GRG):
+    """Check parameters in KPOINTS for generalized regular grid (Reciprocal)
+
+    """
+
+    kpoints = kpoints_parser_GRG.get_dict()
+    assert kpoints['mode'] == 'automatic'
+    assert kpoints['comment'] == 'Example file'
+    np.testing.assert_allclose(kpoints['generating_vectors'], [[0.25, 0.0, 0.0], [0.0, 0.25, 0.0], [0.0, 0.0, 0.25]])
+    np.testing.assert_allclose(kpoints['shifts'], [0.5, 0.5, 0.5])
+    assert kpoints['points'] == None
+    assert kpoints['centering'] == 'Reciprocal'
+    assert kpoints['tetra'] == None
+    assert kpoints['tetra_volume'] == None
+    assert kpoints['num_kpoints'] == 0
 
 
 def test_kpoints_write_auto(kpoints_parser_auto, tmpdir):
@@ -391,7 +421,8 @@ def test_kpoints_dict(tmpdir):
         'centering': 'Gamma',
         'tetra': None,
         'tetra_volume': None,
-        'num_kpoints': 0
+        'num_kpoints': 0,
+        'generating_vectors': None
     }
     temp_file = str(tmpdir.join('KPOINTS'))
     kpoints_parser_auto_temp = Kpoints(kpoints_dict=kpoints_dict)

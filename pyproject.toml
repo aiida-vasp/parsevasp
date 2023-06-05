@@ -1,12 +1,88 @@
+[build-system]
+# build the package with [flit](https://flit.readthedocs.io)
+requires = ["flit_core >=3.4,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "parsevasp"
+dynamic = ["version"]  # read from parsevasp/__init__.py
+description = "A general parser for VASP"
+authors = [{name = "Espen Flage-Larsen	", email = "espen.flage-larsen@sigma2.no"}]
+readme = "README.rst"
+license = {file = "LICENSE.txt"}
+classifiers = [
+    "Programming Language :: Python",
+    "Intended Audience :: Science/Research",
+    "Natural Language :: English",
+    "Development Status :: 5 - Production/Stable",
+	"Environment :: Plugins",
+	"Intended Audience :: Science/Research",
+	"License :: OSI Approved :: MIT License",
+	"Programming Language :: Python :: 3.7",
+	"Programming Language :: Python :: 3.8",
+	"Programming Language :: Python :: 3.9",
+	"Programming Language :: Python :: 3.10",
+	"Programming Language :: Python :: 3.11",
+	"Topic :: Scientific/Engineering :: Physics",
+	"Topic :: Scientific/Engineering :: Chemistry"
+]
+keywords = ["vasp", "parser"]
+requires-python = ">=3.7"
+dependencies = [
+        "numpy",
+        "lxml",
+        "pyyaml"
+]
+
+
+[project.urls]
+Source = "https://github.com/aiida-vasp/parsevasp"
+
+[project.optional-dependencies]
+tests = [
+      "tox>=3.23.0",
+      "virtualenv>20",
+      "pytest~=7.0",
+      "pytest-cov~=2.7,<2.11",
+      "coverage~=6.0"
+]
+pre-commit = [
+	   "tox>=3.23.0",
+	   "virtualenv>20",
+	   "pre-commit~=2.2",
+	   "pylint~=2.15.0"
+]
+
+[tool.flit.module]
+name = "parsevasp"
+
 [tool.pylint.format]
 max-line-length = 120
 
-# [tool.pylint.tool-check]
-# generated-members = 'self.exit_codes.*'
+[tool.coverage.run]
+# Configuration of [coverage.py](https://coverage.readthedocs.io)
+# reporting which lines of your plugin are covered by tests
+source=["parsevasp"]
+
+[tool.isort]
+# Configuration of [isort](https://isort.readthedocs.io)
+line_length = 120
+# this configuration is compatible with yapf
+multi_line_output = 3
+include_trailing_comma = true
+
+[tool.yapf]
+# Configuration of [yapf](https://github.com/google/yapf)
+based_on_style = "google"
+column_limit = 120
+dedent_closing_brackets = true
+coalesce_brackets = true
+align_closing_bracket_with_visual_indent = true
+split_arguments_when_comma_terminated = true
+indent_dictionary_value = false
 
 [tool.pylint.messages_control]
 disable = [
-    'bad-continuation',
     'duplicate-code',
     'locally-disabled',
     'logging-format-interpolation',
@@ -27,5 +103,29 @@ good-names = [
     'k',
 ]
 
-[tool.isort]
-line_length = 120
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+envlist = pre-commit,{py37,py38,py39,py310,py311}-parsevasp
+requires = virtualenv >= 20
+isolated_build = True
+
+[testenv]
+commands =
+         pytest {posargs}
+
+extras = tests
+
+[testenv:pre-commit]
+allowlist_externals = bash
+commands = bash -ec 'pre-commit run --all-files || ( git diff; git status; exit 1; )'
+extras =
+       pre-commit
+
+[flake8]
+max-line-length = 120
+import-order-style = edited
+
+[pycodestyle]
+max-line-length = 120
+"""
