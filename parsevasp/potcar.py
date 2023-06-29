@@ -1,7 +1,15 @@
 """Handle POTCAR
 
-This parser takes parts of the
+In order to not have pymatgen as a dependency, this parser takes parts of the
 `pymatgen parser<https://github.com/materialsproject/pymatgen/blob/v2023.3.23/pymatgen/io/vasp/inputs.py#L1616-L2211>`_
+for POTCAR here.
+
+Copyright info from their MIT license:
+
+Copyright (c) 2011-2012 MIT & The Regents of the University of California,
+through Lawrence Berkeley National Laboratory
+
+pymatgen also uses the MIT license so see this plugins LICENSE file for its copy.
 """
 
 import re

@@ -10,16 +10,16 @@ jobs:
       matrix:
         python: ["3.10"]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Cache python dependencies
         id: cache-pip
-        uses: actions/cache@v1
+        uses: actions/cache@v3
         with:
           path: ~/.cache/pip
           key: pip-${{ matrix.python }}-tests-${{ hashFiles('**/setup.json') }}
           restore-keys: pip-${{ matrix.python }}-tests-
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
       - name: Make sure virtualevn>20 is installed, which will yield newer pip and posibility to pin pip version.
@@ -36,9 +36,9 @@ jobs:
       matrix:
         python: ['3.7', '3.8', '3.9', '3.10', '3.11']
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
       - name: Make sure virtualevn>20 is installed, which will yield newer pip and posibility to pin pip version.
@@ -62,7 +62,7 @@ jobs:
         run: tox -e py${{ steps.tox.outputs.replaced }}-parsevasp
       - name: Upload coverage to Codecov
         if: matrix.python == '3.10'
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           name: parsevasp
           fail_ci_if_error: true
