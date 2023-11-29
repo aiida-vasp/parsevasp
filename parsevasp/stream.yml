@@ -172,6 +172,13 @@ sgrcon:
   recover: false
   regex: "internal error in subroutine SGRCON"
   suggestion: ""
+zbrent:
+  kind: ERROR
+  location: STDOUT
+  message: "Error in ZBRENT"
+  recover: false
+  regex: "ZBRENT: fatal error in bracketing"
+  suggestion: ""
 no_potim:
   kind: ERROR
   location: STDOUT
