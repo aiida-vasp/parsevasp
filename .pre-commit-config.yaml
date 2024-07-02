@@ -37,7 +37,7 @@ repos:
         additional_dependencies: ["toml"]
 
   - repo: https://github.com/PyCQA/pylint
-    rev: v3.2.3
+    rev: v3.2.4
     hooks:
       - id: pylint
         exclude: ^tests/
