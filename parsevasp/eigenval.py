@@ -1,4 +1,5 @@
 """Handle EIGENVAL."""
+
 import re
 import sys
 
@@ -111,7 +112,7 @@ class Eigenval(BaseParser):
             kpoints[k] = kpi
             # The rest is the band energies
             for point in kpbs:
-                eigenvalues[:, k, int(point[0]) - 1] = point[1:num_spins + 1]
+                eigenvalues[:, k, int(point[0]) - 1] = point[1 : num_spins + 1]
 
         # Create the metadata dict
         metadata = {}

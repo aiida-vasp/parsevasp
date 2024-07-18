@@ -1,4 +1,5 @@
 """Handle CHGCAR."""
+
 import sys
 
 import numpy as np
@@ -88,25 +89,30 @@ class Chgcar(BaseParser):
         content = content.split(ngf_string)
         num_datasets = len(content)
         # First dataset is always there
-        self._data['total'] = np.fromstring(content[0].split('augmentation occupancies')[0], dtype=float,
-                                            sep=' ').reshape(ngf) / volume
+        self._data['total'] = (
+            np.fromstring(content[0].split('augmentation occupancies')[0], dtype=float, sep=' ').reshape(ngf) / volume
+        )
         if num_datasets == 2:
             # Collinear spin
-            self._data['magnetization'] = np.fromstring(
-                content[1].split('augmentation occupancies')[0], dtype=float, sep=' '
-            ).reshape(ngf) / volume
+            self._data['magnetization'] = (
+                np.fromstring(content[1].split('augmentation occupancies')[0], dtype=float, sep=' ').reshape(ngf)
+                / volume
+            )
         elif num_datasets == 4:
             # Non-collinear spin
             self._data['magnetization'] = {}
-            self._data['magnetization']['x'] = np.fromstring(
-                content[1].split('augmentation occupancies')[0], dtype=float, sep=' '
-            ).reshape(ngf) / volume
-            self._data['magnetization']['y'] = np.fromstring(
-                content[2].split('augmentation occupancies')[0], dtype=float, sep=' '
-            ).reshape(ngf) / volume
-            self._data['magnetization']['z'] = np.fromstring(
-                content[3].split('augmentation occupancies')[0], dtype=float, sep=' '
-            ).reshape(ngf) / volume
+            self._data['magnetization']['x'] = (
+                np.fromstring(content[1].split('augmentation occupancies')[0], dtype=float, sep=' ').reshape(ngf)
+                / volume
+            )
+            self._data['magnetization']['y'] = (
+                np.fromstring(content[2].split('augmentation occupancies')[0], dtype=float, sep=' ').reshape(ngf)
+                / volume
+            )
+            self._data['magnetization']['z'] = (
+                np.fromstring(content[3].split('augmentation occupancies')[0], dtype=float, sep=' ').reshape(ngf)
+                / volume
+            )
 
     @property
     def charge_density(self):

@@ -1,4 +1,5 @@
 """Utiles."""
+
 import logging
 import math
 import os
@@ -74,9 +75,8 @@ def read_from_file(file_name, input_file_handler, contains=None, lines=True, enc
                 for element in contains:
                     if element in line:
                         parsed.append(line)
-            else:
-                if contains in line:
-                    parsed = line
+            elif contains in line:
+                parsed = line
     else:
         parsed = file_data
 
@@ -162,9 +162,7 @@ def test_string_content(string):
     """
     try:
         float(string)
-        return 'int' if ((string.count('.') == 0) and \
-                         ('e' not in string) and \
-                         ('E' not in string)) else 'float'
+        return 'int' if ((string.count('.') == 0) and ('e' not in string) and ('E' not in string)) else 'float'
     except ValueError:
         return 'string'
 

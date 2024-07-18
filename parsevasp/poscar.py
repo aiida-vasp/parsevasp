@@ -1,4 +1,5 @@
 """Handle POSCAR."""
+
 # pylint: disable=C0302, consider-using-f-string
 import io
 import sys
@@ -21,16 +22,18 @@ class Poscar(BaseParser):
     ERROR_INVALID_ENTRY = 305
     ERROR_NO_DIRECT = 306
     ERROR_NEGATIVE_SCALING = 307
-    BaseParser.ERROR_MESSAGES.update({
-        ERROR_NEGATIVE_SCALING: 'Currently negative scaling values in POSCAR is not supported.',
-        ERROR_VASPFOUR: 'VASP 4 POSCAR is not supported. User, please modernize. ',
-        ERROR_NO_VEL_OR_PRED: 'A velocity or predictor-corrector coordinate was not detected.',
-        ERROR_SITE_NUMBER: "The supplied 'site_number' is not a number (i.e. the index) "
-        'starting from 1 for the site position to be modified.',
-        ERROR_TOO_LARGE_SITE_INDEX: 'The supplied site_number is larger than the number of sites.',
-        ERROR_INVALID_ENTRY: "Only 'comment', 'unitcell' or 'sites' is allowed as input for entry.",
-        ERROR_NO_DIRECT: 'Coordinate should be direct. Did you hack this?'
-    })
+    BaseParser.ERROR_MESSAGES.update(
+        {
+            ERROR_NEGATIVE_SCALING: 'Currently negative scaling values in POSCAR is not supported.',
+            ERROR_VASPFOUR: 'VASP 4 POSCAR is not supported. User, please modernize. ',
+            ERROR_NO_VEL_OR_PRED: 'A velocity or predictor-corrector coordinate was not detected.',
+            ERROR_SITE_NUMBER: "The supplied 'site_number' is not a number (i.e. the index) "
+            'starting from 1 for the site position to be modified.',
+            ERROR_TOO_LARGE_SITE_INDEX: 'The supplied site_number is larger than the number of sites.',
+            ERROR_INVALID_ENTRY: "Only 'comment', 'unitcell' or 'sites' is allowed as input for entry.",
+            ERROR_NO_DIRECT: 'Coordinate should be direct. Did you hack this?',
+        }
+    )
     ERROR_MESSAGES = BaseParser.ERROR_MESSAGES
 
     def __init__(
@@ -42,7 +45,7 @@ class Poscar(BaseParser):
         logger=None,
         prec=None,
         conserve_order=False,
-        write_direct=True
+        write_direct=True,
     ):
         """Initialize a POSCAR object and set content as a dictionary.
 
@@ -81,15 +84,19 @@ class Poscar(BaseParser):
 
         # Check that only one argument is supplied
         # pylint: disable=R0916
-        if (self._poscar_string is not None and self._poscar_dict is not None) or (
-            self._poscar_string is not None and self._file_path is not None
-        ) or (self._poscar_dict is not None and self._file_path is not None and self._file_handler is not None):
+        if (
+            (self._poscar_string is not None and self._poscar_dict is not None)
+            or (self._poscar_string is not None and self._file_path is not None)
+            or (self._poscar_dict is not None and self._file_path is not None and self._file_handler is not None)
+        ):
             self._logger.error(self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
             sys.exit(self.ERROR_USE_ONE_ARGUMENT)
         # Check that at least one is suplpied
         if (
-            self._poscar_string is None and self._poscar_dict is None and self._file_path is None and
-            self._file_handler is None
+            self._poscar_string is None
+            and self._poscar_dict is None
+            and self._file_path is None
+            and self._file_handler is None
         ):
             self._logger.error(self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
             sys.exit(self.ERROR_USE_ONE_ARGUMENT)
@@ -146,7 +153,7 @@ class Poscar(BaseParser):
         """
 
         sites = self._poscar_dict['sites']
-        for site in sites:
+        for i_site, site in enumerate(sites):
             if not isinstance(site, Site):
                 # Entry is not of a Site type, convert it
                 direct = site['direct']
@@ -158,18 +165,19 @@ class Poscar(BaseParser):
                     if velocities is not None:
                         velocities = self._to_direct(velocities, self._poscar_dict['unitcell'])
                     direct = True
-                site = Site(site['specie'], position, site['selective'], velocities, site['predictors'], direct)
-            else:
-                if not site.get_direct():
-                    # Cartesian, so convert.
-                    position = site.get_position()
-                    velocities = site.get_velocities()
-                    position = self._to_direct(position, self._poscar_dict['unitcell'])
-                    site.set_position(position)
-                    if velocities is not None:
-                        velocities = self._to_direct(velocities, self._poscar_dict['unitcell'])
-                        site.set_velocities(velocities)
-                    site.set_direct(True)
+                sites[i_site] = Site(
+                    site['specie'], position, site['selective'], velocities, site['predictors'], direct
+                )
+            elif not site.get_direct():
+                # Cartesian, so convert.
+                position = site.get_position()
+                velocities = site.get_velocities()
+                position = self._to_direct(position, self._poscar_dict['unitcell'])
+                site.set_position(position)
+                if velocities is not None:
+                    velocities = self._to_direct(velocities, self._poscar_dict['unitcell'])
+                    site.set_velocities(velocities)
+                site.set_direct(True)
 
     def _from_list(self, poscar):  # pylint: disable=R0915
         """
@@ -344,7 +352,7 @@ class Poscar(BaseParser):
                 sites_temp[i][1],
                 selective=sites_temp[i][2],
                 velocities=sites_temp[i][3],
-                predictors=sites_temp[i][4]
+                predictors=sites_temp[i][4],
             )
             sites.append(site)
 
@@ -433,9 +441,7 @@ class Poscar(BaseParser):
         raise NotImplementedError
 
     def _check_dict(self):
-        """Check that entries is present.
-
-        """
+        """Check that entries is present."""
 
         try:
             _ = self.entries
@@ -478,8 +484,7 @@ class Poscar(BaseParser):
                 self._logger.error(self.ERROR_MESSAGES[f"{self.ERROR_NO_KEY} The key in question is 'unitcell'."])
                 sys.exit(self.ERROR_NO_KEY)
 
-        if (not isinstance(unitcell, np.ndarray)) \
-           or (unitcell.shape != (3, 3)):
+        if (not isinstance(unitcell, np.ndarray)) or (unitcell.shape != (3, 3)):
             self._logger.error(
                 f"{self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE]} The value of 'unitcell' is not an 3x3 ndarray."
             )
@@ -557,12 +562,11 @@ class Poscar(BaseParser):
                         "The elements of the key 'sites' are not Site() objects."
                     )
                     sys.exit(self.ERROR_KEY_INVALID_TYPE)
-        else:
-            if not isinstance(site, Site):
-                self._logger.error(
-                    f"{self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE]} The key 'site' is not a Site() object."
-                )
-                sys.exit(self.ERROR_KEY_INVALID_TYPE)
+        elif not isinstance(site, Site):
+            self._logger.error(
+                f"{self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE]} The key 'site' is not a Site() object."
+            )
+            sys.exit(self.ERROR_KEY_INVALID_TYPE)
 
     def _check_site_number(self, site_number):
         """
@@ -587,9 +591,7 @@ class Poscar(BaseParser):
             sys.exit(self.ERROR_TOO_LARGE_SITE_INDEX)
 
     def _validate(self):
-        """Validate the content of entries
-
-        """
+        """Validate the content of entries"""
 
         self._check_dict()
         self._check_comment()
@@ -790,14 +792,16 @@ class Poscar(BaseParser):
                         if velocities is not None:
                             velocities = self._to_cart(velocities, self.entries['unitcell'])
                         temp_direct = False
-                    sites_temp.append({
-                        'specie': element.get_specie().capitalize(),
-                        'position': position,
-                        'selective': element.get_selective(),
-                        'velocities': velocities,
-                        'predictors': element.get_predictors(),
-                        'direct': temp_direct
-                    })
+                    sites_temp.append(
+                        {
+                            'specie': element.get_specie().capitalize(),
+                            'position': position,
+                            'selective': element.get_selective(),
+                            'velocities': velocities,
+                            'predictors': element.get_predictors(),
+                            'direct': temp_direct,
+                        }
+                    )
                 dictionary[key] = sites_temp
 
             else:
@@ -842,8 +846,7 @@ class Poscar(BaseParser):
         comment = entries['comment']
         unitcell = entries['unitcell']
         # Sort and group to VASP specifications
-        sites, species, num_species, selective, velocities, predictors = \
-            self._sort_and_group_sites()
+        sites, species, num_species, selective, velocities, predictors = self._sort_and_group_sites()
         # Update comment
         compound = ''
         for index, specie in enumerate(species):
@@ -865,8 +868,7 @@ class Poscar(BaseParser):
         # Write unitcell
         for i in range(3):
             file_handler.write(
-                '{:{width}.{prec}f} {:{width}.{prec}f} '
-                '{:{width}.{prec}f}\n'.format(
+                '{:{width}.{prec}f} {:{width}.{prec}f} ' '{:{width}.{prec}f}\n'.format(
                     unitcell[i][0], unitcell[i][1], unitcell[i][2], prec=self._prec, width=self._width
                 )
             )
@@ -895,8 +897,9 @@ class Poscar(BaseParser):
             else:
                 _site = self._to_cart(site[1][0:3], unitcell)
             file_handler.write(
-                '{:{width}.{prec}f} {:{width}.{prec}f} '
-                '{:{width}.{prec}f}'.format(_site[0], _site[1], _site[2], prec=self._prec, width=self._width)
+                '{:{width}.{prec}f} {:{width}.{prec}f} ' '{:{width}.{prec}f}'.format(
+                    _site[0], _site[1], _site[2], prec=self._prec, width=self._width
+                )
             )
             if selective:
                 sel = ['T', 'T', 'T']
@@ -919,8 +922,9 @@ class Poscar(BaseParser):
                 else:
                     _site = self._to_cart(site[4][0:3], unitcell)
                 file_handler.write(
-                    '{:{width}.{prec}f} {:{width}.{prec}f} '
-                    '{:{width}.{prec}f}\n'.format(_site[0], _site[1], _site[2], prec=self._prec, width=self._width)
+                    '{:{width}.{prec}f} {:{width}.{prec}f} ' '{:{width}.{prec}f}\n'.format(
+                        _site[0], _site[1], _site[2], prec=self._prec, width=self._width
+                    )
                 )
 
         # Write predictors if they exist
@@ -928,8 +932,7 @@ class Poscar(BaseParser):
             file_handler.write('\n')
             for site in sites:
                 file_handler.write(
-                    '{:{width}.{prec}f} {:{width}.{prec}f} '
-                    '{:{width}.{prec}f}\n'.format(
+                    '{:{width}.{prec}f} {:{width}.{prec}f} ' '{:{width}.{prec}f}\n'.format(
                         site[5][0], site[5][1], site[5][2], prec=self._prec, width=self._width
                     )
                 )

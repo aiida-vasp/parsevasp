@@ -1,4 +1,5 @@
 """Handle KPOINTS."""
+
 # pylint: disable=consider-using-f-string, disable=too-many-lines
 import io
 import sys
@@ -25,39 +26,30 @@ class Kpoints(BaseParser):
     ERROR_INVALID_CENTERING = 212
     ERROR_INVALID_MODE = 213
     ERROR_ONLY_ONE_ARGUMENT = 214
-    BaseParser.ERROR_MESSAGES.update({
-        ERROR_KPOINTS_NOT_DIRECT:
-        'Please supply the KPOINTS in direct coordinates.',
-        ERROR_TETRA_FIVE:
-        'The connection line for the tetrahedra info '
-        'in the KPOINTS file does not contain five entries.',
-        ERROR_NO_AUTOMATICS:
-        'We do not support fully automatic inputs. Please instead modify your KPOINTS file '
-        'in order to explicitely specify Gamma or Monkhorst mode, and the number of samples '
-        'along each reciprocal lattice vector.',
-        ERROR_NO_EXPERT:
-        'Expert mode is currently not supported.',
-        ERROR_NOT_A_NUMBER:
-        "The supplied 'point_number' is not a number (i.e. the index) "
-        'starting from 1 for the point to be modified.',
-        ERROR_CONVERSION:
-        'Conversion from reciprocal to direct for the KPOINTS is not yet implemented.',
-        ERROR_DIVISIONS:
-        "You have to set either 'divisions' (automatic mode) or the explicit 'points'.",
-        ERROR_INVALID_TAG:
-        "Only 'comment', 'points', 'tetra', 'tetra_volume', 'divisions', 'shifts', 'mode' "
-        "'num_kpoints' or 'centering' is allowed as input for entry.",
-        ERROR_WRONG_OBJECT:
-        "At least one of the values in 'points' is not a Kpoint() object.",
-        ERROR_TOO_LARGE_POINT_INDEX:
-        'The supplied point_number is larger than the number of points.',
-        ERROR_INVALID_CENTERING:
-        "The supplied 'centering' have to be either 'Gamma' or 'Monkhorst-Pack'.",
-        ERROR_INVALID_MODE:
-        "The supplied 'mode' have to be either explicit, automatic or line-mode.",
-        ERROR_ONLY_ONE_ARGUMENT:
-        'Only supply either `kpoints_string`, `kpoints_dict, `file_path` or `file_handler` as an argument.'
-    })
+    BaseParser.ERROR_MESSAGES.update(
+        {
+            ERROR_KPOINTS_NOT_DIRECT: 'Please supply the KPOINTS in direct coordinates.',
+            ERROR_TETRA_FIVE: 'The connection line for the tetrahedra info '
+            'in the KPOINTS file does not contain five entries.',
+            ERROR_NO_AUTOMATICS: 'We do not support fully automatic inputs. Please instead modify your KPOINTS file '
+            'in order to explicitely specify Gamma or Monkhorst mode, and the number of samples '
+            'along each reciprocal lattice vector.',
+            ERROR_NO_EXPERT: 'Expert mode is currently not supported.',
+            ERROR_NOT_A_NUMBER: "The supplied 'point_number' is not a number (i.e. the index) "
+            'starting from 1 for the point to be modified.',
+            ERROR_CONVERSION: 'Conversion from reciprocal to direct for the KPOINTS is not yet implemented.',
+            ERROR_DIVISIONS: "You have to set either 'divisions' (automatic mode) or the explicit 'points'.",
+            ERROR_INVALID_TAG: "Only 'comment', 'points', 'tetra', 'tetra_volume', 'divisions', 'shifts', 'mode' "
+            "'num_kpoints' or 'centering' is allowed as input for entry.",
+            ERROR_WRONG_OBJECT: "At least one of the values in 'points' is not a Kpoint() object.",
+            ERROR_TOO_LARGE_POINT_INDEX: 'The supplied point_number is larger than the number of points.',
+            ERROR_INVALID_CENTERING: "The supplied 'centering' have to be either 'Gamma' or 'Monkhorst-Pack'.",
+            ERROR_INVALID_MODE: "The supplied 'mode' have to be either explicit, automatic or line-mode.",
+            ERROR_ONLY_ONE_ARGUMENT: (
+                'Only supply either `kpoints_string`, `kpoints_dict, `file_path` or `file_handler` as an argument.'
+            ),
+        }
+    )
     ERROR_MESSAGES = BaseParser.ERROR_MESSAGES
 
     def __init__(
@@ -99,15 +91,19 @@ class Kpoints(BaseParser):
 
         # Check that only one argument is supplied
         # pylint: disable=R0916
-        if (self._kpoints_string is not None and self._kpoints_dict is not None) or (
-            self._kpoints_string is not None and self._file_path is not None
-        ) or (self._kpoints_dict is not None and self._file_path is not None and self._file_handler is not None):
+        if (
+            (self._kpoints_string is not None and self._kpoints_dict is not None)
+            or (self._kpoints_string is not None and self._file_path is not None)
+            or (self._kpoints_dict is not None and self._file_path is not None and self._file_handler is not None)
+        ):
             self._logger.error(self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
             sys.exit(self.ERROR_USE_ONE_ARGUMENT)
         # Check that at least one is suplpied
         if (
-            self._kpoints_string is None and self._kpoints_dict is None and self._file_path is None and
-            self._file_handler is None
+            self._kpoints_string is None
+            and self._kpoints_dict is None
+            and self._file_path is None
+            and self._file_handler is None
         ):
             self._logger.error(self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
             sys.exit(self.ERROR_USE_ONE_ARGUMENT)
@@ -321,9 +317,9 @@ class Kpoints(BaseParser):
                 self._check_points(points=value)
                 # Check that all points are in direct, if not,
                 # convert
-                for point in value:
+                for i_value, point in enumerate(value):
                     if not point.get_direct():
-                        point = self._to_direct(point)
+                        value[i_value] = self._to_direct(point)
                         self._logger.error(self.ERROR_MESSAGES[self.ERROR_CONVERSION])
                         sys.exit(self.ERROR_CONVERSION)
             if entry == 'comment':
@@ -379,9 +375,7 @@ class Kpoints(BaseParser):
         raise NotImplementedError
 
     def _check_dict(self):
-        """Check that entries is present.
-
-        """
+        """Check that entries is present."""
 
         try:
             _ = self.entries
@@ -391,8 +385,11 @@ class Kpoints(BaseParser):
 
         # Check that at least divisions or points are set
         # to something else than None
-        if ((self.entries['divisions'] is None) and (self.entries['points'] is None) and
-            (self.entries['generating_vectors'] is None)):
+        if (
+            (self.entries['divisions'] is None)
+            and (self.entries['points'] is None)
+            and (self.entries['generating_vectors'] is None)
+        ):
             self._logger.error(self.ERROR_MESSAGES[self.ERROR_DIVISIONS])
             sys.exit(self.ERROR_DIVISIONS)
 
@@ -407,9 +404,17 @@ class Kpoints(BaseParser):
 
         """
 
-        if not (('comment' in entry) or ('points' in entry) or ('tetra' in entry) or ('tetra_volume' in entry) or
-                ('divisions' in entry) or ('mode' in entry) or ('num_kpoints' in entry) or ('shifts' in entry) or
-                ('centering') in entry):
+        if not (
+            ('comment' in entry)
+            or ('points' in entry)
+            or ('tetra' in entry)
+            or ('tetra_volume' in entry)
+            or ('divisions' in entry)
+            or ('mode' in entry)
+            or ('num_kpoints' in entry)
+            or ('shifts' in entry)
+            or ('centering') in entry
+        ):
             self._logger.error(self.ERROR_MESSAGES[self.ERROR_INVALID_TAG])
             sys.exit(self.ERROR_INVALID_TAG)
 
@@ -485,10 +490,9 @@ class Kpoints(BaseParser):
                 if not isinstance(_point, Kpoint):
                     self._logger.error(self.ERROR_MESSAGES[self.ERROR_WRONG_OBJECT])
                     sys.exit(self.ERROR_WRONG_OBJECT)
-        else:
-            if not isinstance(point, Kpoint):
-                self._logger.error(self.ERROR_MESSAGES[self.ERROR_WRONG_OBJECT])
-                sys.exit(self.ERROR_WRONG_OBJECT)
+        elif not isinstance(point, Kpoint):
+            self._logger.error(self.ERROR_MESSAGES[self.ERROR_WRONG_OBJECT])
+            sys.exit(self.ERROR_WRONG_OBJECT)
 
     def _check_point_number(self, point_number):
         """
@@ -540,7 +544,7 @@ class Kpoints(BaseParser):
                     if not isinstance(element, float):
                         self._logger.error(
                             f'{self.ERROR_MESSAGES[self.ERROR_KEY_INVALID_TYPE]} The element:'
-                            f"{str(element)} in 'shifts' is not a float."
+                            f"{element!s} in 'shifts' is not a float."
                         )
                         sys.exit(self.ERROR_KEY_INVALID_TYPE)
 
@@ -706,7 +710,7 @@ class Kpoints(BaseParser):
                 sys.exit(self.ERROR_NO_KEY)
         if centering is not None:
             # allow None
-            if not centering in ('Gamma', 'Monkhorst-Pack', 'Reciprocal'):
+            if centering not in ('Gamma', 'Monkhorst-Pack', 'Reciprocal'):
                 self._logger.error(self.ERROR_MESSAGES[self.ERROR_INVALID_CENTERING])
                 sys.exit(self.ERROR_INVALID_CENTERING)
 
@@ -758,9 +762,7 @@ class Kpoints(BaseParser):
                 sys.exit(self.ERROR_INVALID_MODE)
 
     def _validate(self):
-        """Validate the content of entries
-
-        """
+        """Validate the content of entries"""
         self._check_dict()
         self._check_comment()
         self._check_points()
@@ -774,11 +776,9 @@ class Kpoints(BaseParser):
         self._check_tetra_volume()
 
     def _to_direct(self, point):
-
         return point
 
     def _to_cart(self, point):
-
         return point
 
     def get(self, tag):
@@ -821,9 +821,9 @@ class Kpoints(BaseParser):
         for key, entry in self.entries.items():
             if key == 'points':
                 if entry is not None:
-                    dictionary[key] = [[element.get_point(),
-                                        element.get_weight(),
-                                        element.get_direct()] for element in entry]
+                    dictionary[key] = [
+                        [element.get_point(), element.get_weight(), element.get_direct()] for element in entry
+                    ]
                 else:
                     dictionary[key] = None
             else:
@@ -891,8 +891,7 @@ class Kpoints(BaseParser):
                     )
                     weight = 1.0
                 file_handler.write(
-                    '{:{width}.{prec}f} {:{width}.{prec}f} '
-                    '{:{width}.{prec}f} {:{width}.{prec}f}\n'.format(
+                    '{:{width}.{prec}f} {:{width}.{prec}f} ' '{:{width}.{prec}f} {:{width}.{prec}f}\n'.format(
                         coordinate[0], coordinate[1], coordinate[2], weight, prec=self._prec, width=self._width
                     )
                 )
@@ -912,8 +911,6 @@ class Kpoints(BaseParser):
                             element[2],
                             element[3],
                             element[4],
-                            prec=self._prec,
-                            width=self._width
                         )
                     )
         if mode == 'automatic':
@@ -930,19 +927,22 @@ class Kpoints(BaseParser):
             if generating_vectors is not None:
                 for vec in generating_vectors:
                     file_handler.write(
-                        '{:{width}.{prec}f} {:{width}.{prec}f} '
-                        '{:{width}.{prec}f}\n'.format(vec[0], vec[1], vec[2], prec=self._prec, width=self._width)
+                        '{:{width}.{prec}f} {:{width}.{prec}f} ' '{:{width}.{prec}f}\n'.format(
+                            vec[0], vec[1], vec[2], prec=self._prec, width=self._width
+                        )
                     )
             shifts = entries['shifts']
             if shifts is not None:
                 file_handler.write(
-                    '{:{width}.{prec}f} {:{width}.{prec}f} '
-                    '{:{width}.{prec}f}\n'.format(shifts[0], shifts[1], shifts[2], prec=self._prec, width=self._width)
+                    '{:{width}.{prec}f} {:{width}.{prec}f} ' '{:{width}.{prec}f}\n'.format(
+                        shifts[0], shifts[1], shifts[2], prec=self._prec, width=self._width
+                    )
                 )
             else:
                 file_handler.write(
-                    '{:{width}.{prec}f} {:{width}.{prec}f} '
-                    '{:{width}.{prec}f}\n'.format(0.0, 0.0, 0.0, prec=self._prec, width=self._width)
+                    '{:{width}.{prec}f} {:{width}.{prec}f} ' '{:{width}.{prec}f}\n'.format(
+                        0.0, 0.0, 0.0, prec=self._prec, width=self._width
+                    )
                 )
 
         if mode == 'line':
@@ -954,8 +954,7 @@ class Kpoints(BaseParser):
             for _, point in enumerate(entries['points']):
                 coordinate = point.get_point()
                 file_handler.write(
-                    '{:{width}.{prec}f} {:{width}.{prec}f} '
-                    '{:{width}.{prec}f}\n'.format(
+                    '{:{width}.{prec}f} {:{width}.{prec}f} ' '{:{width}.{prec}f}\n'.format(
                         coordinate[0], coordinate[1], coordinate[2], prec=self._prec, width=self._width
                     )
                 )

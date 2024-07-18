@@ -22,50 +22,17 @@ class Potcar(BaseParser):
     """Class to handle the POTCAR"""
 
     _functional_tags = {
-        'pe': {
-            'name': 'PBE',
-            'class': 'GGA'
-        },
-        '91': {
-            'name': 'PW91',
-            'class': 'GGA'
-        },
-        'rp': {
-            'name': 'revPBE',
-            'class': 'GGA'
-        },
-        'am': {
-            'name': 'AM05',
-            'class': 'GGA'
-        },
-        'ps': {
-            'name': 'PBEsol',
-            'class': 'GGA'
-        },
-        'pw': {
-            'name': 'PW86',
-            'class': 'GGA'
-        },
-        'lm': {
-            'name': 'Langreth-Mehl-Hu',
-            'class': 'GGA'
-        },
-        'pb': {
-            'name': 'Perdew-Becke',
-            'class': 'GGA'
-        },
-        'ca': {
-            'name': 'Perdew-Zunger81',
-            'class': 'LDA'
-        },
-        'hl': {
-            'name': 'Hedin-Lundquist',
-            'class': 'LDA'
-        },
-        'wi': {
-            'name': 'Wigner Interpoloation',
-            'class': 'LDA'
-        },
+        'pe': {'name': 'PBE', 'class': 'GGA'},
+        '91': {'name': 'PW91', 'class': 'GGA'},
+        'rp': {'name': 'revPBE', 'class': 'GGA'},
+        'am': {'name': 'AM05', 'class': 'GGA'},
+        'ps': {'name': 'PBEsol', 'class': 'GGA'},
+        'pw': {'name': 'PW86', 'class': 'GGA'},
+        'lm': {'name': 'Langreth-Mehl-Hu', 'class': 'GGA'},
+        'pb': {'name': 'Perdew-Becke', 'class': 'GGA'},
+        'ca': {'name': 'Perdew-Zunger81', 'class': 'LDA'},
+        'hl': {'name': 'Hedin-Lundquist', 'class': 'LDA'},
+        'wi': {'name': 'Wigner Interpoloation', 'class': 'LDA'},
     }
 
     def __init__(self, file_path=None, file_handler=None, logger=None):
@@ -131,8 +98,7 @@ class Potcar(BaseParser):
             'STEP': lambda val: [float(y) for y in re.split(r'\s+', val.strip()) if not y.isalpha()],
         }
         search_lines = re.search(
-            r'(?s)(parameters from PSCTR are:'
-            r'.*?END of PSCTR-controll parameters)',
+            r'(?s)(parameters from PSCTR are:' r'.*?END of PSCTR-controll parameters)',
             potcar_contents,
         ).group(1)
 

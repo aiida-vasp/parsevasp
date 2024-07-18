@@ -1,4 +1,5 @@
 """Handle DOSCAR."""
+
 import sys
 
 import numpy as np
@@ -15,49 +16,123 @@ DTYPES_DOS = {
 # Map from the number of columns in DOSCAR to dtype for the partial density of states.
 DTYPES_PDOS_COLLINEAR = {
     # l-decomposed
-    4:
-    np.dtype([('energy', float), ('s', float), ('p', float), ('d', float)]),
-    7:
-    np.dtype([('energy', float), ('s', float, (2,)), ('p', float, (2,)), ('d', float, (2,))]),
-    5:
-    np.dtype([('energy', float), ('s', float), ('p', float), ('d', float), ('f', float)]),
-    9:
-    np.dtype([('energy', float), ('s', float, (2,)), ('p', float, (2,)), ('d', float, (2,)), ('f', float, (2,))]),
+    4: np.dtype([('energy', float), ('s', float), ('p', float), ('d', float)]),
+    7: np.dtype([('energy', float), ('s', float, (2,)), ('p', float, (2,)), ('d', float, (2,))]),
+    5: np.dtype([('energy', float), ('s', float), ('p', float), ('d', float), ('f', float)]),
+    9: np.dtype([('energy', float), ('s', float, (2,)), ('p', float, (2,)), ('d', float, (2,)), ('f', float, (2,))]),
     # lm-decomposed
-    10:
-    np.dtype([('energy', float), ('s', float), ('py', float), ('px', float), ('pz', float), ('dxy', float),
-              ('dyz', float), ('dz2', float), ('dxz', float), ('dx2-y2', float)]),
-    17:
-    np.dtype([('energy', float), ('s', float), ('py', float), ('px', float), ('pz', float), ('dxy', float),
-              ('dyz', float), ('dz2', float), ('dxz', float), ('dx2-y2', float), ('fy(3x2-y2)', float), ('fxyz', float),
-              ('fyz2', float), ('fz3', float), ('fxz2', float), ('fz(x2-y2)', float), ('fx(x2-3y2)', float)]),
-    19:
-    np.dtype([('energy', float), ('s', float, (2,)), ('py', float, (2,)), ('px', float, (2,)), ('pz', float, (2,)),
-              ('dxy', float, (2,)), ('dyz', float, (2,)), ('dz2', float, (2,)), ('dxz', float, (2,)),
-              ('dx2-y2', float, (2,))]),
-    33:
-    np.dtype([('energy', float), ('s', float, (2,)), ('py', float, (2,)), ('px', float, (2,)), ('pz', float, (2,)),
-              ('dxy', float, (2,)), ('dyz', float, (2,)), ('dz2', float, (2,)), ('dxz', float, (2,)),
-              ('dx2-y2', float, (2,)), ('fy(3x2-y2)', float, (2,)), ('fxyz', float, (2,)), ('fyz2', float, (2,)),
-              ('fz3', float, (2,)), ('fxz2', float, (2,)), ('fz(x2-y2)', float, (2,)), ('fx(x2-3y2)', float, (2,))]),
+    10: np.dtype(
+        [
+            ('energy', float),
+            ('s', float),
+            ('py', float),
+            ('px', float),
+            ('pz', float),
+            ('dxy', float),
+            ('dyz', float),
+            ('dz2', float),
+            ('dxz', float),
+            ('dx2-y2', float),
+        ]
+    ),
+    17: np.dtype(
+        [
+            ('energy', float),
+            ('s', float),
+            ('py', float),
+            ('px', float),
+            ('pz', float),
+            ('dxy', float),
+            ('dyz', float),
+            ('dz2', float),
+            ('dxz', float),
+            ('dx2-y2', float),
+            ('fy(3x2-y2)', float),
+            ('fxyz', float),
+            ('fyz2', float),
+            ('fz3', float),
+            ('fxz2', float),
+            ('fz(x2-y2)', float),
+            ('fx(x2-3y2)', float),
+        ]
+    ),
+    19: np.dtype(
+        [
+            ('energy', float),
+            ('s', float, (2,)),
+            ('py', float, (2,)),
+            ('px', float, (2,)),
+            ('pz', float, (2,)),
+            ('dxy', float, (2,)),
+            ('dyz', float, (2,)),
+            ('dz2', float, (2,)),
+            ('dxz', float, (2,)),
+            ('dx2-y2', float, (2,)),
+        ]
+    ),
+    33: np.dtype(
+        [
+            ('energy', float),
+            ('s', float, (2,)),
+            ('py', float, (2,)),
+            ('px', float, (2,)),
+            ('pz', float, (2,)),
+            ('dxy', float, (2,)),
+            ('dyz', float, (2,)),
+            ('dz2', float, (2,)),
+            ('dxz', float, (2,)),
+            ('dx2-y2', float, (2,)),
+            ('fy(3x2-y2)', float, (2,)),
+            ('fxyz', float, (2,)),
+            ('fyz2', float, (2,)),
+            ('fz3', float, (2,)),
+            ('fxz2', float, (2,)),
+            ('fz(x2-y2)', float, (2,)),
+            ('fx(x2-3y2)', float, (2,)),
+        ]
+    ),
 }
 
 DTYPES_PDOS_NONCOLLINEAR = {
     # l-decomposed
-    13:
-    np.dtype([('energy', float), ('s', float, (4,)), ('p', float, (4,)), ('d', float, (4,))]),
-    17:
-    np.dtype([('energy', float), ('s', float, (4,)), ('p', float, (4,)), ('d', float, (4,)), ('f', float, (4,))]),
+    13: np.dtype([('energy', float), ('s', float, (4,)), ('p', float, (4,)), ('d', float, (4,))]),
+    17: np.dtype([('energy', float), ('s', float, (4,)), ('p', float, (4,)), ('d', float, (4,)), ('f', float, (4,))]),
     # lm-decomposed
-    37:
-    np.dtype([('energy', float), ('s', float, (4,)), ('py', float, (4,)), ('px', float, (4,)), ('pz', float, (4,)),
-              ('dxy', float, (4,)), ('dyz', float, (4,)), ('dz2', float, (4,)), ('dxz', float, (4,)),
-              ('x2-y2', float, (4,))]),
-    65:
-    np.dtype([('energy', float), ('s', float, (4,)), ('py', float, (4,)), ('px', float, (4,)), ('pz', float, (4,)),
-              ('dxy', float, (4,)), ('dyz', float, (4,)), ('dz2', float, (4,)), ('dxz', float, (4,)),
-              ('dx2-y2', float, (4,)), ('fy(3x2-y2)', float, (4,)), ('fxyz', float, (4,)), ('fyz2', float, (4,)),
-              ('fz3', float, (4,)), ('fxz2', float, (4,)), ('fz(x2-y2)', float, (4,)), ('fx(x2-3y2)', float, (4,))]),
+    37: np.dtype(
+        [
+            ('energy', float),
+            ('s', float, (4,)),
+            ('py', float, (4,)),
+            ('px', float, (4,)),
+            ('pz', float, (4,)),
+            ('dxy', float, (4,)),
+            ('dyz', float, (4,)),
+            ('dz2', float, (4,)),
+            ('dxz', float, (4,)),
+            ('x2-y2', float, (4,)),
+        ]
+    ),
+    65: np.dtype(
+        [
+            ('energy', float),
+            ('s', float, (4,)),
+            ('py', float, (4,)),
+            ('px', float, (4,)),
+            ('pz', float, (4,)),
+            ('dxy', float, (4,)),
+            ('dyz', float, (4,)),
+            ('dz2', float, (4,)),
+            ('dxz', float, (4,)),
+            ('dx2-y2', float, (4,)),
+            ('fy(3x2-y2)', float, (4,)),
+            ('fxyz', float, (4,)),
+            ('fyz2', float, (4,)),
+            ('fz3', float, (4,)),
+            ('fxz2', float, (4,)),
+            ('fz(x2-y2)', float, (4,)),
+            ('fx(x2-3y2)', float, (4,)),
+        ]
+    ),
 }
 
 # Mapping between the number of columns to the number of spins.
@@ -210,9 +285,9 @@ class Doscar(BaseParser):
         dos['energy'] = dos_data[:, 0]
         for i, name in enumerate(DTYPES_DOS[count].names[1:]):
             if num_spin == 1:
-                dos[name] = np.squeeze(dos_data[:, i + 1:i + 1 + num_spin], axis=1)
+                dos[name] = np.squeeze(dos_data[:, i + 1 : i + 1 + num_spin], axis=1)
             else:
-                dos[name] = dos_data[:, i + 1:i + 1 + num_spin]
+                dos[name] = dos_data[:, i + 1 : i + 1 + num_spin]
 
         # Partial density of states
         pdos_items = []
@@ -220,8 +295,8 @@ class Doscar(BaseParser):
         if line_2 in data:
             start = data.index(line_2) + 1
             for _ in range(num_ions):
-                pdos_items += [data[start:start + ndos]]
-                start += (ndos + 1)
+                pdos_items += [data[start : start + ndos]]
+                start += ndos + 1
 
             # Get the number of columns for the pdos section.
             count = len(pdos_items[-1][-1])
@@ -235,9 +310,9 @@ class Doscar(BaseParser):
             pdos['energy'] = pdos_data[:, :, 0]
             for i, name in enumerate(dtype_pdos.names[1:]):
                 if num_spin == 1:  # Only squeeze if there is only one spin component
-                    pdos[name] = np.squeeze(pdos_data[:, :, i + 1:i + 1 + num_spin], axis=2)
+                    pdos[name] = np.squeeze(pdos_data[:, :, i + 1 : i + 1 + num_spin], axis=2)
                 else:
-                    pdos[name] = pdos_data[:, :, i + 1:i + 1 + num_spin]
+                    pdos[name] = pdos_data[:, :, i + 1 : i + 1 + num_spin]
 
         metadata = {}
         metadata['n_ions'] = num_ions

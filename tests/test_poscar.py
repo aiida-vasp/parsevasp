@@ -1,4 +1,5 @@
 """Test poscar."""
+
 import os
 
 import numpy as np
@@ -9,9 +10,7 @@ from parsevasp.poscar import Poscar, Site
 
 @pytest.fixture(scope='module')
 def poscar_parser(request):
-    """Load POSCAR file.
-
-    """
+    """Load POSCAR file."""
 
     testdir = os.path.dirname(__file__)
     poscarfile = testdir + '/POSCAR'
@@ -22,9 +21,7 @@ def poscar_parser(request):
 
 @pytest.fixture(scope='module')
 def poscar_parser_file_object():
-    """Load POSCAR file using a file object.
-
-    """
+    """Load POSCAR file using a file object."""
 
     testdir = os.path.dirname(__file__)
     poscarfile = testdir + '/POSCAR'
@@ -37,9 +34,7 @@ def poscar_parser_file_object():
 
 @pytest.fixture(scope='module')
 def poscar_parser_names():
-    """Load POSCAR file.
-
-    """
+    """Load POSCAR file."""
 
     testdir = os.path.dirname(__file__)
     poscarfile = testdir + '/POSCARNAMES'
@@ -50,9 +45,7 @@ def poscar_parser_names():
 
 @pytest.fixture(scope='module')
 def poscar_parser_vel():
-    """Load POSCAR file.
-
-    """
+    """Load POSCAR file."""
 
     testdir = os.path.dirname(__file__)
     poscarfile = testdir + '/POSCARVEL'
@@ -70,9 +63,7 @@ def test_poscar_log(poscar_parser):
 
 @pytest.mark.parametrize('poscar_parser', [(True,)], indirect=True)
 def test_poscar_exist(poscar_parser):
-    """Check if poscar_parser exists.
-
-    """
+    """Check if poscar_parser exists."""
 
     assert poscar_parser.get_dict()
 
@@ -95,16 +86,16 @@ def test_poscar_write(tmp_path, poscar_parser):
     compare_poscars(poscar, poscar_reloaded)
 
 
-@pytest.mark.parametrize('poscar_parser', [(False,)], indirect=True)
+@pytest.mark.parametrize('poscar_parser', [False], indirect=True)
 def test_poscar_cartesian(tmp_path, poscar_parser):
     """Test that the POSCAR writes and reads positional cartesian coordinates correctly."""
     poscar = poscar_parser.get_dict()
     # Write it
     poscar_write_path = tmp_path / 'POSCAR'
     poscar_parser.write(file_path=poscar_write_path)
-    poscar_cartesian = None
     with open(poscar_write_path) as file_object:
         poscar_cartesian = file_object.readlines()
+
     assert poscar_cartesian[7] == 'Cartesian\n'
     assert poscar_cartesian[8] == '  2.254110000000   2.254110000000   2.254110000000\n'
     assert poscar_cartesian[9] == '  6.762340000000   6.762340000000   6.762340000000\n'
@@ -146,7 +137,9 @@ def test_poscar_scaling(tmp_path, poscar_parser):
         file_object.write('\n'.join(poscar_lines))
     # Read it using a new Poscar instance
     poscar_scaled_direct = Poscar(file_path=poscar_write_path).get_dict()
-    unitcell_test = np.array([[9.0164589999999993, 0., 0.], [0., 9.0164589999999993, 0.], [0., 0., 9.0164589999999993]])
+    unitcell_test = np.array(
+        [[9.0164589999999993, 0.0, 0.0], [0.0, 9.0164589999999993, 0.0], [0.0, 0.0, 9.0164589999999993]]
+    )
     position_test = np.array([0.24999947, 0.24999947, 0.24999947])
     assert np.allclose(poscar_scaled_direct['sites'][0]['position'], position_test)
     assert np.allclose(poscar_scaled_direct['unitcell'], unitcell_test)
@@ -160,17 +153,20 @@ def test_poscar_scaling(tmp_path, poscar_parser):
     poscar_cart_unscaled[1] = str(scaling) + '\n'
     # Scale unitcell
     for i in range(2, 5):
-        poscar_cart_unscaled[i] = ' '.join([str(float(item) / scaling) for item in poscar_cart_unscaled[i].split()]
-                                           ) + '\n'
+        poscar_cart_unscaled[i] = (
+            ' '.join([str(float(item) / scaling) for item in poscar_cart_unscaled[i].split()]) + '\n'
+        )
     # Scale positions
     for i in range(8, 40):
-        poscar_cart_unscaled[i] = ' '.join([str(float(item) / scaling) for item in poscar_cart_unscaled[i].split()]
-                                           ) + '\n'
+        poscar_cart_unscaled[i] = (
+            ' '.join([str(float(item) / scaling) for item in poscar_cart_unscaled[i].split()]) + '\n'
+        )
     # Write file
     with open(poscar_write_path, 'w') as file_object:
         file_object.writelines(poscar_cart_unscaled)
-    poscar_cart_scaled = Poscar(file_path=poscar_write_path).get_dict()
-    unitcell_test = np.array([[9.0164589999999993, 0., 0.], [0., 9.0164589999999993, 0.], [0., 0., 9.0164589999999993]])
+    unitcell_test = np.array(
+        [[9.0164589999999993, 0.0, 0.0], [0.0, 9.0164589999999993, 0.0], [0.0, 0.0, 9.0164589999999993]]
+    )
     position_test = np.array([0.24999947, 0.24999947, 0.24999947])
     assert np.allclose(poscar_scaled_direct['sites'][0]['position'], position_test)
     assert np.allclose(poscar_scaled_direct['unitcell'], unitcell_test)
@@ -190,30 +186,28 @@ def test_poscar_entries(poscar_parser_names):
         'selective': [True, True, True],
         'velocities': None,
         'predictors': None,
-        'direct': True
+        'direct': True,
     }
     assert sites[0]['specie'] == test['specie']
     test = {
         'specie': 'Pizza',
-        'position': np.array([0., 0.33510051, 0.15804985]),
+        'position': np.array([0.0, 0.33510051, 0.15804985]),
         'selective': [True, True, True],
         'velocities': None,
         'predictors': None,
-        'direct': True
+        'direct': True,
     }
     assert sites[8]['specie'] == test['specie']
 
 
 @pytest.mark.parametrize('poscar_parser', [(True,)], indirect=True)
-def test_poscar_entries(poscar_parser):
-    """Check POSCAR entries.
-
-    """
+def test_poscar_entries_dict(poscar_parser):
+    """Check POSCAR entries."""
 
     poscar = poscar_parser.get_dict()
     assert poscar['comment'] == 'Compound: Co7Sb24.'
     unitcell = poscar['unitcell']
-    test = np.array([[9.0164589999999993, 0., 0.], [0., 9.0164589999999993, 0.], [0., 0., 9.0164589999999993]])
+    test = np.array([[9.0164589999999993, 0.0, 0.0], [0.0, 9.0164589999999993, 0.0], [0.0, 0.0, 9.0164589999999993]])
     np.testing.assert_allclose(unitcell, test)
     sites = poscar['sites']
     assert len(sites) == 32
@@ -223,12 +217,12 @@ def test_poscar_entries(poscar_parser):
         'selective': [True, True, True],
         'velocities': None,
         'predictors': None,
-        'direct': True
+        'direct': True,
     }
     np.testing.assert_allclose(sites[0]['position'], test['position'])
     assert sites[0]['specie'] == test['specie']
     assert sites[0]['selective'] == [True, True, True]
-    assert sites[0]['velocities'] == None
+    assert sites[0]['velocities'] is None
     np.testing.assert_allclose(sites[0]['predictors'], np.array([0.0, 0.0, 0.0]))
     assert sites[0]['direct']
     test = {
@@ -237,39 +231,37 @@ def test_poscar_entries(poscar_parser):
         'selective': [True, True, True],
         'velocties': None,
         'predictors': None,
-        'direct': True
+        'direct': True,
     }
     np.testing.assert_allclose(sites[7]['position'], test['position'])
     assert sites[7]['specie'] == test['specie']
     assert sites[7]['selective'] == [True, True, True]
-    assert sites[7]['velocities'] == None
+    assert sites[7]['velocities'] is None
     np.testing.assert_allclose(sites[7]['predictors'], np.array([8.0, 0.0, 0.0]))
     assert sites[7]['direct']
     test = {
         'specie': 'Sb',
-        'position': np.array([0., 0.33510051, 0.15804985]),
+        'position': np.array([0.0, 0.33510051, 0.15804985]),
         'selective': [True, True, True],
         'velocities': None,
         'predictors': None,
-        'direct': True
+        'direct': True,
     }
     np.testing.assert_allclose(sites[8]['position'], test['position'])
     assert sites[8]['specie'] == test['specie']
     assert sites[8]['selective'] == [True, True, True]
-    assert sites[8]['velocities'] == None
+    assert sites[8]['velocities'] is None
     np.testing.assert_allclose(sites[8]['predictors'], np.array([0.0, 9.0, 0.0]))
     assert sites[8]['direct']
 
 
 def test_poscar_entries_file_object(poscar_parser_file_object):
-    """Check POSCAR entries.
-
-    """
+    """Check POSCAR entries."""
 
     poscar = poscar_parser_file_object.get_dict()
     assert poscar['comment'] == 'Compound: Co7Sb24.'
     unitcell = poscar['unitcell']
-    test = np.array([[9.0164589999999993, 0., 0.], [0., 9.0164589999999993, 0.], [0., 0., 9.0164589999999993]])
+    test = np.array([[9.0164589999999993, 0.0, 0.0], [0.0, 9.0164589999999993, 0.0], [0.0, 0.0, 9.0164589999999993]])
     np.testing.assert_allclose(unitcell, test)
     sites = poscar['sites']
     assert len(sites) == 32
@@ -279,12 +271,12 @@ def test_poscar_entries_file_object(poscar_parser_file_object):
         'selective': [True, True, True],
         'velocities': None,
         'predictors': None,
-        'direct': True
+        'direct': True,
     }
     np.testing.assert_allclose(sites[0]['position'], test['position'])
     assert sites[0]['specie'] == test['specie']
     assert sites[0]['selective'] == [True, True, True]
-    assert sites[0]['velocities'] == None
+    assert sites[0]['velocities'] is None
     np.testing.assert_allclose(sites[0]['predictors'], np.array([0.0, 0.0, 0.0]))
     assert sites[0]['direct']
     test = {
@@ -293,39 +285,37 @@ def test_poscar_entries_file_object(poscar_parser_file_object):
         'selective': [True, True, True],
         'velocties': None,
         'predictors': None,
-        'direct': True
+        'direct': True,
     }
     np.testing.assert_allclose(sites[7]['position'], test['position'])
     assert sites[7]['specie'] == test['specie']
     assert sites[7]['selective'] == [True, True, True]
-    assert sites[7]['velocities'] == None
+    assert sites[7]['velocities'] is None
     np.testing.assert_allclose(sites[7]['predictors'], np.array([8.0, 0.0, 0.0]))
     assert sites[7]['direct']
     test = {
         'specie': 'Sb',
-        'position': np.array([0., 0.33510051, 0.15804985]),
+        'position': np.array([0.0, 0.33510051, 0.15804985]),
         'selective': [True, True, True],
         'velocities': None,
         'predictors': None,
-        'direct': True
+        'direct': True,
     }
     np.testing.assert_allclose(sites[8]['position'], test['position'])
     assert sites[8]['specie'] == test['specie']
     assert sites[8]['selective'] == [True, True, True]
-    assert sites[8]['velocities'] == None
+    assert sites[8]['velocities'] is None
     np.testing.assert_allclose(sites[8]['predictors'], np.array([0.0, 9.0, 0.0]))
     assert sites[8]['direct']
 
 
 def test_poscar_entries_vel(poscar_parser_vel):
-    """Check POSCAR entries including velocities.
-
-    """
+    """Check POSCAR entries including velocities."""
 
     poscar = poscar_parser_vel.get_dict()
     assert poscar['comment'] == 'Compound: Co7Sb24.'
     unitcell = poscar['unitcell']
-    test = np.array([[9.0164589999999993, 0., 0.], [0., 9.0164589999999993, 0.], [0., 0., 9.0164589999999993]])
+    test = np.array([[9.0164589999999993, 0.0, 0.0], [0.0, 9.0164589999999993, 0.0], [0.0, 0.0, 9.0164589999999993]])
     np.testing.assert_allclose(unitcell, test)
     sites = poscar['sites']
     assert len(sites) == 32
@@ -335,7 +325,7 @@ def test_poscar_entries_vel(poscar_parser_vel):
         'selective': [True, True, True],
         'velocities': None,
         'predictors': None,
-        'direct': True
+        'direct': True,
     }
     np.testing.assert_allclose(sites[0]['position'], test['position'])
     assert sites[0]['specie'] == test['specie']
@@ -349,7 +339,7 @@ def test_poscar_entries_vel(poscar_parser_vel):
         'selective': [True, True, True],
         'velocities': None,
         'predictors': None,
-        'direct': True
+        'direct': True,
     }
     np.testing.assert_allclose(sites[7]['position'], test['position'])
     assert sites[7]['specie'] == test['specie']
@@ -359,11 +349,11 @@ def test_poscar_entries_vel(poscar_parser_vel):
     assert sites[7]['direct']
     test = {
         'specie': 'Sb',
-        'position': np.array([0., 0.33510051, 0.15804985]),
+        'position': np.array([0.0, 0.33510051, 0.15804985]),
         'selective': [True, True, True],
         'velocties': None,
         'predictors': None,
-        'direct': True
+        'direct': True,
     }
     np.testing.assert_allclose(sites[8]['position'], test['position'])
     assert sites[8]['specie'] == test['specie']
@@ -373,12 +363,12 @@ def test_poscar_entries_vel(poscar_parser_vel):
     assert sites[8]['direct']
 
 
-def test_poscar_entries_dict():
-    """Test to check inititialization using dict.
+def test_poscar_entries_init():
+    """Test to check inititialization using dict."""
 
-    """
-
-    unitcell = np.array([[9.0164589999999993, 0., 0.], [0., 9.0164589999999993, 0.], [0., 0., 9.0164589999999993]])
+    unitcell = np.array(
+        [[9.0164589999999993, 0.0, 0.0], [0.0, 9.0164589999999993, 0.0], [0.0, 0.0, 9.0164589999999993]]
+    )
     sites = []
     sites.append(Site('Co', np.array([0.0, 0.0, 0.0]), [True, True, True], None, None, True))
     poscar_dict = {'comment': 'Example file', 'unitcell': unitcell, 'sites': sites}
@@ -386,7 +376,7 @@ def test_poscar_entries_dict():
     poscar = poscar_parser.get_dict()
     assert poscar['comment'] == 'Example file'
     unitcell = poscar['unitcell']
-    test = np.array([[9.0164589999999993, 0., 0.], [0., 9.0164589999999993, 0.], [0., 0., 9.0164589999999993]])
+    test = np.array([[9.0164589999999993, 0.0, 0.0], [0.0, 9.0164589999999993, 0.0], [0.0, 0.0, 9.0164589999999993]])
     np.testing.assert_allclose(unitcell, test)
     sites = poscar['sites']
     assert len(sites) == 1
@@ -396,21 +386,19 @@ def test_poscar_entries_dict():
         'selective': [True, True, True],
         'velocities': None,
         'predictors': None,
-        'direct': True
+        'direct': True,
     }
     np.testing.assert_allclose(sites[0]['position'], test['position'])
     assert sites[0]['specie'] == test['specie']
     assert sites[0]['selective'] == [True, True, True]
-    assert sites[0]['velocities'] == None
-    assert sites[0]['predictors'] == None
+    assert sites[0]['velocities'] is None
+    assert sites[0]['predictors'] is None
     assert sites[0]['direct']
 
 
 @pytest.mark.parametrize('poscar_parser', [(True,)], indirect=True)
-def test_poscar_cartesian(poscar_parser):
-    """Check that get_dict can return cartesian coordinates.
-
-    """
+def test_poscar_cartesian_dict(poscar_parser):
+    """Check that get_dict can return cartesian coordinates."""
 
     poscar = poscar_parser.get_dict(direct=False)
     sites = poscar['sites']
@@ -420,7 +408,7 @@ def test_poscar_cartesian(poscar_parser):
         'selective': [True, True, True],
         'velocities': None,
         'predictors': None,
-        'direct': True
+        'direct': True,
     }
     np.testing.assert_allclose(sites[0]['position'], test['position'])
     test = {
@@ -429,16 +417,16 @@ def test_poscar_cartesian(poscar_parser):
         'selective': [True, True, True],
         'velocties': None,
         'predictors': None,
-        'direct': True
+        'direct': True,
     }
     np.testing.assert_allclose(sites[7]['position'], test['position'])
     test = {
         'specie': 'Sb',
-        'position': np.array([0., 3.02142, 1.42505]),
+        'position': np.array([0.0, 3.02142, 1.42505]),
         'selective': [True, True, True],
         'velocities': None,
         'predictors': None,
-        'direct': True
+        'direct': True,
     }
     np.testing.assert_allclose(sites[8]['position'], test['position'])
     assert not sites[8]['direct']

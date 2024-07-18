@@ -1,4 +1,5 @@
 """Test kpoints."""
+
 import math
 import os
 
@@ -10,9 +11,7 @@ from parsevasp.kpoints import Kpoint, Kpoints
 
 @pytest.fixture(scope='module')
 def kpoints_parser_auto():
-    """Load KPOINTS file.
-
-    """
+    """Load KPOINTS file."""
 
     testdir = os.path.dirname(__file__)
     kpointsfile = testdir + '/KPOINTS'
@@ -23,9 +22,7 @@ def kpoints_parser_auto():
 
 @pytest.fixture(scope='module')
 def kpoints_parser_auto_file_object():
-    """Load KPOINTS file.
-
-    """
+    """Load KPOINTS file."""
 
     testdir = os.path.dirname(__file__)
     kpointsfile = testdir + '/KPOINTS'
@@ -38,9 +35,7 @@ def kpoints_parser_auto_file_object():
 
 @pytest.fixture(scope='module')
 def kpoints_parser_explicit():
-    """Load KPOINTS file.
-
-    """
+    """Load KPOINTS file."""
 
     testdir = os.path.dirname(__file__)
     kpointsfile = testdir + '/KPOINTSEXP'
@@ -51,9 +46,7 @@ def kpoints_parser_explicit():
 
 @pytest.fixture(scope='module')
 def kpoints_parser_line():
-    """Load KPOINTS file.
-
-    """
+    """Load KPOINTS file."""
 
     testdir = os.path.dirname(__file__)
     kpointsfile = testdir + '/KPOINTSLINE'
@@ -64,9 +57,7 @@ def kpoints_parser_line():
 
 @pytest.fixture(scope='module')
 def kpoints_parser_GRG():
-    """Load KPOINTS file of generalized regular grid (Reciprocal).
-
-    """
+    """Load KPOINTS file of generalized regular grid (Reciprocal)."""
 
     testdir = os.path.dirname(__file__)
     kpointsfile = testdir + '/KPOINTSGRG'
@@ -76,58 +67,50 @@ def kpoints_parser_GRG():
 
 
 def test_kpoints_exist(kpoints_parser_auto):
-    """Check if kpoints_parser exists.
-
-    """
+    """Check if kpoints_parser exists."""
 
     assert kpoints_parser_auto.get_dict()
 
 
 def test_kpoints_params_auto(kpoints_parser_auto):
-    """Check parameters in KPOINTS for automatic generation.
-
-    """
+    """Check parameters in KPOINTS for automatic generation."""
 
     kpoints = kpoints_parser_auto.get_dict()
     assert kpoints['mode'] == 'automatic'
     assert kpoints['comment'] == 'Example file'
     assert kpoints['divisions'] == [4, 4, 4]
-    assert kpoints['shifts'] == None
-    assert kpoints['points'] == None
+    assert kpoints['shifts'] is None
+    assert kpoints['points'] is None
     assert kpoints['centering'] == 'Gamma'
-    assert kpoints['tetra'] == None
-    assert kpoints['tetra_volume'] == None
+    assert kpoints['tetra'] is None
+    assert kpoints['tetra_volume'] is None
     assert kpoints['num_kpoints'] == 0
 
 
 def test_kpoints_params_auto_file_object(kpoints_parser_auto_file_object):
-    """Check parameters in KPOINTS for automatic generation using a file object.
-
-    """
+    """Check parameters in KPOINTS for automatic generation using a file object."""
 
     kpoints = kpoints_parser_auto_file_object.get_dict()
     assert kpoints['mode'] == 'automatic'
     assert kpoints['comment'] == 'Example file'
     assert kpoints['divisions'] == [4, 4, 4]
-    assert kpoints['shifts'] == None
-    assert kpoints['points'] == None
+    assert kpoints['shifts'] is None
+    assert kpoints['points'] is None
     assert kpoints['centering'] == 'Gamma'
-    assert kpoints['tetra'] == None
-    assert kpoints['tetra_volume'] == None
+    assert kpoints['tetra'] is None
+    assert kpoints['tetra_volume'] is None
     assert kpoints['num_kpoints'] == 0
 
 
 def test_kpoints_params_explicit(kpoints_parser_explicit):
-    """Check parameters in KPOINTS for explicit generation.
-
-    """
+    """Check parameters in KPOINTS for explicit generation."""
 
     kpoints = kpoints_parser_explicit.get_dict()
     assert kpoints['mode'] == 'explicit'
     assert kpoints['comment'] == 'Example file'
-    assert kpoints['divisions'] == None
-    assert kpoints['shifts'] == None
-    assert kpoints['centering'] == None
+    assert kpoints['divisions'] is None
+    assert kpoints['shifts'] is None
+    assert kpoints['centering'] is None
     points = kpoints['points']
     assert len(points) == 4
     np.testing.assert_allclose(points[0][0], np.array([0.0, 0.0, 0.0]))
@@ -147,16 +130,14 @@ def test_kpoints_params_explicit(kpoints_parser_explicit):
 
 
 def test_kpoints_params_line(kpoints_parser_line):
-    """Check parameters in KPOINTS for line generation.
-
-    """
+    """Check parameters in KPOINTS for line generation."""
 
     kpoints = kpoints_parser_line.get_dict()
     assert kpoints['mode'] == 'line'
     assert kpoints['comment'] == 'k-points along high symmetry lines'
-    assert kpoints['divisions'] == None
-    assert kpoints['shifts'] == None
-    assert kpoints['centering'] == None
+    assert kpoints['divisions'] is None
+    assert kpoints['shifts'] is None
+    assert kpoints['centering'] is None
     assert kpoints['num_kpoints'] == 40
     points = kpoints['points']
     np.testing.assert_allclose(points[0][0], np.array([0.0, 0.0, 0.0]))
@@ -180,19 +161,17 @@ def test_kpoints_params_line(kpoints_parser_line):
 
 
 def test_kpoints_params_GRG(kpoints_parser_GRG):
-    """Check parameters in KPOINTS for generalized regular grid (Reciprocal)
-
-    """
+    """Check parameters in KPOINTS for generalized regular grid (Reciprocal)"""
 
     kpoints = kpoints_parser_GRG.get_dict()
     assert kpoints['mode'] == 'automatic'
     assert kpoints['comment'] == 'Example file'
     np.testing.assert_allclose(kpoints['generating_vectors'], [[0.25, 0.0, 0.0], [0.0, 0.25, 0.0], [0.0, 0.0, 0.25]])
     np.testing.assert_allclose(kpoints['shifts'], [0.5, 0.5, 0.5])
-    assert kpoints['points'] == None
+    assert kpoints['points'] is None
     assert kpoints['centering'] == 'Reciprocal'
-    assert kpoints['tetra'] == None
-    assert kpoints['tetra_volume'] == None
+    assert kpoints['tetra'] is None
+    assert kpoints['tetra_volume'] is None
     assert kpoints['num_kpoints'] == 0
 
 
@@ -203,7 +182,6 @@ def test_kpoints_write_auto(kpoints_parser_auto, tmpdir):
 
     """
 
-    kpoints = kpoints_parser_auto.get_dict()
     temp_file = str(tmpdir.join('KPOINTS'))
     kpoints_parser_auto.write(file_path=temp_file)
     kpoints_parser_auto_temp = Kpoints(file_path=temp_file)
@@ -218,20 +196,17 @@ def test_kpoints_write_auto(kpoints_parser_auto, tmpdir):
 
 
 def test_kpoints_write_explicit(kpoints_parser_explicit, tmpdir):
-    """Test read, write and read KPOINTS in explicit mode.
+    """Test read, write and read KPOINTS in explicit mode."""
 
-    """
-
-    kpoints = kpoints_parser_explicit.get_dict()
     temp_file = str(tmpdir.join('KPOINTSEXP'))
     kpoints_parser_explicit.write(file_path=temp_file)
     kpoints_parser_explicit_temp = Kpoints(file_path=temp_file)
     kpoints_temp = kpoints_parser_explicit_temp.get_dict()
     assert kpoints_temp['mode'] == 'explicit'
     assert kpoints_temp['comment'] == 'Example file'
-    assert kpoints_temp['divisions'] == None
-    assert kpoints_temp['shifts'] == None
-    assert kpoints_temp['centering'] == None
+    assert kpoints_temp['divisions'] is None
+    assert kpoints_temp['shifts'] is None
+    assert kpoints_temp['centering'] is None
     points = kpoints_temp['points']
     assert len(points) == 4
     np.testing.assert_allclose(points[0][0], np.array([0.0, 0.0, 0.0]))
@@ -251,20 +226,17 @@ def test_kpoints_write_explicit(kpoints_parser_explicit, tmpdir):
 
 
 def test_kpoints_write_line(kpoints_parser_line, tmpdir):
-    """Test read, write and read KPOINTS in line mode.
+    """Test read, write and read KPOINTS in line mode."""
 
-    """
-
-    kpoints = kpoints_parser_line.get_dict()
     temp_file = str(tmpdir.join('KPOINTSLINE'))
     kpoints_parser_line.write(file_path=temp_file)
     kpoints_parser_line_temp = Kpoints(file_path=temp_file)
     kpoints_temp = kpoints_parser_line_temp.get_dict()
     assert kpoints_temp['mode'] == 'line'
     assert kpoints_temp['comment'] == 'k-points along high symmetry lines'
-    assert kpoints_temp['divisions'] == None
-    assert kpoints_temp['shifts'] == None
-    assert kpoints_temp['centering'] == None
+    assert kpoints_temp['divisions'] is None
+    assert kpoints_temp['shifts'] is None
+    assert kpoints_temp['centering'] is None
     assert kpoints_temp['num_kpoints'] == 40
     points = kpoints_temp['points']
     np.testing.assert_allclose(points[0][0], np.array([0.0, 0.0, 0.0]))
@@ -288,9 +260,7 @@ def test_kpoints_write_line(kpoints_parser_line, tmpdir):
 
 
 def test_kpoints_modify_auto(kpoints_parser_auto, tmpdir):
-    """Test read, modify, write and read KPOINTS in auto mode.
-
-    """
+    """Test read, modify, write and read KPOINTS in auto mode."""
 
     kpoints = kpoints_parser_auto.get_dict()
     assert kpoints['comment'] == 'Example file'
@@ -306,9 +276,7 @@ def test_kpoints_modify_auto(kpoints_parser_auto, tmpdir):
 
 
 def test_kpoints_modify_explicit(kpoints_parser_explicit, tmpdir):
-    """Test read, modify, write and read KPOINTS in explicit mode.
-
-    """
+    """Test read, modify, write and read KPOINTS in explicit mode."""
 
     kpoints = kpoints_parser_explicit.get_dict()
     assert kpoints['comment'] == 'Example file'
@@ -351,9 +319,7 @@ def test_kpoints_modify_explicit(kpoints_parser_explicit, tmpdir):
 
 
 def test_kpoints_modify_line(kpoints_parser_line, tmpdir):
-    """Test read, modify, write and read KPOINTS in line mode.
-
-    """
+    """Test read, modify, write and read KPOINTS in line mode."""
 
     kpoints = kpoints_parser_line.get_dict()
     assert kpoints['comment'] == 'k-points along high symmetry lines'
@@ -388,29 +354,24 @@ def test_kpoints_modify_line(kpoints_parser_line, tmpdir):
 
 
 def test_kpoints_string(tmpdir):
-    """Test to initialize KPOINTS in auto mode using string.
-
-    """
+    """Test to initialize KPOINTS in auto mode using string."""
 
     kpoints_str = '# Example file\n0\nG\n4 4 4\n'
-    temp_file = str(tmpdir.join('KPOINTS'))
     kpoints_parser_auto_temp = Kpoints(kpoints_string=kpoints_str)
     kpoints_temp = kpoints_parser_auto_temp.get_dict()
     assert kpoints_temp['mode'] == 'automatic'
     assert kpoints_temp['comment'] == 'Example file'
     assert kpoints_temp['divisions'] == [4, 4, 4]
-    assert kpoints_temp['shifts'] == None
-    assert kpoints_temp['points'] == None
+    assert kpoints_temp['shifts'] is None
+    assert kpoints_temp['points'] is None
     assert kpoints_temp['centering'] == 'Gamma'
-    assert kpoints_temp['tetra'] == None
-    assert kpoints_temp['tetra_volume'] == None
+    assert kpoints_temp['tetra'] is None
+    assert kpoints_temp['tetra_volume'] is None
     assert kpoints_temp['num_kpoints'] == 0
 
 
 def test_kpoints_dict(tmpdir):
-    """Test to initialize KPOINTS in auto mode using dictionary.
-
-    """
+    """Test to initialize KPOINTS in auto mode using dictionary."""
 
     kpoints_dict = {
         'comment': 'Example file',
@@ -422,19 +383,18 @@ def test_kpoints_dict(tmpdir):
         'tetra': None,
         'tetra_volume': None,
         'num_kpoints': 0,
-        'generating_vectors': None
+        'generating_vectors': None,
     }
-    temp_file = str(tmpdir.join('KPOINTS'))
     kpoints_parser_auto_temp = Kpoints(kpoints_dict=kpoints_dict)
     kpoints_temp = kpoints_parser_auto_temp.get_dict()
     assert kpoints_temp['mode'] == 'automatic'
     assert kpoints_temp['comment'] == 'Example file'
     assert kpoints_temp['divisions'] == [5, 5, 5]
-    assert kpoints_temp['shifts'] == None
-    assert kpoints_temp['points'] == None
+    assert kpoints_temp['shifts'] is None
+    assert kpoints_temp['points'] is None
     assert kpoints_temp['centering'] == 'Gamma'
-    assert kpoints_temp['tetra'] == None
-    assert kpoints_temp['tetra_volume'] == None
+    assert kpoints_temp['tetra'] is None
+    assert kpoints_temp['tetra_volume'] is None
     assert kpoints_temp['num_kpoints'] == 0
 
 
@@ -444,8 +404,8 @@ def verify_kpoints_content(kpoints):
     assert kpoints['comment'] == 'Example file'
     assert kpoints['divisions'] == [4, 4, 4]
     assert kpoints['shifts'] == [0.0, 0.0, 0.0]
-    assert kpoints['points'] == None
+    assert kpoints['points'] is None
     assert kpoints['centering'] == 'Gamma'
-    assert kpoints['tetra'] == None
-    assert kpoints['tetra_volume'] == None
+    assert kpoints['tetra'] is None
+    assert kpoints['tetra_volume'] is None
     assert kpoints['num_kpoints'] == 0

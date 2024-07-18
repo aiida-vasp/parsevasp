@@ -1,4 +1,5 @@
 """Test eigenval."""
+
 import os
 
 import numpy as np
@@ -6,9 +7,9 @@ import pytest
 
 from parsevasp.eigenval import Eigenval
 
-compare_eigenvalues = np.array([[[
-    -1.439825, 2.964373, 2.964373, 2.964373, 7.254542, 7.254542, 7.254542, 11.451811, 11.670398, 11.670398
-]]])
+compare_eigenvalues = np.array(
+    [[[-1.439825, 2.964373, 2.964373, 2.964373, 7.254542, 7.254542, 7.254542, 11.451811, 11.670398, 11.670398]]]
+)
 compare_kpoints = np.array([[0.25, 0.25, 0.25, 1.0]])
 compare_metadata = {
     0: [4, 4, 1, 1],
@@ -22,7 +23,7 @@ compare_metadata = {
     'name': 'unknown system',
     'some_num': 12,
     'n_bands': 10,
-    'n_kp': 1
+    'n_kp': 1,
 }
 
 
