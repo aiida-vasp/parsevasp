@@ -1,6 +1,5 @@
 """Handle POSCAR."""
 
-# pylint: disable=C0302, consider-using-f-string
 import io
 import sys
 from collections import Counter
@@ -83,7 +82,6 @@ class Poscar(BaseParser):
         self._conserve_order = conserve_order
 
         # Check that only one argument is supplied
-        # pylint: disable=R0916
         if (
             (self._poscar_string is not None and self._poscar_dict is not None)
             or (self._poscar_string is not None and self._file_path is not None)
@@ -179,7 +177,7 @@ class Poscar(BaseParser):
                     site.set_velocities(velocities)
                 site.set_direct(True)
 
-    def _from_list(self, poscar):  # pylint: disable=R0915
+    def _from_list(self, poscar):
         """
         Go through the list and analyze for = and ; in order to
         disentangle grouped entries etc.
@@ -830,7 +828,7 @@ class Poscar(BaseParser):
 
         return poscar_string
 
-    def _write(self, file_handler, **kwargs):  # pylint: disable=R0915
+    def _write(self, file_handler, **kwargs):
         """
         Write POSCAR like files to a file or string
 

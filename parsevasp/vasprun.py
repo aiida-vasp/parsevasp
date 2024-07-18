@@ -1,6 +1,5 @@
 """Handle vasprun.xml."""
 
-# pylint: disable=C0302
 import copy
 import logging
 import os
@@ -37,7 +36,7 @@ _SUPPORTED_TOTAL_ENERGIES = {
 }
 
 
-class Xml(BaseParser):  #  pylint: disable=R0902, R0904
+class Xml(BaseParser):
     """Class to handle vasprun.xml."""
 
     ERROR_MULTIPLE_ENTRIES = 500
@@ -253,7 +252,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
         self._data['dynmat'] = self._fetch_dynmatw(vaspxml)
         self._data['born'] = self._fetch_bornw(vaspxml)
 
-    def _parsee(self):  # pylint: disable=R0915
+    def _parsee(self):
         """
         Performs parsing in an event driven fashion on the XML file.
         Slower, but suitable for bigger files.
@@ -340,7 +339,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         # Index that control the calculation step (e.g. ionic step)
         calc = 1
-        for event, element in etree.iterparse(filer, events=('start', 'end')):  # pylint: disable=R1702
+        for event, element in etree.iterparse(filer, events=('start', 'end')):
             # Set extraction points (what to read and when to read it)
             # here we also set the relevant data elements when the tags
             # close when they contain more than one element
@@ -1372,7 +1371,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         return born
 
-    def _fetch_upfsw(self, xml, extract_all=False):  # pylint: disable=R0915
+    def _fetch_upfsw(self, xml, extract_all=False):
         """
         Fetch the unitcell, atomic positions, force and stress using etree.
 
@@ -2594,7 +2593,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         return data
 
-    def _convert_array1D_i(self, entry):  # pylint: disable=C0103
+    def _convert_array1D_i(self, entry):
         """
         Convert the input entry to numpy array.
 
@@ -2625,7 +2624,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         return data
 
-    def _convert_array1D_f(self, entry):  # pylint: disable=C0103
+    def _convert_array1D_f(self, entry):
         """
         Convert the input entry to numpy array.
 
@@ -3124,7 +3123,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         # Check if the supplied etype is in the support list
         for item in etype:
-            if item not in _SUPPORTED_TOTAL_ENERGIES.keys():  # pylint: disable=consider-iterating-dictionary
+            if item not in _SUPPORTED_TOTAL_ENERGIES.keys():
                 raise ValueError(f'The supplied total energy type: {item} is not supported.')
 
         return self._get_energies(status, etype, nosc)

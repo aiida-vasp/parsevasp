@@ -16,7 +16,7 @@ from parsevasp import utils
 from parsevasp.base import BaseParser
 
 
-class Stream(BaseParser):  # pylint: disable=R0902
+class Stream(BaseParser):
     """Class to handle standard stream."""
 
     def __init__(self, file_path=None, file_handler=None, logger=None, history=False, config=None):
@@ -139,7 +139,7 @@ class Stream(BaseParser):  # pylint: disable=R0902
         for _, value in self._stream_config.items():
             kind = value['kind']
             if isinstance(kind, str):
-                if kind.upper() in VaspStream._ALLOWED_STREAMS:  # pylint: disable=W0212
+                if kind.upper() in VaspStream._ALLOWED_STREAMS:
                     if kind not in stream_kinds:
                         stream_kinds.append(kind)
             else:
@@ -210,7 +210,7 @@ class Stream(BaseParser):  # pylint: disable=R0902
         ignore = {}
         for kind, _ in stream_triggers.items():
             ignore[kind] = []
-        for _, line in enumerate(stream):  # pylint: disable=too-many-nested-blocks
+        for _, line in enumerate(stream):
             # Go though all entries in the stream triggers
             for kind, triggers in stream_triggers.items():
                 # Not check all the triggers of the given kind
@@ -253,7 +253,7 @@ class Stream(BaseParser):  # pylint: disable=R0902
                     )
 
 
-class VaspStream:  # pylint: disable=R0902
+class VaspStream:
     """Class representing stream elements given by VASP that we want to trigger on."""
 
     _ALLOWED_STREAMS = ['ERROR', 'WARNING']
@@ -261,7 +261,7 @@ class VaspStream:  # pylint: disable=R0902
 
     def __init__(
         self, shortname, kind, regex, message, suggestion=None, location='STDOUT', recover=False, inverse=False
-    ):  # pylint: disable=too-many-arguments
+    ):
         """
         Initialise a VaspStream object.
 

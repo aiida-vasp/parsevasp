@@ -1,13 +1,12 @@
 """Base class to handle VASP files."""
 
-# pylint: disable=consider-using-with
 import logging
 import os
 import sys
 from abc import ABC, abstractmethod
 
 
-class BaseParser(ABC):  # pylint: disable=R0903
+class BaseParser(ABC):
     """Base class to handle VASP files."""
 
     ERROR_USE_ONE_ARGUMENT = 10
@@ -158,7 +157,7 @@ def open_close_file_handler(file_name='', file_handler=None, status=None, encodi
     """
 
     if logger is None:
-        logger = logging.getLogger(sys._getframe().f_code.co_name)  # pylint: disable=W0212
+        logger = logging.getLogger(sys._getframe().f_code.co_name)
 
     if status is None:
         if file_handler is None:

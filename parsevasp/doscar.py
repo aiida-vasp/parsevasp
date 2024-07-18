@@ -246,7 +246,7 @@ class Doscar(BaseParser):
         """
 
         # Set some metadata
-        num_ions, num_atoms, part, ncdij = utils.line_to_type(doscar[0], int)  # pylint: disable=W0612
+        num_ions, num_atoms, part, ncdij = utils.line_to_type(doscar[0], int)
 
         # Figure out if we have a partial density of states
         # partial = bool(int(part))

@@ -1,6 +1,5 @@
 """Handle OUTCAR."""
 
-# pylint: disable=consider-using-f-string
 import re
 import sys
 
@@ -92,7 +91,7 @@ class Outcar(BaseParser):
         outcar = utils.read_from_file(self._file_path, self._file_handler, encoding='utf8')
         self._from_list(outcar)
 
-    def _from_list(self, outcar):  # pylint: disable=R0915
+    def _from_list(self, outcar):
         """
         Go through the list and extract what is not present in the XML file.
 
@@ -109,7 +108,7 @@ class Outcar(BaseParser):
         iter_counter = None
         nelec_steps = {}
 
-        for index, line in enumerate(outcar):  # pylint: disable=R1702
+        for index, line in enumerate(outcar):
             # Check the iteration counter
             match = re.search(r'Iteration *(\d+)\( *(\d+)\)', line)
             if match:

@@ -1,6 +1,5 @@
 """Handle KPOINTS."""
 
-# pylint: disable=consider-using-f-string, disable=too-many-lines
 import io
 import sys
 
@@ -90,7 +89,6 @@ class Kpoints(BaseParser):
         self._width = self._prec + 4
 
         # Check that only one argument is supplied
-        # pylint: disable=R0916
         if (
             (self._kpoints_string is not None and self._kpoints_dict is not None)
             or (self._kpoints_string is not None and self._file_path is not None)
@@ -142,7 +140,7 @@ class Kpoints(BaseParser):
         kpoints_dict = self._from_list(kpoints)
         return kpoints_dict
 
-    def _from_list(self, kpoints):  # pylint: disable=R0915
+    def _from_list(self, kpoints):
         """
         Go through the list and analyze for = and ; in order to
         deentangle grouped entries etc.
@@ -184,7 +182,7 @@ class Kpoints(BaseParser):
         if third_line[0].lower() == 'l':
             # Line mode is detected
             line_mode = True
-        if not automatic and not line_mode:  # pylint: disable=R1702
+        if not automatic and not line_mode:
             direct = False
             if third_line[0].lower() not in ['k', 'c']:
                 direct = True

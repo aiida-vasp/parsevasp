@@ -1,6 +1,5 @@
 """Handle INCAR."""
 
-# pylint: disable=consider-using-f-string
 import io
 import logging
 import sys
@@ -39,7 +38,7 @@ class Incar(BaseParser):
         logger=None,
         prec=None,
         validate_tags=True,
-    ):  # pylint: disable=too-many-arguments
+    ):
         """Initialize an INCAR object and set content as a dictionary.
 
         Parameters
@@ -71,7 +70,6 @@ class Incar(BaseParser):
         self._width = self._prec + 4
 
         # Check that only one argument is supplied
-        # pylint: disable=R0916
         if (
             (self._incar_string is not None and self._incar_dict is not None)
             or (self._incar_string is not None and self._file_path is not None)
