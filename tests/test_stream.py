@@ -1,8 +1,8 @@
 """Test stream."""
+
 import os
 import pathlib
 
-import numpy as np
 import pytest
 
 from parsevasp.stream import Stream

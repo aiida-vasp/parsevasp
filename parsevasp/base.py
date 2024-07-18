@@ -1,12 +1,12 @@
 """Base class to handle VASP files."""
-# pylint: disable=consider-using-with
+
 import logging
 import os
 import sys
 from abc import ABC, abstractmethod
 
 
-class BaseParser(ABC):  # pylint: disable=R0903
+class BaseParser(ABC):
     """Base class to handle VASP files."""
 
     ERROR_USE_ONE_ARGUMENT = 10
@@ -23,7 +23,7 @@ class BaseParser(ABC):  # pylint: disable=R0903
         ERROR_KEY_INVALID_TYPE: 'The key has a wrong type.',
         ERROR_FILE_NOT_FOUND: 'The path did not contain a file.',
         ERROR_EMPTY_HANDLER: 'The supplied file handler is empty.',
-        ERROR_EMPTY_FILE_PATH: 'The supplied file path is empty.'
+        ERROR_EMPTY_FILE_PATH: 'The supplied file path is empty.',
     }
 
     def __init__(self, file_path=None, file_handler=None, logger=None):
@@ -79,8 +79,9 @@ class BaseParser(ABC):  # pylint: disable=R0903
         """
 
         # Check that we only supply either or of path and handler.
-        if ('file_path' in kwargs and 'file_handler' in kwargs) or \
-           ('file_path' not in kwargs and 'file_handler' not in kwargs):
+        if ('file_path' in kwargs and 'file_handler' in kwargs) or (
+            'file_path' not in kwargs and 'file_handler' not in kwargs
+        ):
             self._logger.error(self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
             sys.exit(self.ERROR_USE_ONE_ARGUMENT)
 
@@ -156,7 +157,7 @@ def open_close_file_handler(file_name='', file_handler=None, status=None, encodi
     """
 
     if logger is None:
-        logger = logging.getLogger(sys._getframe().f_code.co_name)  # pylint: disable=W0212
+        logger = logging.getLogger(sys._getframe().f_code.co_name)
 
     if status is None:
         if file_handler is None:

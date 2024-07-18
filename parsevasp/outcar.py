@@ -1,5 +1,5 @@
 """Handle OUTCAR."""
-# pylint: disable=consider-using-f-string
+
 import re
 import sys
 
@@ -43,39 +43,17 @@ class Outcar(BaseParser):
             sys.exit(self.ERROR_USE_ONE_ARGUMENT)
 
         self._data = {
-            'elastic_moduli': {
-                'non-symmetrized': None,
-                'symmetrized': None,
-                'total': None
-            },
+            'elastic_moduli': {'non-symmetrized': None, 'symmetrized': None, 'total': None},
             'symmetry': {
-                'num_space_group_operations': {
-                    'static': [],
-                    'dynamic': []
-                },
-                'original_cell_type': {
-                    'static': [],
-                    'dynamic': []
-                },
-                'symmetrized_cell_type': {
-                    'static': [],
-                    'dynamic': []
-                }
+                'num_space_group_operations': {'static': [], 'dynamic': []},
+                'original_cell_type': {'static': [], 'dynamic': []},
+                'symmetrized_cell_type': {'static': [], 'dynamic': []},
             },
             'magnetization': {
                 'sphere': {
-                    'x': {
-                        'site_moment': {},
-                        'total_magnetization': {}
-                    },
-                    'y': {
-                        'site_moment': {},
-                        'total_magnetization': {}
-                    },
-                    'z': {
-                        'site_moment': {},
-                        'total_magnetization': {}
-                    },
+                    'x': {'site_moment': {}, 'total_magnetization': {}},
+                    'y': {'site_moment': {}, 'total_magnetization': {}},
+                    'z': {'site_moment': {}, 'total_magnetization': {}},
                 },
                 'full_cell': {},
             },
@@ -88,8 +66,8 @@ class Outcar(BaseParser):
                 'ionic_converged': False,
                 'electronic_converged': False,
                 'consistent_nelm_breach': False,
-                'contains_nelm_breach': False
-            }
+                'contains_nelm_breach': False,
+            },
         }
 
         # parse parse parse
@@ -113,7 +91,7 @@ class Outcar(BaseParser):
         outcar = utils.read_from_file(self._file_path, self._file_handler, encoding='utf8')
         self._from_list(outcar)
 
-    def _from_list(self, outcar):  # pylint: disable=R0915
+    def _from_list(self, outcar):
         """
         Go through the list and extract what is not present in the XML file.
 
@@ -130,7 +108,7 @@ class Outcar(BaseParser):
         iter_counter = None
         nelec_steps = {}
 
-        for index, line in enumerate(outcar):  # pylint: disable=R1702
+        for index, line in enumerate(outcar):
             # Check the iteration counter
             match = re.search(r'Iteration *(\d+)\( *(\d+)\)', line)
             if match:
@@ -191,22 +169,24 @@ class Outcar(BaseParser):
                     while not mag_found:
                         if outcar[index + 4 + _counter].strip().split():
                             if not outcar[index + 4 + _counter].strip().startswith('-') and not outcar[
-                                index + 4 + _counter].strip().startswith('tot'):
+                                index + 4 + _counter
+                            ].strip().startswith('tot'):
                                 mag_line = outcar[index + 4 + _counter].split()
                                 self._data['magnetization']['sphere'][f'{_proj}']['site_moment'][int(mag_line[0])] = {}
                                 for _count, orb in enumerate(mag_line[1:-1]):
-                                    self._data['magnetization']['sphere'][f'{_proj}']['site_moment'][int(
-                                        mag_line[0]
-                                    )][s_orb[_count]] = float(orb)
-                                self._data['magnetization']['sphere'][f'{_proj}']['site_moment'][int(
-                                    mag_line[0]
-                                )]['tot'] = float(mag_line[-1])
+                                    self._data['magnetization']['sphere'][f'{_proj}']['site_moment'][int(mag_line[0])][
+                                        s_orb[_count]
+                                    ] = float(orb)
+                                self._data['magnetization']['sphere'][f'{_proj}']['site_moment'][int(mag_line[0])][
+                                    'tot'
+                                ] = float(mag_line[-1])
                             if outcar[index + 4 + _counter].strip().startswith('tot'):
                                 mag_line = outcar[index + 4 + _counter].split()
                                 self._data['magnetization']['sphere'][f'{_proj}']['total_magnetization'] = {}
                                 for _count, orb in enumerate(mag_line[1:-1]):
                                     self._data['magnetization']['sphere'][f'{_proj}']['total_magnetization'][
-                                        s_orb[_count]] = float(orb)
+                                        s_orb[_count]
+                                    ] = float(orb)
                                 self._data['magnetization']['sphere'][f'{_proj}']['total_magnetization']['tot'] = float(
                                     mag_line[-1]
                                 )
@@ -214,9 +194,10 @@ class Outcar(BaseParser):
                         else:
                             self._data['magnetization']['sphere'][f'{_proj}']['total_magnetization'] = {}
                             self._data['magnetization']['sphere'][f'{_proj}']['total_magnetization'] = self._data[
-                                'magnetization']['sphere'][f'{_proj}']['site_moment'][list(
-                                    self._data['magnetization']['sphere'][f'{_proj}']['site_moment'].keys()
-                                )[0]]
+                                'magnetization'
+                            ]['sphere'][f'{_proj}']['site_moment'][
+                                next(iter(self._data['magnetization']['sphere'][f'{_proj}']['site_moment'].keys()))
+                            ]
                             mag_found = True
                         _counter = _counter + 1
             if line.strip().startswith('number of electron'):
@@ -270,8 +251,7 @@ class Outcar(BaseParser):
         # by checking if there are any single run that have reached NELM in the history or if NELM
         # has been consistently reached.
         mask = [value >= nelm for sc_idx, value in sorted(nelec_steps.items(), key=lambda x: x[0])]
-        if (finished and all(mask)) or \
-           (not finished and all(mask[:-1]) and iter_counter[0] > 1):
+        if (finished and all(mask)) or (not finished and all(mask[:-1]) and iter_counter[0] > 1):
             # We have consistently reached NELM. Excluded the last iteration,
             # as the calculation may not be finished
             run_status['consistent_nelm_breach'] = True

@@ -1,5 +1,5 @@
 """Handle vasprun.xml."""
-# pylint: disable=C0302
+
 import copy
 import logging
 import os
@@ -15,15 +15,16 @@ from parsevasp.base import BaseParser
 USE_LXML = False
 try:
     from lxml import etree
+
     USE_LXML = True
 except ImportError:
     try:
         # normal cElementTree
-        import cElementTree as etree
+        import cElementTree as etree  # noqa N813
     except ImportError:
         try:
             # normal ElementTree
-            import elementtree.ElementTree as etree
+            import elementtree.ElementTree as etree  # noqa N813
         except ImportError:
             logging.error('Failed to import ElementTree.')
             sys.exit('Failed to import ElementTree.')
@@ -31,11 +32,11 @@ except ImportError:
 _SUPPORTED_TOTAL_ENERGIES = {
     'energy_extrapolated': 'e_0_energy',
     'energy_free': 'e_fr_energy',
-    'energy_no_entropy': 'e_wo_entrp'
+    'energy_no_entropy': 'e_wo_entrp',
 }
 
 
-class Xml(BaseParser):  #  pylint: disable=R0902, R0904
+class Xml(BaseParser):
     """Class to handle vasprun.xml."""
 
     ERROR_MULTIPLE_ENTRIES = 500
@@ -49,31 +50,24 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
     ERROR_NO_SIZE = 508
     ERROR_OVERFLOW = 509
     ERROR_ONLY_ONE_ARGUMENT = 510
-    BaseParser.ERROR_MESSAGES.update({
-        ERROR_NO_SPECIES:
-        'Please extract the species first.',
-        ERROR_MULTIPLE_ENTRIES:
-        'Multiple entries of were located.',
-        ERROR_NO_ISPIN:
-        'Please extract ISPIN first.',
-        ERROR_NO_NBANDS:
-        'Please extract NBANDS first.',
-        ERROR_NO_KPOINTS:
-        'Please extract the kpoints first.',
-        ERROR_MISMATCH_KPOINTS_NBANDS:
-        'The number of kpoints and bands for the entries does not match the number of '
-        'located kpoints and NBANDS.',
-        ERROR_UNKNOWN_ELEMENT:
-        'There is an atomic element present in the XML file that is unknown.',
-        ERROR_UNSUPPORTED_STATUS:
-        'The supplied status is not supported.',
-        ERROR_NO_SIZE:
-        'Can not calculate size.',
-        ERROR_OVERFLOW:
-        'Overflow detected in the XML file.',
-        ERROR_ONLY_ONE_ARGUMENT:
-        'Only supply either `file_path` or `file_handler` as an argument.'
-    })
+    BaseParser.ERROR_MESSAGES.update(
+        {
+            ERROR_NO_SPECIES: 'Please extract the species first.',
+            ERROR_MULTIPLE_ENTRIES: 'Multiple entries of were located.',
+            ERROR_NO_ISPIN: 'Please extract ISPIN first.',
+            ERROR_NO_NBANDS: 'Please extract NBANDS first.',
+            ERROR_NO_KPOINTS: 'Please extract the kpoints first.',
+            ERROR_MISMATCH_KPOINTS_NBANDS: (
+                'The number of kpoints and bands for the entries does not match the number of '
+                'located kpoints and NBANDS.'
+            ),
+            ERROR_UNKNOWN_ELEMENT: 'There is an atomic element present in the XML file that is unknown.',
+            ERROR_UNSUPPORTED_STATUS: 'The supplied status is not supported.',
+            ERROR_NO_SIZE: 'Can not calculate size.',
+            ERROR_OVERFLOW: 'Overflow detected in the XML file.',
+            ERROR_ONLY_ONE_ARGUMENT: 'Only supply either `file_path` or `file_handler` as an argument.',
+        }
+    )
     ERROR_MESSAGES = BaseParser.ERROR_MESSAGES
 
     def __init__(
@@ -141,7 +135,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
             'positions': None,
             'kpoints': None,
             'kpointsw': None,
-            'kpointdiv': None
+            'kpointdiv': None,
         }
         self._data = {
             'eigenvalues': None,
@@ -159,7 +153,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
             'projectors': None,
             'hessian': None,
             'dynmat': None,
-            'born': None
+            'born': None,
         }
 
         if USE_LXML:
@@ -195,8 +189,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
             return None
 
         file_size = self._file_size / 1048576.0
-        if ((file_size < self._sizecutoff) or self._xml_truncated) and \
-           not self._event:
+        if ((file_size < self._sizecutoff) or self._xml_truncated) and not self._event:
             # Run regular method (loads file into memory) and
             # enable recovery mode if necessary
             self._parsew(self._xml_truncated)
@@ -242,9 +235,9 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
         self._parameters['nelm'] = self._fetch_nelmw(vaspxml)
         self._parameters['nsw'] = self._fetch_nsww(vaspxml)
         self._lattice['species'] = self._fetch_speciesw(vaspxml)
-        self._lattice['unitcell'], self._lattice['positions'], \
-            self._data['forces'], self._data['stress'] = \
+        self._lattice['unitcell'], self._lattice['positions'], self._data['forces'], self._data['stress'] = (
             self._fetch_upfsw(vaspxml, extract_all=extract_all)
+        )
         self._lattice['kpoints'] = self._fetch_kpointsw(vaspxml)
         self._lattice['kpointsw'] = self._fetch_kpointsww(vaspxml)
         self._lattice['kpointdiv'] = self._fetch_kpointdivw(vaspxml)
@@ -259,7 +252,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
         self._data['dynmat'] = self._fetch_dynmatw(vaspxml)
         self._data['born'] = self._fetch_bornw(vaspxml)
 
-    def _parsee(self):  # pylint: disable=R0915
+    def _parsee(self):
         """
         Performs parsing in an event driven fashion on the XML file.
         Slower, but suitable for bigger files.
@@ -346,7 +339,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         # Index that control the calculation step (e.g. ionic step)
         calc = 1
-        for event, element in etree.iterparse(filer, events=('start', 'end')):  # pylint: disable=R1702
+        for event, element in etree.iterparse(filer, events=('start', 'end')):
             # Set extraction points (what to read and when to read it)
             # here we also set the relevant data elements when the tags
             # close when they contain more than one element
@@ -374,11 +367,9 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
                 # Update index for the calculation
                 calc = calc + 1
                 extract_calculation = False
-            if event == 'start' and element.tag == 'array' \
-               and element.attrib.get('name') == 'atoms':
+            if event == 'start' and element.tag == 'array' and element.attrib.get('name') == 'atoms':
                 extract_species = True
-            if event == 'end' and element.tag == 'array' \
-               and element.attrib.get('name') == 'atoms':
+            if event == 'end' and element.tag == 'array' and element.attrib.get('name') == 'atoms':
                 # Only need every other element (element, not atomtype)
                 self._lattice['species'] = self._convert_species(data[::2])
                 data = []
@@ -436,8 +427,11 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
                 except KeyError:
                     pass
                 try:
-                    if event == 'start' and element.attrib['name'] == 'NELM' \
-                        and element.getparent().attrib['name'] == 'electronic convergence':
+                    if (
+                        event == 'start'
+                        and element.attrib['name'] == 'NELM'
+                        and element.getparent().attrib['name'] == 'electronic convergence'
+                    ):
                         self._parameters['nelm'] = self._convert_i(element)
                 except KeyError:
                     pass
@@ -597,19 +591,15 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
                     extract_latticedata = True
                 if event == 'end' and element.tag == 'structure':
                     extract_latticedata = False
-                if event == 'start' and element.tag == 'varray' and \
-                   element.attrib['name'] == 'forces':
+                if event == 'start' and element.tag == 'varray' and element.attrib['name'] == 'forces':
                     extract_forces = True
-                if event == 'end' and element.tag == 'varray' and \
-                   element.attrib['name'] == 'forces':
+                if event == 'end' and element.tag == 'varray' and element.attrib['name'] == 'forces':
                     force[calc] = self._convert_array2D_f(data, 3)
                     data = []
                     extract_forces = False
-                if event == 'start' and element.tag == 'varray' and \
-                   element.attrib['name'] == 'stress':
+                if event == 'start' and element.tag == 'varray' and element.attrib['name'] == 'stress':
                     extract_stress = True
-                if event == 'end' and element.tag == 'varray' and \
-                   element.attrib['name'] == 'stress':
+                if event == 'end' and element.tag == 'varray' and element.attrib['name'] == 'stress':
                     stress[calc] = self._convert_array2D_f(data, 3)
                     data = []
                     extract_stress = False
@@ -622,8 +612,11 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
                 if event == 'end' and element.tag == 'scstep':
                     extract_scstep = False
                 if (
-                    event == 'start' and element.tag == 'eigenvalues' and not extract_eigenvelocities and
-                    element.attrib.get('comment') != 'interpolated' and not extract_eigenvalues_specific
+                    event == 'start'
+                    and element.tag == 'eigenvalues'
+                    and not extract_eigenvelocities
+                    and element.attrib.get('comment') != 'interpolated'
+                    and not extract_eigenvalues_specific
                 ):
                     extract_eigenvalues = True
                 if event == 'end' and element.tag == 'eigenvalues' and extract_eigenvalues:
@@ -637,9 +630,11 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
                     data = []
                     data2 = []
                     extract_eigenvalues = False
-                if event == 'start' and element.tag == 'eigenvalues' and element.attrib.get(
-                    'comment'
-                ) == 'interpolated':
+                if (
+                    event == 'start'
+                    and element.tag == 'eigenvalues'
+                    and element.attrib.get('comment') == 'interpolated'
+                ):
                     extract_eigenvalues_specific = True
 
                 if event == 'end' and element.tag == 'eigenvalues' and extract_eigenvalues_specific:
@@ -710,47 +705,37 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
                 # Now extract data
                 if extract_scstep:
                     # Extrapolated energy
-                    if event == 'start' and element.tag == 'i' and \
-                       element.attrib['name'] == 'e_0_energy':
+                    if event == 'start' and element.tag == 'i' and element.attrib['name'] == 'e_0_energy':
                         extract_e_0_energy = True
-                    if event == 'end' and element.tag == 'i' and \
-                       element.attrib['name'] == 'e_0_energy':
+                    if event == 'end' and element.tag == 'i' and element.attrib['name'] == 'e_0_energy':
                         extract_e_0_energy = False
                     if extract_e_0_energy:
                         data3.append(element)
                     # Free energy
-                    if event == 'start' and element.tag == 'i' and \
-                       element.attrib['name'] == 'e_fr_energy':
+                    if event == 'start' and element.tag == 'i' and element.attrib['name'] == 'e_fr_energy':
                         extract_e_fr_energy = True
-                    if event == 'end' and element.tag == 'i' and \
-                       element.attrib['name'] == 'e_fr_energy':
+                    if event == 'end' and element.tag == 'i' and element.attrib['name'] == 'e_fr_energy':
                         extract_e_fr_energy = False
                     if extract_e_fr_energy:
                         data4.append(element)
                     # energy without entropy
-                    if event == 'start' and element.tag == 'i' and \
-                       element.attrib['name'] == 'e_wo_entrp':
+                    if event == 'start' and element.tag == 'i' and element.attrib['name'] == 'e_wo_entrp':
                         extract_e_wo_entrp = True
-                    if event == 'end' and element.tag == 'i' and \
-                       element.attrib['name'] == 'e_wo_entrp':
+                    if event == 'end' and element.tag == 'i' and element.attrib['name'] == 'e_wo_entrp':
                         extract_e_wo_entrp = False
                     if extract_e_wo_entrp:
                         data5.append(element)
                 if extract_latticedata:
-                    if event == 'start' and element.tag == 'varray' \
-                       and element.attrib.get('name') == 'basis':
+                    if event == 'start' and element.tag == 'varray' and element.attrib.get('name') == 'basis':
                         extract_unitcell = True
-                    if event == 'end' and element.tag == 'varray' \
-                       and element.attrib.get('name') == 'basis':
+                    if event == 'end' and element.tag == 'varray' and element.attrib.get('name') == 'basis':
                         cell[calc] = self._convert_array2D_f(data, 3)
                         data = []
                         extract_unitcell = False
 
-                    if event == 'start' and element.tag == 'varray' \
-                       and element.attrib.get('name') == 'positions':
+                    if event == 'start' and element.tag == 'varray' and element.attrib.get('name') == 'positions':
                         extract_positions = True
-                    if event == 'end' and element.tag == 'varray' \
-                       and element.attrib.get('name') == 'positions':
+                    if event == 'end' and element.tag == 'varray' and element.attrib.get('name') == 'positions':
                         pos[calc] = self._convert_array2D_f(data, 3)
                         data = []
                         extract_positions = False
@@ -772,30 +757,23 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
                 if extract_energies:
                     # Extrapolated energy
-                    if event == 'start' and element.tag == 'i' and \
-                       element.attrib['name'] == 'e_0_energy':
+                    if event == 'start' and element.tag == 'i' and element.attrib['name'] == 'e_0_energy':
                         totens[calc].update({'energy_extrapolated_final': float(element.text)})
                     # Free energy
-                    if event == 'start' and element.tag == 'i' and \
-                       element.attrib['name'] == 'e_fr_energy':
+                    if event == 'start' and element.tag == 'i' and element.attrib['name'] == 'e_fr_energy':
                         totens[calc].update({'energy_free_final': float(element.text)})
                     # Energy without entropy
-                    if event == 'start' and element.tag == 'i' and \
-                       element.attrib['name'] == 'e_wo_entrp':
+                    if event == 'start' and element.tag == 'i' and element.attrib['name'] == 'e_wo_entrp':
                         totens[calc].update({'energy_no_entropy_final': float(element.text)})
 
                 if extract_eigenvalues:
-                    if event == 'start' and element.tag == 'set' \
-                       and element.attrib.get('comment') == 'spin 1':
+                    if event == 'start' and element.tag == 'set' and element.attrib.get('comment') == 'spin 1':
                         extract_eigenvalues_spin1 = True
-                    if event == 'end' and element.tag == 'set' \
-                       and element.attrib.get('comment') == 'spin 1':
+                    if event == 'end' and element.tag == 'set' and element.attrib.get('comment') == 'spin 1':
                         extract_eigenvalues_spin1 = False
-                    if event == 'start' and element.tag == 'set' \
-                       and element.attrib.get('comment') == 'spin 2':
+                    if event == 'start' and element.tag == 'set' and element.attrib.get('comment') == 'spin 2':
                         extract_eigenvalues_spin2 = True
-                    if event == 'end' and element.tag == 'set' \
-                       and element.attrib.get('comment') == 'spin 2':
+                    if event == 'end' and element.tag == 'set' and element.attrib.get('comment') == 'spin 2':
                         extract_eigenvalues_spin2 = False
                     if extract_eigenvalues_spin1:
                         if event == 'start' and element.tag == 'r':
@@ -805,33 +783,25 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
                             data2.append(element)
 
                 if extract_eigenvalues_specific:
-                    if event == 'start' and element.tag == 'varray' \
-                       and element.attrib.get('name') == 'kpointlist':
+                    if event == 'start' and element.tag == 'varray' and element.attrib.get('name') == 'kpointlist':
                         extract_kpoints_specific = True
-                    if event == 'end' and element.tag == 'varray' \
-                       and element.attrib.get('name') == 'kpointlist':
+                    if event == 'end' and element.tag == 'varray' and element.attrib.get('name') == 'kpointlist':
                         self._data['kpoints'] = self._convert_array2D_f(data, 3)
                         data = []
                         extract_kpoints_specific = False
-                    if event == 'start' and element.tag == 'varray' \
-                       and element.attrib.get('name') == 'weights':
+                    if event == 'start' and element.tag == 'varray' and element.attrib.get('name') == 'weights':
                         extract_kpointsw_specific = True
-                    if event == 'end' and element.tag == 'varray' \
-                       and element.attrib.get('name') == 'weights':
+                    if event == 'end' and element.tag == 'varray' and element.attrib.get('name') == 'weights':
                         self._data['kpointsw'] = self._convert_array1D_f(data)
                         data = []
                         extract_kpointsw_specific = False
-                    if event == 'start' and element.tag == 'set' \
-                       and element.attrib.get('comment') == 'spin 1':
+                    if event == 'start' and element.tag == 'set' and element.attrib.get('comment') == 'spin 1':
                         extract_eigenvalues_spin1 = True
-                    if event == 'end' and element.tag == 'set' \
-                       and element.attrib.get('comment') == 'spin 1':
+                    if event == 'end' and element.tag == 'set' and element.attrib.get('comment') == 'spin 1':
                         extract_eigenvalues_spin1 = False
-                    if event == 'start' and element.tag == 'set' \
-                       and element.attrib.get('comment') == 'spin 2':
+                    if event == 'start' and element.tag == 'set' and element.attrib.get('comment') == 'spin 2':
                         extract_eigenvalues_spin2 = True
-                    if event == 'end' and element.tag == 'set' \
-                       and element.attrib.get('comment') == 'spin 2':
+                    if event == 'end' and element.tag == 'set' and element.attrib.get('comment') == 'spin 2':
                         extract_eigenvalues_spin2 = False
                     if extract_kpoints_specific:
                         if event == 'start' and element.tag == 'v':
@@ -847,33 +817,25 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
                             data2.append(element)
 
                 if extract_eigenvelocities:
-                    if event == 'start' and element.tag == 'varray' \
-                       and element.attrib.get('name') == 'kpointlist':
+                    if event == 'start' and element.tag == 'varray' and element.attrib.get('name') == 'kpointlist':
                         extract_kpoints_specific = True
-                    if event == 'end' and element.tag == 'varray' \
-                       and element.attrib.get('name') == 'kpointlist':
+                    if event == 'end' and element.tag == 'varray' and element.attrib.get('name') == 'kpointlist':
                         self._data['kpoints'] = self._convert_array2D_f(data, 3)
                         data = []
                         extract_kpoints_specific = False
-                    if event == 'start' and element.tag == 'varray' \
-                       and element.attrib.get('name') == 'weights':
+                    if event == 'start' and element.tag == 'varray' and element.attrib.get('name') == 'weights':
                         extract_kpointsw_specific = True
-                    if event == 'end' and element.tag == 'varray' \
-                       and element.attrib.get('name') == 'weights':
+                    if event == 'end' and element.tag == 'varray' and element.attrib.get('name') == 'weights':
                         self._data['kpointsw'] = self._convert_array1D_f(data)
                         data = []
                         extract_kpointsw_specific = False
-                    if event == 'start' and element.tag == 'set' \
-                       and element.attrib.get('comment') == 'spin 1':
+                    if event == 'start' and element.tag == 'set' and element.attrib.get('comment') == 'spin 1':
                         extract_eigenvelocities_spin1 = True
-                    if event == 'end' and element.tag == 'set' \
-                       and element.attrib.get('comment') == 'spin 1':
+                    if event == 'end' and element.tag == 'set' and element.attrib.get('comment') == 'spin 1':
                         extract_eigenvelocities_spin1 = False
-                    if event == 'start' and element.tag == 'set' \
-                       and element.attrib.get('comment') == 'spin 2':
+                    if event == 'start' and element.tag == 'set' and element.attrib.get('comment') == 'spin 2':
                         extract_eigenvelocities_spin2 = True
-                    if event == 'end' and element.tag == 'set' \
-                       and element.attrib.get('comment') == 'spin 2':
+                    if event == 'end' and element.tag == 'set' and element.attrib.get('comment') == 'spin 2':
                         extract_eigenvelocities_spin2 = False
                     if extract_kpoints_specific:
                         if event == 'start' and element.tag == 'v':
@@ -897,8 +859,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
                     # the eigenvalues (already stored at this point)
                     if event == 'end' and element.tag == 'eigenvalues':
                         extract_eig_proj = True
-                    if event == 'end' and element.tag == 'array' and \
-                       extract_eig_proj:
+                    if event == 'end' and element.tag == 'array' and extract_eig_proj:
                         if not data2:
                             projectors = self._extract_projectors(data, None)
                         else:
@@ -909,17 +870,13 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
                         extract_eig_proj = False
 
                     if extract_eig_proj:
-                        if event == 'start' and element.tag == 'set' \
-                           and element.attrib.get('comment') == 'spin1':
+                        if event == 'start' and element.tag == 'set' and element.attrib.get('comment') == 'spin1':
                             extract_eig_proj_ispin1 = True
-                        if event == 'end' and element.tag == 'set' \
-                           and element.attrib.get('comment') == 'spin1':
+                        if event == 'end' and element.tag == 'set' and element.attrib.get('comment') == 'spin1':
                             extract_eig_proj_ispin1 = False
-                        if event == 'start' and element.tag == 'set' \
-                           and element.attrib.get('comment') == 'spin2':
+                        if event == 'start' and element.tag == 'set' and element.attrib.get('comment') == 'spin2':
                             extract_eig_proj_ispin2 = True
-                        if event == 'end' and element.tag == 'set' \
-                           and element.attrib.get('comment') == 'spin2':
+                        if event == 'end' and element.tag == 'set' and element.attrib.get('comment') == 'spin2':
                             extract_eig_proj_ispin2 = False
                         if extract_eig_proj_ispin1:
                             if event == 'start' and element.tag == 'r':
@@ -929,11 +886,9 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
                                 data2.append(element)
 
                 if extract_dynmat:
-                    if event == 'start' and element.tag == 'varray' \
-                       and element.attrib.get('name') == 'hessian':
+                    if event == 'start' and element.tag == 'varray' and element.attrib.get('name') == 'hessian':
                         extract_hessian = True
-                    if event == 'end' and element.tag == 'varray' \
-                       and element.attrib.get('name') == 'hessian':
+                    if event == 'end' and element.tag == 'varray' and element.attrib.get('name') == 'hessian':
                         num_atoms = 0
                         if self._lattice['species'] is not None:
                             num_atoms = self._lattice['species'].shape[0]
@@ -944,11 +899,9 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
                         self._data['hessian'] = hessian
                         data = []
                         extract_hessian = False
-                    if event == 'start' and element.tag == 'varray' \
-                       and element.attrib.get('name') == 'eigenvectors':
+                    if event == 'start' and element.tag == 'varray' and element.attrib.get('name') == 'eigenvectors':
                         extract_dynmat_eigen = True
-                    if event == 'end' and element.tag == 'varray' \
-                       and element.attrib.get('name') == 'eigenvectors':
+                    if event == 'end' and element.tag == 'varray' and element.attrib.get('name') == 'eigenvectors':
                         num_atoms = 0
                         if self._lattice['species'] is not None:
                             num_atoms = self._lattice['species'].shape[0]
@@ -966,8 +919,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
                         if event == 'start' and element.tag == 'v':
                             data.append(element)
                     try:
-                        if event == 'start' and \
-                           element.attrib['name'] == 'eigenvalues':
+                        if event == 'start' and element.attrib['name'] == 'eigenvalues':
                             dynmat['eigenvalues'] = self._convert_array_f(element)
                     except KeyError:
                         pass
@@ -982,25 +934,20 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
             if extract_kpointdata:
                 try:
-                    if event == 'start' and element.tag == 'v' and \
-                       element.attrib['name'] == 'divisions':
+                    if event == 'start' and element.tag == 'v' and element.attrib['name'] == 'divisions':
                         self._lattice['kpointdiv'] = self._convert_array_i(element)
                 except KeyError:
                     pass
 
-                if event == 'start' and element.tag == 'varray' \
-                   and element.attrib.get('name') == 'kpointlist':
+                if event == 'start' and element.tag == 'varray' and element.attrib.get('name') == 'kpointlist':
                     extract_kpoints = True
-                if event == 'end' and element.tag == 'varray' \
-                   and element.attrib.get('name') == 'kpointlist':
+                if event == 'end' and element.tag == 'varray' and element.attrib.get('name') == 'kpointlist':
                     self._lattice['kpoints'] = self._convert_array2D_f(data, 3)
                     data = []
                     extract_kpoints = False
-                if event == 'start' and element.tag == 'varray' \
-                   and element.attrib.get('name') == 'weights':
+                if event == 'start' and element.tag == 'varray' and element.attrib.get('name') == 'weights':
                     extract_kpointsw = True
-                if event == 'end' and element.tag == 'varray' \
-                   and element.attrib.get('name') == 'weights':
+                if event == 'end' and element.tag == 'varray' and element.attrib.get('name') == 'weights':
                     self._lattice['kpointsw'] = self._convert_array1D_f(data)
                     data = []
                     extract_kpointsw = False
@@ -1012,20 +959,15 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
                         data.append(element)
 
             if extract_dos:
-                if event == 'start' and element.tag == 'i' and \
-                   element.attrib.get('name') == 'efermi':
+                if event == 'start' and element.tag == 'i' and element.attrib.get('name') == 'efermi':
                     data6.append(element)
-                if event == 'start' and element.tag == 'set' \
-                   and element.attrib.get('comment') == 'spin 1':
+                if event == 'start' and element.tag == 'set' and element.attrib.get('comment') == 'spin 1':
                     extract_dos_ispin1 = True
-                if event == 'end' and element.tag == 'set' \
-                   and element.attrib.get('comment') == 'spin 1':
+                if event == 'end' and element.tag == 'set' and element.attrib.get('comment') == 'spin 1':
                     extract_dos_ispin1 = False
-                if event == 'start' and element.tag == 'set' \
-                   and element.attrib.get('comment') == 'spin 2':
+                if event == 'start' and element.tag == 'set' and element.attrib.get('comment') == 'spin 2':
                     extract_dos_ispin2 = True
-                if event == 'end' and element.tag == 'set' \
-                   and element.attrib.get('comment') == 'spin 2':
+                if event == 'end' and element.tag == 'set' and element.attrib.get('comment') == 'spin 2':
                     extract_dos_ispin2 = False
                 if extract_dos_ispin1:
                     if event == 'start' and element.tag == 'r':
@@ -1035,20 +977,15 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
                         data2.append(element)
 
             if extract_dos_specific:
-                if event == 'start' and element.tag == 'i' and \
-                   element.attrib.get('name') == 'efermi':
+                if event == 'start' and element.tag == 'i' and element.attrib.get('name') == 'efermi':
                     data6.append(element)
-                if event == 'start' and element.tag == 'set' \
-                   and element.attrib.get('comment') == 'spin 1':
+                if event == 'start' and element.tag == 'set' and element.attrib.get('comment') == 'spin 1':
                     extract_dos_specific_ispin1 = True
-                if event == 'end' and element.tag == 'set' \
-                   and element.attrib.get('comment') == 'spin 1':
+                if event == 'end' and element.tag == 'set' and element.attrib.get('comment') == 'spin 1':
                     extract_dos_specific_ispin1 = False
-                if event == 'start' and element.tag == 'set' \
-                   and element.attrib.get('comment') == 'spin 2':
+                if event == 'start' and element.tag == 'set' and element.attrib.get('comment') == 'spin 2':
                     extract_dos_specific_ispin2 = True
-                if event == 'end' and element.tag == 'set' \
-                   and element.attrib.get('comment') == 'spin 2':
+                if event == 'end' and element.tag == 'set' and element.attrib.get('comment') == 'spin 2':
                     extract_dos_specific_ispin2 = False
                 if extract_dos_specific_ispin1:
                     if event == 'start' and element.tag == 'r':
@@ -1141,8 +1078,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         """
 
-        entry = self._find(xml, './/parameters/separator[@name="symmetry"]/'
-                           'i[@name="SYMPREC"]')
+        entry = self._find(xml, './/parameters/separator[@name="symmetry"]/' 'i[@name="SYMPREC"]')
 
         if entry is None:
             return None
@@ -1172,9 +1108,8 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
         """
 
         entry = self._find(
-            xml, './/parameters/separator[@name="electronic"]/'
-            'separator[@name="electronic smearing"]/'
-            'i[@name="SIGMA"]'
+            xml,
+            './/parameters/separator[@name="electronic"]/' 'separator[@name="electronic smearing"]/' 'i[@name="SIGMA"]',
         )
 
         if entry is None:
@@ -1206,9 +1141,10 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
         """
 
         entry = self._find(
-            xml, './/parameters/separator[@name="electronic"]/'
+            xml,
+            './/parameters/separator[@name="electronic"]/'
             'separator[@name="electronic convergence"]/'
-            'i[@name="NELM"]'
+            'i[@name="NELM"]',
         )
 
         if entry is None:
@@ -1238,8 +1174,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         """
 
-        entry = self._find(xml, './/parameters/separator[@name="ionic"]/'
-                           'i[@name="NSW"]')
+        entry = self._find(xml, './/parameters/separator[@name="ionic"]/' 'i[@name="NSW"]')
 
         if entry is None:
             return None
@@ -1269,9 +1204,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
         """
 
         entry = self._find(
-            xml, './/parameters/separator[@name="electronic"]/'
-            'separator[@name="electronic spin"]/'
-            'i[@name="ISPIN"]'
+            xml, './/parameters/separator[@name="electronic"]/' 'separator[@name="electronic spin"]/' 'i[@name="ISPIN"]'
         )
         if entry is None:
             return None
@@ -1301,9 +1234,10 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
         """
 
         entry = self._find(
-            xml, './/parameters/separator[@name="electronic"]/'
+            xml,
+            './/parameters/separator[@name="electronic"]/'
             'separator[@name="electronic smearing"]/'
-            'i[@name="ISMEAR"]'
+            'i[@name="ISMEAR"]',
         )
 
         if entry is None:
@@ -1333,8 +1267,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         """
 
-        entry = self._find(xml, './/parameters/separator[@name="electronic"]/'
-                           'i[@name="NBANDS"]')
+        entry = self._find(xml, './/parameters/separator[@name="electronic"]/' 'i[@name="NBANDS"]')
         if entry is None:
             return None
 
@@ -1362,8 +1295,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         """
 
-        entry = self._find(xml, './/parameters/separator[@name="electronic"]/'
-                           'i[@name="NELECT"]')
+        entry = self._find(xml, './/parameters/separator[@name="electronic"]/' 'i[@name="NELECT"]')
 
         if entry is None:
             return None
@@ -1392,8 +1324,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         """
 
-        entry = self._find(xml, './/parameters/separator[@name="general"]/'
-                           'i[@name="SYSTEM"]')
+        entry = self._find(xml, './/parameters/separator[@name="general"]/' 'i[@name="SYSTEM"]')
 
         if entry is None:
             return None
@@ -1419,8 +1350,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         """
 
-        entry = self._findall(xml, './/calculation/array[@name="born_charges"]/'
-                              'set/v')
+        entry = self._findall(xml, './/calculation/array[@name="born_charges"]/' 'set/v')
 
         if entry is None:
             return None
@@ -1441,7 +1371,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         return born
 
-    def _fetch_upfsw(self, xml, extract_all=False):  # pylint: disable=R0915
+    def _fetch_upfsw(self, xml, extract_all=False):
         """
         Fetch the unitcell, atomic positions, force and stress using etree.
 
@@ -1580,19 +1510,19 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
                 stress[1] = None
                 stress[2] = None
 
-            max_entries = max(num_entrystress, max(num_entryforce, max(num_entrycell, num_entrypos)))
+            max_entries = max(num_entrystress, num_entryforce, num_entrycell, num_entrypos)
             if max_entries > 6:
                 for calc in range(1, num_calcs):
                     basecell = calc * 3
                     basepos = calc * num_atoms
                     if entrycell is not None:
-                        cell[calc + 1] = self._convert_array2D_f(entrycell[basecell:basecell + 3], 3)
+                        cell[calc + 1] = self._convert_array2D_f(entrycell[basecell : basecell + 3], 3)
                     if entrypos is not None:
-                        pos[calc + 1] = self._convert_array2D_f(entrypos[basepos:basepos + num_atoms], 3)
+                        pos[calc + 1] = self._convert_array2D_f(entrypos[basepos : basepos + num_atoms], 3)
                     if entryforce is not None:
-                        force[calc + 1] = self._convert_array2D_f(entryforce[basepos:basepos + num_atoms], 3)
+                        force[calc + 1] = self._convert_array2D_f(entryforce[basepos : basepos + num_atoms], 3)
                     if entrystress is not None:
-                        stress[calc + 1] = self._convert_array2D_f(entrystress[basecell:basecell + 3], 3)
+                        stress[calc + 1] = self._convert_array2D_f(entrystress[basecell : basecell + 3], 3)
 
         # If we still only have one entry, or number two is None, last and initial should
         # be the same, force them to be similar. We could do this earlier, but this is done
@@ -1629,8 +1559,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         """
 
-        entry = self._findall(xml, './/atominfo/'
-                              'array[@name="atoms"]/set/rc/c')
+        entry = self._findall(xml, './/atominfo/' 'array[@name="atoms"]/set/rc/c')
 
         if entry is None:
             return None
@@ -1655,8 +1584,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         """
 
-        entry = self._findall(xml, './/calculation/dynmat/'
-                              'varray[@name="hessian"]/v')
+        entry = self._findall(xml, './/calculation/dynmat/' 'varray[@name="hessian"]/v')
 
         if entry is None:
             return None
@@ -1690,8 +1618,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         """
 
-        entry = self._find(xml, './/calculation/dynmat/'
-                           'v[@name="eigenvalues"]')
+        entry = self._find(xml, './/calculation/dynmat/' 'v[@name="eigenvalues"]')
 
         if entry is None:
             return None
@@ -1707,8 +1634,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         eigenvalues = self._convert_array_f(entry)
 
-        entry = self._find(xml, './/calculation/dynmat/'
-                           'varray[@name="eigenvectors"]')
+        entry = self._find(xml, './/calculation/dynmat/' 'varray[@name="eigenvectors"]')
 
         if entry is None:
             return None
@@ -1819,12 +1745,10 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
         """
 
         # Spin 1
-        entry_ispin1 = self._findall(xml, './/calculation/eigenvalues/array/set/'
-                                     'set[@comment="spin 1"]/set/r')
+        entry_ispin1 = self._findall(xml, './/calculation/eigenvalues/array/set/' 'set[@comment="spin 1"]/set/r')
 
         # Spin 2
-        entry_ispin2 = self._findall(xml, './/calculation/eigenvalues/array/set/'
-                                     'set[@comment="spin 2"]/set/r')
+        entry_ispin2 = self._findall(xml, './/calculation/eigenvalues/array/set/' 'set[@comment="spin 2"]/set/r')
 
         # If we do not find spin 1 entries return right away
         if entry_ispin1 is None:
@@ -1854,26 +1778,20 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         # Spin 1
         entry_ispin1 = self._findall(
-            xml, './/calculation/eigenvalues/'
-            'eigenvalues/array/set/'
-            'set[@comment="spin 1"]/set/r'
+            xml, './/calculation/eigenvalues/' 'eigenvalues/array/set/' 'set[@comment="spin 1"]/set/r'
         )
         # Spin 2
         entry_ispin2 = self._findall(
-            xml, './/calculation/eigenvalues/'
-            'eigenvalues/array/set/'
-            'set[@comment="spin 2"]/set/r'
+            xml, './/calculation/eigenvalues/' 'eigenvalues/array/set/' 'set[@comment="spin 2"]/set/r'
         )
         if entry_ispin1 is not None:
             # Also extract the k-point grids
             self._data['kpoints'] = self._fetch_kpointsw(
-                xml, path='.//calculation/eigenvalues/'
-                'kpoints/varray[@name="kpointlist"]/v'
+                xml, path='.//calculation/eigenvalues/' 'kpoints/varray[@name="kpointlist"]/v'
             )
 
             self._data['kpointsw'] = self._fetch_kpointsww(
-                xml, path='//calculation/eigenvalues/'
-                'kpoints/varray[@name="weights"]/v'
+                xml, path='//calculation/eigenvalues/' 'kpoints/varray[@name="weights"]/v'
             )
 
         # If we do not find spin 1 entries return right away
@@ -1907,16 +1825,12 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         # Spin 1
         entry_ispin1 = self._findall(
-            xml, './/calculation/eigenvelocities/'
-            'eigenvalues/array/set/'
-            'set[@comment="spin 1"]/set/r'
+            xml, './/calculation/eigenvelocities/' 'eigenvalues/array/set/' 'set[@comment="spin 1"]/set/r'
         )
 
         # Spin 2
         entry_ispin2 = self._findall(
-            xml, './/calculation/eigenvelocities/'
-            'eigenvalues/array/set/'
-            'set[@comment="spin 2"]/set/r'
+            xml, './/calculation/eigenvelocities/' 'eigenvalues/array/set/' 'set[@comment="spin 2"]/set/r'
         )
 
         # If we do not find spin 1 entries return right away
@@ -1924,13 +1838,11 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
             return None
 
         self._data['kpoints'] = self._fetch_kpointsw(
-            xml, path='.//calculation/eigenvelocities/'
-            'kpoints/varray[@name="kpointlist"]/v'
+            xml, path='.//calculation/eigenvelocities/' 'kpoints/varray[@name="kpointlist"]/v'
         )
 
         self._data['kpointsw'] = self._fetch_kpointsww(
-            xml, path='//calculation/eigenvelocities/'
-            'kpoints/varray[@name="weights"]/v'
+            xml, path='//calculation/eigenvelocities/' 'kpoints/varray[@name="weights"]/v'
         )
 
         eigenvelocities = self._extract_eigenvelocities(entry_ispin1, entry_ispin2, len(self._data['kpoints']))
@@ -1955,12 +1867,10 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
         """
 
         # Projectors spin 1
-        entry_ispin1 = self._findall(xml, './/calculation/projected/array/set/'
-                                     'set[@comment="spin1"]/set/set/r')
+        entry_ispin1 = self._findall(xml, './/calculation/projected/array/set/' 'set[@comment="spin1"]/set/set/r')
 
         # Projectors spin 2
-        entry_ispin2 = self._findall(xml, './/calculation/projected/array/set/'
-                                     'set[@comment="spin2"]/set/set/r')
+        entry_ispin2 = self._findall(xml, './/calculation/projected/array/set/' 'set[@comment="spin2"]/set/set/r')
 
         # If we do not find spin 1 entries return right away
         if entry_ispin1 is None:
@@ -2458,12 +2368,11 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
             else:
                 eigenvalues['up'] = np.ascontiguousarray(data[0, :, :])
                 eigenvalues['down'] = np.ascontiguousarray(data[1, :, :])
+        elif entries > 1:
+            eigenvalues['total'] = np.ascontiguousarray(data[0, :, :, 0])
+            occupancies['total'] = np.ascontiguousarray(data[0, :, :, 1])
         else:
-            if entries > 1:
-                eigenvalues['total'] = np.ascontiguousarray(data[0, :, :, 0])
-                occupancies['total'] = np.ascontiguousarray(data[0, :, :, 1])
-            else:
-                eigenvalues['total'] = np.ascontiguousarray(data[0, :, :])
+            eigenvalues['total'] = np.ascontiguousarray(data[0, :, :])
         if entries > 1:
             return eigenvalues, occupancies
         return eigenvalues, None
@@ -2684,7 +2593,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         return data
 
-    def _convert_array1D_i(self, entry):  # pylint: disable=C0103
+    def _convert_array1D_i(self, entry):
         """
         Convert the input entry to numpy array.
 
@@ -2715,7 +2624,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         return data
 
-    def _convert_array1D_f(self, entry):  # pylint: disable=C0103
+    def _convert_array1D_f(self, entry):
         """
         Convert the input entry to numpy array.
 
@@ -2747,7 +2656,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         return data
 
-    def _convert_array2D_f(self, entry, dim):  # pylint: disable=C0103
+    def _convert_array2D_f(self, entry, dim):
         """
         Convert the input entry to numpy array.
 
@@ -2971,7 +2880,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
     def get_epsilon(self):
         """
-        Return the """
+        Return the"""
         epsilon = self._data['dielectrics']['epsilon']
         return epsilon
 
@@ -3214,7 +3123,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
 
         # Check if the supplied etype is in the support list
         for item in etype:
-            if item not in _SUPPORTED_TOTAL_ENERGIES.keys():  # pylint: disable=consider-iterating-dictionary
+            if item not in _SUPPORTED_TOTAL_ENERGIES.keys():
                 raise ValueError(f'The supplied total energy type: {item} is not supported.')
 
         return self._get_energies(status, etype, nosc)
@@ -3550,7 +3459,7 @@ class Xml(BaseParser):  #  pylint: disable=R0902, R0904
             self._logger.error(
                 f'{self.ERROR_MESSAGES[self.ERROR_UNSUPPORTED_STATUS]} '
                 'Please use any of the following values '
-                f'{str(allowed_entries)}'
+                f'{allowed_entries!s}'
             )
             sys.exit(self.ERROR_UNSUPPORTED_STATUS)
 

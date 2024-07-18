@@ -1,5 +1,5 @@
 """Handle INCAR."""
-# pylint: disable=consider-using-f-string
+
 import io
 import logging
 import sys
@@ -15,20 +15,18 @@ class Incar(BaseParser):
     ERROR_TWO_EQUALS = 101
     ERROR_INVALID_COMMENT_SIGN = 102
     ERROR_MULTIPLE_COMMENTS = 103
-    BaseParser.ERROR_MESSAGES.update({
-        ERROR_TWO_EQUALS:
-        'Detected two equal signs for an entry in the INCAR file.',
-        ERROR_INVALID_COMMENT_SIGN:
-        'Detected a comment line that does not start '
-        'with a #. Please correct and be consistent.',
-        ERROR_MULTIPLE_COMMENTS:
-        'Multiple comment tags detected.',
-        ERROR_UNSUPPORTED_TAG:
-        'The supplied INCAR tag is not '
-        'officially supported. Please consult the VASP manual or '
-        'set the validate_tags attribute for the Incar class initializer to '
-        'False if you want to disable tag checking.'
-    })
+    BaseParser.ERROR_MESSAGES.update(
+        {
+            ERROR_TWO_EQUALS: 'Detected two equal signs for an entry in the INCAR file.',
+            ERROR_INVALID_COMMENT_SIGN: 'Detected a comment line that does not start '
+            'with a #. Please correct and be consistent.',
+            ERROR_MULTIPLE_COMMENTS: 'Multiple comment tags detected.',
+            ERROR_UNSUPPORTED_TAG: 'The supplied INCAR tag is not '
+            'officially supported. Please consult the VASP manual or '
+            'set the validate_tags attribute for the Incar class initializer to '
+            'False if you want to disable tag checking.',
+        }
+    )
     ERROR_MESSAGES = BaseParser.ERROR_MESSAGES
 
     def __init__(
@@ -39,8 +37,8 @@ class Incar(BaseParser):
         file_handler=None,
         logger=None,
         prec=None,
-        validate_tags=True
-    ):  # pylint: disable=too-many-arguments
+        validate_tags=True,
+    ):
         """Initialize an INCAR object and set content as a dictionary.
 
         Parameters
@@ -72,17 +70,21 @@ class Incar(BaseParser):
         self._width = self._prec + 4
 
         # Check that only one argument is supplied
-        # pylint: disable=R0916
-        if (self._incar_string is not None and self._incar_dict is not None) or (
-            self._incar_string is not None and self._file_path is not None
-        ) or (self._incar_dict is not None and self._file_path is not None) and self._file_handler is not None:
+        if (
+            (self._incar_string is not None and self._incar_dict is not None)
+            or (self._incar_string is not None and self._file_path is not None)
+            or (self._incar_dict is not None and self._file_path is not None)
+            and self._file_handler is not None
+        ):
             self._logger.error(self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
             sys.exit(self.ERROR_USE_ONE_ARGUMENT)
 
         # Check that at least one is supplied
         if (
-            self._incar_string is None and self._incar_dict is None and self._file_path is None and
-            self._file_handler is None
+            self._incar_string is None
+            and self._incar_dict is None
+            and self._file_path is None
+            and self._file_handler is None
         ):
             self._logger.error(self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
             sys.exit(self.ERROR_USE_ONE_ARGUMENT)
@@ -169,8 +171,9 @@ class Incar(BaseParser):
                     final_split = ntry.split('=')
                     if len(final_split) > 2:
                         self._logger.error(
-                            '{} The following line contains the problem:\n\n {}'
-                            '\n\nPlease correct. Exiting.'.format(self.ERROR_MESSAGES[self.ERROR_TWO_EQUALS], ntry)
+                            '{} The following line contains the problem:\n\n {}' '\n\nPlease correct. Exiting.'.format(
+                                self.ERROR_MESSAGES[self.ERROR_TWO_EQUALS], ntry
+                            )
                         )
                         sys.exit(self.ERROR_TWO_EQUALS)
                     if len(final_split) == 1:
@@ -190,7 +193,7 @@ class Incar(BaseParser):
         return incar_dict
 
     def _from_dict(self, incar):
-        """"
+        """ "
         Go through the dict and setup the IncarItem elements.
 
         Parameters
@@ -219,7 +222,7 @@ class Incar(BaseParser):
                 comment = value.split('#')
                 if len(comment) > 2:
                     self._logger.info(
-                        f'{self.ERROR_MESSAGES[self.ERROR_MULTIPLE_COMMENTS]} The tag {str(tag)} is affected.'
+                        f'{self.ERROR_MESSAGES[self.ERROR_MULTIPLE_COMMENTS]} The tag {tag!s} is affected.'
                     )
                     sys.exit(self.ERROR_MULTIPLE_COMMENTS)
                 if len(comment) == 1:
@@ -614,16 +617,8 @@ class IncarItem:
             depending on what is detected.
 
         """
-        if '.True.' in string \
-           or '.TRUE.' in string \
-           or '.true.' in string \
-           or '.t.' in string \
-           or '.T.' in string:
+        if '.True.' in string or '.TRUE.' in string or '.true.' in string or '.t.' in string or '.T.' in string:
             return True
-        if '.False.' in string \
-             or '.FALSE.' in string \
-             or '.false.' in string \
-             or '.f.' in string \
-             or '.F.' in string:
+        if '.False.' in string or '.FALSE.' in string or '.false.' in string or '.f.' in string or '.F.' in string:
             return False
         return string

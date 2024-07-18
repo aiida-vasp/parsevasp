@@ -1,7 +1,7 @@
 """Test potcar."""
+
 import os
 
-import numpy as np
 import pytest
 
 from parsevasp.potcar import Potcar
@@ -63,10 +63,11 @@ def potcar_parser_file_object():
 
 
 @pytest.mark.parametrize(
-    'potcar_object,reference_values', [
+    'potcar_object,reference_values',
+    [
         ('potcar_parser', 'potcar_reference_metadata'),
         ('potcar_parser_file_object', 'potcar_reference_metadata'),
-    ]
+    ],
 )
 def test_potcar_metadata(potcar_object, reference_values, request):
     """Test if the metadata produced matches the expected one"""
@@ -75,16 +76,17 @@ def test_potcar_metadata(potcar_object, reference_values, request):
 
     for key, value in reference_values.items():
         assert key in potcar_object.metadata, f'key "{key}" not in the metadata'
-        assert value == potcar_object.metadata[
-            key
-        ], f'referance value "{value}" does not match to found value {potcar_object.metadata[key]} for key "{key}"'
+        assert (
+            value == potcar_object.metadata[key]
+        ), f'referance value "{value}" does not match to found value {potcar_object.metadata[key]} for key "{key}"'
 
 
 @pytest.mark.parametrize(
-    'potcar_object,reference_values', [
+    'potcar_object,reference_values',
+    [
         ('potcar_parser', 'potcar_reference_metadata'),
         ('potcar_parser_file_object', 'potcar_reference_metadata'),
-    ]
+    ],
 )
 def test_potcar_attributes(potcar_object, reference_values, request):
     """Test if the attributes are correctly setup"""
@@ -97,6 +99,6 @@ def test_potcar_attributes(potcar_object, reference_values, request):
 
     for key, value in reference_values.items():
         assert hasattr(potcar_object, key.lower()), f'attribute {key} not found in potcar'
-        assert getattr(
-            potcar_object, key.lower()
-        ) == value, f'value of attribute {key} {getattr(potcar_object, key.lower())} does not match reference {value}'
+        assert (
+            getattr(potcar_object, key.lower()) == value
+        ), f'value of attribute {key} {getattr(potcar_object, key.lower())} does not match reference {value}'

@@ -16,7 +16,7 @@ from parsevasp import utils
 from parsevasp.base import BaseParser
 
 
-class Stream(BaseParser):  # pylint: disable=R0902
+class Stream(BaseParser):
     """Class to handle standard stream."""
 
     def __init__(self, file_path=None, file_handler=None, logger=None, history=False, config=None):
@@ -139,8 +139,8 @@ class Stream(BaseParser):  # pylint: disable=R0902
         for _, value in self._stream_config.items():
             kind = value['kind']
             if isinstance(kind, str):
-                if kind.upper() in VaspStream._ALLOWED_STREAMS:  # pylint: disable=W0212
-                    if not kind in stream_kinds:
+                if kind.upper() in VaspStream._ALLOWED_STREAMS:
+                    if kind not in stream_kinds:
                         stream_kinds.append(kind)
             else:
                 raise ValueError('One of the kind entries is not a string.')
@@ -166,8 +166,9 @@ class Stream(BaseParser):  # pylint: disable=R0902
                     if not inverse:
                         triggers[''.join([stream.lower(), 's'])].append(VaspStream(shortname=shortname, **config))
                     else:
-                        inverse_triggers[''.join([stream.lower(),
-                                                  's'])].append(VaspStream(shortname=shortname, **config))
+                        inverse_triggers[''.join([stream.lower(), 's'])].append(
+                            VaspStream(shortname=shortname, **config)
+                        )
 
         return triggers, inverse_triggers
 
@@ -209,7 +210,7 @@ class Stream(BaseParser):  # pylint: disable=R0902
         ignore = {}
         for kind, _ in stream_triggers.items():
             ignore[kind] = []
-        for _, line in enumerate(stream):  # pylint: disable=too-many-nested-blocks
+        for _, line in enumerate(stream):
             # Go though all entries in the stream triggers
             for kind, triggers in stream_triggers.items():
                 # Not check all the triggers of the given kind
@@ -240,29 +241,27 @@ class Stream(BaseParser):  # pylint: disable=R0902
                     # Only add inverse triggers if they was not detected during parsing.
                     self._streams.append(
                         VaspStream(
-                            trigger.shortname, trigger.kind, trigger.regex, trigger.message, trigger.suggestion,
-                            trigger.location, trigger.recover, trigger.inverse
+                            trigger.shortname,
+                            trigger.kind,
+                            trigger.regex,
+                            trigger.message,
+                            trigger.suggestion,
+                            trigger.location,
+                            trigger.recover,
+                            trigger.inverse,
                         )
                     )
 
 
-class VaspStream:  # pylint: disable=R0902
+class VaspStream:
     """Class representing stream elements given by VASP that we want to trigger on."""
 
     _ALLOWED_STREAMS = ['ERROR', 'WARNING']
     _ALLOWED_LOCATIONS = ['STDOUT', 'STDERR']
 
     def __init__(
-        self,
-        shortname,
-        kind,
-        regex,
-        message,
-        suggestion=None,
-        location='STDOUT',
-        recover=False,
-        inverse=False
-    ):  # pylint: disable=too-many-arguments
+        self, shortname, kind, regex, message, suggestion=None, location='STDOUT', recover=False, inverse=False
+    ):
         """
         Initialise a VaspStream object.
 
@@ -388,7 +387,7 @@ class VaspStream:  # pylint: disable=R0902
     @location.setter
     def location(self, loc):
         """Setter for the location that validates if it is an allowed value."""
-        if not loc in self._ALLOWED_LOCATIONS:
+        if loc not in self._ALLOWED_LOCATIONS:
             raise ValueError(f'The location entry {loc} is not one of the allowed values {self._ALLOWED_LOCATIONS}')
         self._location = loc
 
@@ -428,8 +427,14 @@ class VaspStream:  # pylint: disable=R0902
             # Make a new instance for this particular error (in case we want
             # to save each and every error)
             return VaspStream(
-                self.shortname, self.kind, self.regex, self.message, self.suggestion, self.location, self.recover,
-                self.inverse
+                self.shortname,
+                self.kind,
+                self.regex,
+                self.message,
+                self.suggestion,
+                self.location,
+                self.recover,
+                self.inverse,
             )
 
         return None

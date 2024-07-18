@@ -1,19 +1,15 @@
-=======
-Authors
-=======
+# Authors
 
 Parsevasp is maintained by Espen Flage-Larsen, Sigma2, Norway.
 
 
-Development Team
-----------------
+## Development Team
 * Espen Flage-Larsen, Sigma2 (maintainer)
 * Bonan Zhu, University College London
 * Atsushi Togo, National Institute for Materials Science
 * Jonathan Chico, Sandvik Coromant
 
-Acknowledgements
-----------------
+## Acknowledgements
 Special thanks go to the following individuals and organizations that helps or helped in the development.
 
 * Kohei Shinohara, fixed messages for OUTCAR parser and partial DOS mapping for the DOSCAR parser.

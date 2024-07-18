@@ -1,4 +1,5 @@
 """Utiles."""
+
 import logging
 import math
 import os
@@ -42,7 +43,7 @@ def read_from_file(file_name, input_file_handler, contains=None, lines=True, enc
     """
 
     if logger is None:
-        logger = logging.getLogger(sys._getframe().f_code.co_name)  # pylint: disable=W0212
+        logger = logging.getLogger(sys._getframe().f_code.co_name)
 
     if input_file_handler is not None:
         inputfile = input_file_handler
@@ -74,9 +75,8 @@ def read_from_file(file_name, input_file_handler, contains=None, lines=True, enc
                 for element in contains:
                     if element in line:
                         parsed.append(line)
-            else:
-                if contains in line:
-                    parsed = line
+            elif contains in line:
+                parsed = line
     else:
         parsed = file_data
 
@@ -102,7 +102,7 @@ def file_exists(file_path, logger=None):
     from parsevasp.base import BaseParser
 
     if logger is None:
-        logger = logging.getLogger(sys._getframe().f_code.co_name)  # pylint: disable=W0212
+        logger = logging.getLogger(sys._getframe().f_code.co_name)
 
     if not file_path:
         logger.error(BaseParser.ERROR_MESSAGES[BaseParser.ERROR_EMPTY_FILE_PATH])
@@ -162,9 +162,7 @@ def test_string_content(string):
     """
     try:
         float(string)
-        return 'int' if ((string.count('.') == 0) and \
-                         ('e' not in string) and \
-                         ('E' not in string)) else 'float'
+        return 'int' if ((string.count('.') == 0) and ('e' not in string) and ('E' not in string)) else 'float'
     except ValueError:
         return 'string'
 
