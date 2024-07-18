@@ -17,6 +17,8 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: Install pytset
         run: pip install pytest pytest-cov
+      - name: Install parsevasp
+        run: pip install -e . -vvv
       - name: Run pytest
         run: pytest --cov=./ --cov-report=xml tests
       - name: Upload coverage to Codecov
