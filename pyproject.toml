@@ -8,7 +8,7 @@ name = "parsevasp"
 dynamic = ["version"]  # read from parsevasp/__init__.py
 description = "A general parser for VASP"
 authors = [{name = "Espen Flage-Larsen	", email = "espen.flage-larsen@sigma2.no"}]
-readme = "README.rst"
+readme = "README.md"
 license = {file = "LICENSE.txt"}
 classifiers = [
     "Programming Language :: Python",
