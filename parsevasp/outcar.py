@@ -202,7 +202,7 @@ class Outcar(BaseParser):
                         _counter = _counter + 1
             if line.strip().startswith('number of electron'):
                 # Only take the last value
-                self._data['magnetization']['full_cell'] = [float(_val) for _val in outcar[index].strip().split()[5:]]
+                self._data['magnetization']['full_cell'] = [float(_val) for _val in line.strip().split()[5:]]
 
         # Check if SCF iterations are contained in the file
         if iter_counter is None:
