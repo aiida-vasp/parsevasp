@@ -2916,7 +2916,11 @@ class Xml(BaseParser):
     def _get_parameters(self, xml):
         """
         Return all of the input parameters, including the default values, used
-        for the simulation.
+        for the simulation. Makes use of the `findall` function from lxml and
+        searches for all entries in the parameters and separator sections. 
+        There are two values that need to be parsed, the `i` and `v` entries.
+        The suggested type from the xml file is used to convert the values. If 
+        no type is suggested it is considered to be a float.
 
         Parameters
         ----------
@@ -2935,23 +2939,38 @@ class Xml(BaseParser):
 
         root = xml.getroot()
 
-        parameters = root.findall('.//parameters//separator//i')
+        separators = root.findall('.//parameters//separator')
 
-        for parameter in parameters:
-            name = parameter.get('name').lower()
-            value = parameter.text
-            entry_type = parameter.get('type')
-            if entry_type == 'string':
-                param_dict[name] = str(value)
-            elif entry_type == 'logical':
-                if value == 'F':
-                    param_dict[name] = False
-                elif value == 'T':
-                    param_dict[name] = True
-            elif entry_type == 'int':
-                param_dict[name] = int(value)
-            else:
-                param_dict[name] = float(value)
+        for separator in separators:
+            i_elements = separator.findall('.//i')
+            v_elements = separator.findall('.//v')
+
+            for i in i_elements:
+                name = i.get('name').lower()
+                value = i.text
+                entry_type = i.get('type')
+                # Check to see if the value has * which means that the value
+                # was too large for the output. Currently we are ignoring 
+                # these values which by default are set to None.
+                if value is not None and '****' in value:
+                    continue
+                if entry_type == 'string':
+                    param_dict[name] = str(value)
+                elif entry_type == 'logical':
+                    if value == 'F':
+                        param_dict[name] = False
+                    elif value == 'T':
+                        param_dict[name] = True
+                elif entry_type == 'int':
+                    param_dict[name] = int(value)
+                else:
+                    param_dict[name] = float(value)
+
+            for v in v_elements:
+                name = v.get('name').lower()
+                value = v.text
+                entry_type = v.get('type')
+                param_dict[name] = np.array(value.split()).astype('float')
 
         return param_dict
 
