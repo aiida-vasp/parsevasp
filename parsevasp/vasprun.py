@@ -375,8 +375,9 @@ class Xml(BaseParser):
                 except KeyError:
                     pass
             if extract_parameters:
-                name, param_value = self._convert_parameter(element)
-                self._parameters[name] = param_value
+                if element.get('name') is not None:
+                    name, param_value = self._convert_parameter(element)
+                    self._parameters[name] = param_value
 
             if extract_calculation:
                 # It would be very tempting just to fill the data and disect
@@ -2989,6 +2990,8 @@ class Xml(BaseParser):
         # these values which by default are set to None.
         if value is not None and '****' in value:
             value = None
+        elif value is None:
+            pass
         if entry_type == 'string':
             value = str(value)
         elif entry_type == 'logical':
