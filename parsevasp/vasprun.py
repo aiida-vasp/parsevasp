@@ -5,6 +5,7 @@ import logging
 import os
 import sys
 from collections import defaultdict
+from typing import Union, Tuple
 
 import numpy as np
 
@@ -119,7 +120,7 @@ class Xml(BaseParser):
         self._version = None
 
         # Dictionaries that contain the output of the parsing
-        self._parameters = {}
+        self._parameters = defaultdict(lambda:None)
         self._lattice = {
             'unitcell': None,
             'species': None,
@@ -374,7 +375,8 @@ class Xml(BaseParser):
                 except KeyError:
                     pass
             if extract_parameters:
-                self._parameters = self._get_parameters()
+                name, param_value = self._convert_parameter(element)
+                self._parameters[name] = param_value
 
             if extract_calculation:
                 # It would be very tempting just to fill the data and disect
@@ -2912,7 +2914,10 @@ class Xml(BaseParser):
 
         return energies
 
-    def _get_parameters(self, xml):
+    def _get_parameters(
+        self, 
+        xml: etree
+    ) -> defaultdict:
         """
         Return all of the input parameters, including the default values, used
         for the simulation. Makes use of the `findall` function from lxml and
@@ -2945,33 +2950,58 @@ class Xml(BaseParser):
             v_elements = separator.findall('.//v')
 
             for i in i_elements:
-                name = i.get('name').lower()
-                value = i.text
-                entry_type = i.get('type')
-                # Check to see if the value has * which means that the value
-                # was too large for the output. Currently we are ignoring 
-                # these values which by default are set to None.
-                if value is not None and '****' in value:
-                    continue
-                if entry_type == 'string':
-                    param_dict[name] = str(value)
-                elif entry_type == 'logical':
-                    if value == 'F':
-                        param_dict[name] = False
-                    elif value == 'T':
-                        param_dict[name] = True
-                elif entry_type == 'int':
-                    param_dict[name] = int(value)
-                else:
-                    param_dict[name] = float(value)
+                name, value = self._convert_parameter(i)
+                param_dict[name] = value
 
             for v in v_elements:
                 name = v.get('name').lower()
                 value = v.text
-                entry_type = v.get('type')
                 param_dict[name] = np.array(value.split()).astype('float')
 
         return param_dict
+    
+    def _convert_parameter(
+        self, 
+        element: etree._Element
+    ) -> Tuple[str, Union[str, bool, int, float, None]]:
+        """
+        Function will take an element from a XML file and convert it to the
+        suggested type. This function is primarily used while parsing input
+        parameters and might need modified to parse from other sections.
+
+        Parameters
+        ----------
+        element: Element from a parsed XML file. Will be used to pull values 
+            such as name, text, and type.
+
+        Returns
+        -------
+        name: String representation of the input parameter.
+        value: The determined value of the input parameter. Can have different
+            values including str, bool, int, or float.
+        """
+
+        name = element.get('name').lower()
+        value = element.text
+        entry_type = element.get('type')
+        # Check to see if the value has * which means that the value
+        # was too large for the output. Currently we are ignoring 
+        # these values which by default are set to None.
+        if value is not None and '****' in value:
+            value = None
+        if entry_type == 'string':
+            value = str(value)
+        elif entry_type == 'logical':
+            if value == 'F':
+                value = False
+            elif value == 'T':
+                value = True
+        elif entry_type == 'int':
+            value = int(value)
+        else:
+            value = float(value)
+
+        return name, value
 
     def get_dos(self):
         """
