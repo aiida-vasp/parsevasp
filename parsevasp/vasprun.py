@@ -2916,9 +2916,9 @@ class Xml(BaseParser):
         """
         Return all of the input parameters, including the default values, used
         for the simulation. Makes use of the `findall` function from lxml and
-        searches for all entries in the parameters and separator sections. 
+        searches for all entries in the parameters and separator sections.
         There are two values that need to be parsed, the `i` and `v` entries.
-        The suggested type from the xml file is used to convert the values. If 
+        The suggested type from the xml file is used to convert the values. If
         no type is suggested it is considered to be a float.
 
         Parameters
@@ -2949,7 +2949,7 @@ class Xml(BaseParser):
                 value = i.text
                 entry_type = i.get('type')
                 # Check to see if the value has * which means that the value
-                # was too large for the output. Currently we are ignoring 
+                # was too large for the output. Currently we are ignoring
                 # these values which by default are set to None.
                 if value is not None and '****' in value:
                     continue
