@@ -375,7 +375,7 @@ class Xml(BaseParser):
                 except KeyError:
                     pass
             if extract_parameters:
-                if element.get('name') is not None:
+                if element.tag in ['i', 'v']:
                     name, param_value = self._convert_parameter(element)
                     self._parameters[name] = param_value
 
@@ -2952,9 +2952,8 @@ class Xml(BaseParser):
                 param_dict[name] = value
 
             for v in v_elements:
-                name = v.get('name').lower()
-                value = v.text
-                param_dict[name] = np.array(value.split()).astype('float')
+                name, value = self._convert_parameter(v)
+                param_dict[name] = value
 
         return param_dict
 
@@ -2971,32 +2970,39 @@ class Xml(BaseParser):
 
         Returns
         -------
-        name: String representation of the input parameter.
+        name: String representation of the input parameter name.
         value: The determined value of the input parameter. Can have different
             values including str, bool, int, or float.
         """
 
+        tag = element.tag
         name = element.get('name').lower()
         value = element.text
+        if value is not None and '\n' in value:
+            value = value.strip('\n')
         entry_type = element.get('type')
         # Check to see if the value has * which means that the value
         # was too large for the output. Currently we are ignoring
         # these values which by default are set to None.
-        if value is not None and '****' in value:
-            value = None
-        elif value is None:
-            pass
-        if entry_type == 'string':
-            value = str(value)
-        elif entry_type == 'logical':
-            if value == 'F':
-                value = False
-            elif value == 'T':
-                value = True
-        elif entry_type == 'int':
-            value = int(value)
-        else:
-            value = float(value)
+        if tag == 'i':
+            if value is not None and '****' in value:
+                value = None
+            elif value is None:
+                value = None
+            elif entry_type == 'string':
+                value = str(value)
+            elif entry_type == 'logical':
+                if value == 'F':
+                    value = False
+                elif value == 'T':
+                    value = True
+            elif entry_type == 'int':
+                value = int(value)
+            else:
+                value = float(value)
+
+        elif tag == 'v':
+            value = np.array(value.split()).astype('float')
 
         return name, value
 
