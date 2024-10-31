@@ -5,7 +5,7 @@ import logging
 import os
 import sys
 from collections import defaultdict
-from typing import Union, Tuple
+from typing import Tuple, Union
 
 import numpy as np
 
@@ -120,7 +120,7 @@ class Xml(BaseParser):
         self._version = None
 
         # Dictionaries that contain the output of the parsing
-        self._parameters = defaultdict(lambda:None)
+        self._parameters = defaultdict(lambda: None)
         self._lattice = {
             'unitcell': None,
             'species': None,
@@ -2915,10 +2915,7 @@ class Xml(BaseParser):
 
         return energies
 
-    def _get_parameters(
-        self, 
-        xml: etree
-    ) -> defaultdict:
+    def _get_parameters(self, xml: etree) -> defaultdict:
         """
         Return all of the input parameters, including the default values, used
         for the simulation. Makes use of the `findall` function from lxml and
@@ -2960,11 +2957,8 @@ class Xml(BaseParser):
                 param_dict[name] = np.array(value.split()).astype('float')
 
         return param_dict
-    
-    def _convert_parameter(
-        self, 
-        element: etree._Element
-    ) -> Tuple[str, Union[str, bool, int, float, None]]:
+
+    def _convert_parameter(self, element: etree._Element) -> Tuple[str, Union[str, bool, int, float, None]]:
         """
         Function will take an element from a XML file and convert it to the
         suggested type. This function is primarily used while parsing input
@@ -2972,7 +2966,7 @@ class Xml(BaseParser):
 
         Parameters
         ----------
-        element: Element from a parsed XML file. Will be used to pull values 
+        element: Element from a parsed XML file. Will be used to pull values
             such as name, text, and type.
 
         Returns
@@ -2986,7 +2980,7 @@ class Xml(BaseParser):
         value = element.text
         entry_type = element.get('type')
         # Check to see if the value has * which means that the value
-        # was too large for the output. Currently we are ignoring 
+        # was too large for the output. Currently we are ignoring
         # these values which by default are set to None.
         if value is not None and '****' in value:
             value = None
