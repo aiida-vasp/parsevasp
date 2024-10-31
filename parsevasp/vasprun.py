@@ -4,10 +4,9 @@ import copy
 import logging
 import os
 import sys
+from collections import defaultdict
 
 import numpy as np
-
-from collections import defaultdict
 
 from parsevasp import constants, utils
 from parsevasp.base import BaseParser
@@ -2463,7 +2462,7 @@ class Xml(BaseParser):
             return forces[largest_key]
         if status == 'all':
             return forces
-        
+
     def get_parameters(self) -> defaultdict:
         """
         Get the input parameters, including the default values, as specified
@@ -2472,7 +2471,7 @@ class Xml(BaseParser):
         Returns
         -------
         parameters: defaultdict
-            Returns a defaultdict of the input parameters. If a parameter was 
+            Returns a defaultdict of the input parameters. If a parameter was
             not specified, the defaultdict will return None.
         """
 
@@ -2912,7 +2911,7 @@ class Xml(BaseParser):
         energies['electronic_steps'] = electronic_steps
 
         return energies
-    
+
     def _get_parameters(self, xml):
         """
         Return all of the input parameters, including the default values, used
@@ -2931,7 +2930,7 @@ class Xml(BaseParser):
         -------
         parameters: dict
             A dict containing all of the input values of a VASP simulation.
-            Based on the type in the XML file, will attempt to convert the 
+            Based on the type in the XML file, will attempt to convert the
             value to the specified type.
         """
 
