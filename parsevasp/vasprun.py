@@ -2921,9 +2921,9 @@ class Xml(BaseParser):
         """
         Return all of the input parameters, including the default values, used
         for the simulation. Makes use of the `findall` function from lxml and
-        searches for all entries in the parameters and separator sections. 
+        searches for all entries in the parameters and separator sections.
         There are two values that need to be parsed, the `i` and `v` entries.
-        The suggested type from the xml file is used to convert the values. If 
+        The suggested type from the xml file is used to convert the values. If
         no type is suggested it is considered to be a float.
 
         Parameters
