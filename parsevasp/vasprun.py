@@ -382,7 +382,7 @@ class Xml(BaseParser):
                     if self._parameters[name] is not None:
                         parent = element.getparent().get('name')
                         if parent is not None:
-                            name = '_'.join([name]  + parent.split())
+                            name = '_'.join([name] + parent.split())
                         else:
                             name += '_none'
                     self._parameters[name] = param_value
@@ -2962,7 +2962,7 @@ class Xml(BaseParser):
                     if param_dict[name] is not None:
                         parent = e.getparent().get('name')
                         if parent is not None:
-                            name = '_'.join([name]  + parent.split())
+                            name = '_'.join([name] + parent.split())
                         else:
                             name += '_none'
                     param_dict[name] = value
