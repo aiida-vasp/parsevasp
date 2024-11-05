@@ -243,6 +243,8 @@ class Xml(BaseParser):
 
         """
 
+        self._parameters = defaultdict(lambda: None)
+
         # Set logger
         self._logger.debug('Running parsee.')
 
@@ -374,9 +376,15 @@ class Xml(BaseParser):
                         self._version = element.text
                 except KeyError:
                     pass
-            if extract_parameters:
+            if extract_parameters and event == 'start':
                 if element.tag in ['i', 'v']:
                     name, param_value = self._convert_parameter(element)
+                    if self._parameters[name] is not None:
+                        parent = element.getparent().get('name')
+                        if parent is not None:
+                            name = '_'.join([name]  + parent.split())
+                        else:
+                            name += '_none'
                     self._parameters[name] = param_value
 
             if extract_calculation:
@@ -2939,21 +2947,25 @@ class Xml(BaseParser):
 
         param_dict = defaultdict(lambda: None)
 
+        tags = ['i', 'v']
+
         root = xml.getroot()
 
         separators = root.findall('.//parameters//separator')
 
         for separator in separators:
-            i_elements = separator.findall('.//i')
-            v_elements = separator.findall('.//v')
+            for tag in tags:
+                elements = separator.findall(f'.//{tag}')
 
-            for i in i_elements:
-                name, value = self._convert_parameter(i)
-                param_dict[name] = value
-
-            for v in v_elements:
-                name, value = self._convert_parameter(v)
-                param_dict[name] = value
+                for e in elements:
+                    name, value = self._convert_parameter(e)
+                    if param_dict[name] is not None:
+                        parent = e.getparent().get('name')
+                        if parent is not None:
+                            name = '_'.join([name]  + parent.split())
+                        else:
+                            name += '_none'
+                    param_dict[name] = value
 
         return param_dict
 
