@@ -2930,8 +2930,8 @@ class Xml(BaseParser):
         searches for all entries in the parameters and separator sections.
         There are two values that need to be parsed, the `i` and `v` entries.
         The suggested type from the xml file is used to convert the values. If
-        no type is suggested it is considered to be a float. If a duplicate 
-        entry is detected for the param_dict key, the name of the parent is 
+        no type is suggested it is considered to be a float. If a duplicate
+        entry is detected for the param_dict key, the name of the parent is
         appended to the key name. If there is no parent name, None is used.
 
         Parameters
