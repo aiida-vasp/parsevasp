@@ -2930,7 +2930,9 @@ class Xml(BaseParser):
         searches for all entries in the parameters and separator sections.
         There are two values that need to be parsed, the `i` and `v` entries.
         The suggested type from the xml file is used to convert the values. If
-        no type is suggested it is considered to be a float.
+        no type is suggested it is considered to be a float. If a duplicate 
+        entry is detected for the param_dict key, the name of the parent is 
+        appended to the key name. If there is no parent name, None is used.
 
         Parameters
         ----------
@@ -2939,7 +2941,7 @@ class Xml(BaseParser):
 
         Returns
         -------
-        parameters: dict
+        parameters: defaultdict
             A dict containing all of the input values of a VASP simulation.
             Based on the type in the XML file, will attempt to convert the
             value to the specified type.
