@@ -4,6 +4,8 @@ import copy
 import logging
 import os
 import sys
+from collections import defaultdict
+from typing import Tuple, Union
 
 import numpy as np
 
@@ -118,17 +120,7 @@ class Xml(BaseParser):
         self._version = None
 
         # Dictionaries that contain the output of the parsing
-        self._parameters = {
-            'symprec': None,
-            'ismear': None,
-            'sigma': None,
-            'ispin': None,
-            'nbands': None,
-            'nelect': None,
-            'system': None,
-            'nelm': None,
-            'nsw': None,
-        }
+        self._parameters = defaultdict(lambda: None)
         self._lattice = {
             'unitcell': None,
             'species': None,
@@ -225,15 +217,7 @@ class Xml(BaseParser):
 
         # Let us start to parse the content
         self._version = self._fetch_versionw(vaspxml)
-        self._parameters['symprec'] = self._fetch_symprecw(vaspxml)
-        self._parameters['sigma'] = self._fetch_sigmaw(vaspxml)
-        self._parameters['ismear'] = self._fetch_ismearw(vaspxml)
-        self._parameters['ispin'] = self._fetch_ispinw(vaspxml)
-        self._parameters['nbands'] = self._fetch_nbandsw(vaspxml)
-        self._parameters['nelect'] = self._fetch_nelectw(vaspxml)
-        self._parameters['system'] = self._fetch_systemw(vaspxml)
-        self._parameters['nelm'] = self._fetch_nelmw(vaspxml)
-        self._parameters['nsw'] = self._fetch_nsww(vaspxml)
+        self._parameters = self._get_parameters(vaspxml)
         self._lattice['species'] = self._fetch_speciesw(vaspxml)
         self._lattice['unitcell'], self._lattice['positions'], self._data['forces'], self._data['stress'] = (
             self._fetch_upfsw(vaspxml, extract_all=extract_all)
@@ -258,6 +242,8 @@ class Xml(BaseParser):
         Slower, but suitable for bigger files.
 
         """
+
+        self._parameters = defaultdict(lambda: None)
 
         # Set logger
         self._logger.debug('Running parsee.')
@@ -390,56 +376,16 @@ class Xml(BaseParser):
                         self._version = element.text
                 except KeyError:
                     pass
-            if extract_parameters:
-                try:
-                    if event == 'start' and element.attrib['name'] == 'SYMPREC':
-                        self._parameters['symprec'] = self._convert_f(element)
-                except KeyError:
-                    pass
-                try:
-                    if event == 'start' and element.attrib['name'] == 'ISPIN':
-                        self._parameters['ispin'] = self._convert_i(element)
-                except KeyError:
-                    pass
-                try:
-                    if event == 'start' and element.attrib['name'] == 'ISMEAR':
-                        self._parameters['ismear'] = self._convert_i(element)
-                except KeyError:
-                    pass
-                try:
-                    if event == 'start' and element.attrib['name'] == 'SIGMA':
-                        self._parameters['sigma'] = self._convert_f(element)
-                except KeyError:
-                    pass
-                try:
-                    if event == 'start' and element.attrib['name'] == 'NBANDS':
-                        self._parameters['nbands'] = self._convert_i(element)
-                except KeyError:
-                    pass
-                try:
-                    if event == 'start' and element.attrib['name'] == 'NELECT':
-                        self._parameters['nelect'] = self._convert_f(element)
-                except KeyError:
-                    pass
-                try:
-                    if event == 'start' and element.attrib['name'] == 'SYSTEM':
-                        self._parameters['system'] = element.text
-                except KeyError:
-                    pass
-                try:
-                    if (
-                        event == 'start'
-                        and element.attrib['name'] == 'NELM'
-                        and element.getparent().attrib['name'] == 'electronic convergence'
-                    ):
-                        self._parameters['nelm'] = self._convert_i(element)
-                except KeyError:
-                    pass
-                try:
-                    if event == 'start' and element.attrib['name'] == 'NSW':
-                        self._parameters['nsw'] = self._convert_i(element)
-                except KeyError:
-                    pass
+            if extract_parameters and event == 'start':
+                if element.tag in ['i', 'v']:
+                    name, param_value = self._convert_parameter(element)
+                    if self._parameters[name] is not None:
+                        parent = element.getparent().get('name')
+                        if parent is not None:
+                            name = '_'.join([name] + parent.split())
+                        else:
+                            name += '_none'
+                    self._parameters[name] = param_value
 
             if extract_calculation:
                 # It would be very tempting just to fill the data and disect
@@ -1057,281 +1003,6 @@ class Xml(BaseParser):
         version = entry.text
 
         return version
-
-    def _fetch_symprecw(self, xml):
-        """
-        Fetch and set symprec using etree.
-
-        Parameters
-        ----------
-        xml : object
-            An ElementTree object to be used for parsing.
-
-        Returns
-        -------
-        symprec : float
-            If SYMPREC is found it is returned.
-
-        Notes
-        -----
-        Used when detecting symmetry.
-
-        """
-
-        entry = self._find(xml, './/parameters/separator[@name="symmetry"]/' 'i[@name="SYMPREC"]')
-
-        if entry is None:
-            return None
-
-        symprec = self._convert_f(entry)
-
-        return symprec
-
-    def _fetch_sigmaw(self, xml):
-        """
-        Fetch and set sigma using etree.
-
-        Parameters
-        ----------
-        xml : object
-            An ElementTree object to be used for parsing.
-
-        Returns
-        -------
-        sigma : float
-            If SIGMA is found it is returned.
-
-        Notes
-        -----
-        Determines the smearing used etc.
-
-        """
-
-        entry = self._find(
-            xml,
-            './/parameters/separator[@name="electronic"]/' 'separator[@name="electronic smearing"]/' 'i[@name="SIGMA"]',
-        )
-
-        if entry is None:
-            return None
-
-        sigma = self._convert_f(entry)
-
-        return sigma
-
-    def _fetch_nelmw(self, xml):
-        """
-        Fetch and set nelm using etree.
-
-        Parameters
-        ----------
-        xml : object
-            An ElementTree object to be used for parsing.
-
-        Returns
-        -------
-        nelm : float
-            If NELM is found it is returned.
-
-        Notes
-        -----
-        Maximum number of eletronic steps. This is needed for checking if the eletronic
-        structure is converged.
-
-        """
-
-        entry = self._find(
-            xml,
-            './/parameters/separator[@name="electronic"]/'
-            'separator[@name="electronic convergence"]/'
-            'i[@name="NELM"]',
-        )
-
-        if entry is None:
-            return None
-
-        nelm = self._convert_i(entry)
-
-        return nelm
-
-    def _fetch_nsww(self, xml):
-        """
-        Fetch and set nsw using etree.
-
-        Parameters
-        ----------
-        xml : object
-            An ElementTree object to be used for parsing.
-
-        Returns
-        -------
-        nsw : int
-            If NSW is found it is returned.
-
-        Notes
-        -----
-        Maximum number of eletronic steps. This is needed for checking ionic convergence.
-
-        """
-
-        entry = self._find(xml, './/parameters/separator[@name="ionic"]/' 'i[@name="NSW"]')
-
-        if entry is None:
-            return None
-
-        nsw = self._convert_i(entry)
-
-        return nsw
-
-    def _fetch_ispinw(self, xml):
-        """
-        Fetch and set ispin using etree.
-
-        Parameters
-        ----------
-        xml : object
-            An ElementTree object to be used for parsing.
-
-        Returns
-        -------
-        ispin : int
-            If ISPIN is found it is returned.
-
-        Notes
-        -----
-        Determines if spin is included. ISPIN=2 separates the spins.
-
-        """
-
-        entry = self._find(
-            xml, './/parameters/separator[@name="electronic"]/' 'separator[@name="electronic spin"]/' 'i[@name="ISPIN"]'
-        )
-        if entry is None:
-            return None
-
-        ispin = self._convert_i(entry)
-
-        return ispin
-
-    def _fetch_ismearw(self, xml):
-        """
-        Fetch and set ismear using etree.
-
-        Parameters
-        ----------
-        xml : object
-            An ElementTree object to be used for parsing.
-
-        Returns
-        -------
-        ismear : int
-            If ISMEAR is found it is returned.
-
-        Notes
-        -----
-        Determines which smearing factor is used on the electrons.
-
-        """
-
-        entry = self._find(
-            xml,
-            './/parameters/separator[@name="electronic"]/'
-            'separator[@name="electronic smearing"]/'
-            'i[@name="ISMEAR"]',
-        )
-
-        if entry is None:
-            return None
-
-        ismear = self._convert_i(entry)
-
-        return ismear
-
-    def _fetch_nbandsw(self, xml):
-        """
-        Fetch and set nbands using etree.
-
-        Parameters
-        ----------
-        xml : object
-            An ElementTree object to be used for parsing.
-
-        Returns
-        -------
-        nbands : int
-            If NBANDS is found it is returned.
-
-        Notes
-        -----
-        The number of bands used in the calculation.
-
-        """
-
-        entry = self._find(xml, './/parameters/separator[@name="electronic"]/' 'i[@name="NBANDS"]')
-        if entry is None:
-            return None
-
-        nbands = self._convert_i(entry)
-
-        return nbands
-
-    def _fetch_nelectw(self, xml):
-        """
-        Fetch and set nelect using etree.
-
-        Parameters
-        ----------
-        xml : object
-            An ElementTree object to be used for parsing.
-
-        Returns
-        -------
-        nelect : float
-            If NELECT is found it is returned.
-
-        Notes
-        -----
-        The number of electrons used in the calculation.
-
-        """
-
-        entry = self._find(xml, './/parameters/separator[@name="electronic"]/' 'i[@name="NELECT"]')
-
-        if entry is None:
-            return None
-
-        nelect = self._convert_f(entry)
-
-        return nelect
-
-    def _fetch_systemw(self, xml):
-        """
-        Fetch and set system using etree.
-
-        Parameters
-        ----------
-        xml : object
-            An ElementTree object to be used for parsing.
-
-        Returns
-        -------
-        system : string
-            If SYSTEM is found it is returned.
-
-        Notes
-        -----
-        A comment that can be specified in the INCAR file.
-
-        """
-
-        entry = self._find(xml, './/parameters/separator[@name="general"]/' 'i[@name="SYSTEM"]')
-
-        if entry is None:
-            return None
-
-        system = entry.text
-
-        return system
 
     def _fetch_bornw(self, xml):
         """
@@ -2803,6 +2474,21 @@ class Xml(BaseParser):
         if status == 'all':
             return forces
 
+    def get_parameters(self) -> defaultdict:
+        """
+        Get the input parameters, including the default values, as specified
+        in the XML file.
+
+        Returns
+        -------
+        parameters: defaultdict
+            Returns a defaultdict of the input parameters. If a parameter was
+            not specified, the defaultdict will return None.
+        """
+
+        parameters = self._parameters
+        return parameters
+
     def get_stress(self, status):
         """
         Get stress in unit cell from the stored data dict.
@@ -3132,7 +2818,7 @@ class Xml(BaseParser):
         """
         Driver for the `get_energies`.
 
-        Paramaeters
+        Parameters
         -----------
         status : {'all', 'initial', 'final'}
             A string containing which positions to return. For `all`, positionss for all ionic steps
@@ -3236,6 +2922,103 @@ class Xml(BaseParser):
         energies['electronic_steps'] = electronic_steps
 
         return energies
+
+    def _get_parameters(self, xml: etree) -> defaultdict:
+        """
+        Return all of the input parameters, including the default values, used
+        for the simulation. Makes use of the `findall` function from lxml and
+        searches for all entries in the parameters and separator sections.
+        There are two values that need to be parsed, the `i` and `v` entries.
+        The suggested type from the xml file is used to convert the values. If
+        no type is suggested it is considered to be a float. If a duplicate
+        entry is detected for the param_dict key, the name of the parent is
+        appended to the key name. If there is no parent name, None is used.
+
+        Parameters
+        ----------
+        xml : object
+            An ElementTree object to be used for parsing.
+
+        Returns
+        -------
+        parameters: defaultdict
+            A dict containing all of the input values of a VASP simulation.
+            Based on the type in the XML file, will attempt to convert the
+            value to the specified type.
+        """
+
+        param_dict = defaultdict(lambda: None)
+
+        tags = ['i', 'v']
+
+        root = xml.getroot()
+
+        separators = root.findall('.//parameters//separator')
+
+        for separator in separators:
+            for tag in tags:
+                elements = separator.findall(f'.//{tag}')
+
+                for e in elements:
+                    name, value = self._convert_parameter(e)
+                    if param_dict[name] is not None:
+                        parent = e.getparent().get('name')
+                        if parent is not None:
+                            name = '_'.join([name] + parent.split())
+                        else:
+                            name += '_none'
+                    param_dict[name] = value
+
+        return param_dict
+
+    def _convert_parameter(self, element: etree._Element) -> Tuple[str, Union[str, bool, int, float, None]]:
+        """
+        Function will take an element from a XML file and convert it to the
+        suggested type. This function is primarily used while parsing input
+        parameters and might need modified to parse from other sections.
+
+        Parameters
+        ----------
+        element: Element from a parsed XML file. Will be used to pull values
+            such as name, text, and type.
+
+        Returns
+        -------
+        name: String representation of the input parameter name.
+        value: The determined value of the input parameter. Can have different
+            values including str, bool, int, or float.
+        """
+
+        tag = element.tag
+        name = element.get('name').lower()
+        value = element.text
+        if value is not None and '\n' in value:
+            value = value.strip('\n')
+        entry_type = element.get('type')
+        # Check to see if the value has * which means that the value
+        # was too large for the output. Currently we are ignoring
+        # these values which by default are set to None.
+        if tag == 'i':
+            if value is not None and '****' in value:
+                value = None
+            elif value is None:
+                value = None
+            elif entry_type == 'string':
+                value = str(value)
+            elif entry_type == 'logical':
+                if value == 'F':
+                    value = False
+                elif value == 'T':
+                    value = True
+            elif entry_type == 'int':
+                value = int(value)
+            else:
+                value = float(value)
+
+        elif tag == 'v':
+            value = np.array(value.split()).astype('float')
+
+        return name, value
 
     def get_dos(self):
         """
@@ -3415,20 +3198,6 @@ class Xml(BaseParser):
         dictionary = {'parameters': self._parameters, 'lattice': self._lattice, 'data': self._data}
 
         return dictionary
-
-    def get_parameters(self):
-        """
-        Return the parsed input parameters.
-
-        Returns
-        -------
-        parameters : dict
-            A dict containing the input parameters.
-
-        """
-
-        parameters = self._parameters
-        return parameters
 
     def get_version(self):
         """
