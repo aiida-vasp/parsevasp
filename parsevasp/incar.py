@@ -73,8 +73,7 @@ class Incar(BaseParser):
         if (
             (self._incar_string is not None and self._incar_dict is not None)
             or (self._incar_string is not None and self._file_path is not None)
-            or (self._incar_dict is not None and self._file_path is not None)
-            and self._file_handler is not None
+            or ((self._incar_dict is not None and self._file_path is not None) and self._file_handler is not None)
         ):
             self._logger.error(self.ERROR_MESSAGES[self.ERROR_USE_ONE_ARGUMENT])
             sys.exit(self.ERROR_USE_ONE_ARGUMENT)
