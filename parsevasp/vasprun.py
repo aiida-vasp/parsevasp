@@ -1462,7 +1462,7 @@ class Xml(BaseParser):
             )
 
             self._data['kpointsw'] = self._fetch_kpointsww(
-                xml, path='//calculation/eigenvalues/' 'kpoints/varray[@name="weights"]/v'
+                xml, path='.//calculation/eigenvalues/' 'kpoints/varray[@name="weights"]/v'
             )
 
         # If we do not find spin 1 entries return right away
@@ -1513,7 +1513,7 @@ class Xml(BaseParser):
         )
 
         self._data['kpointsw'] = self._fetch_kpointsww(
-            xml, path='//calculation/eigenvelocities/' 'kpoints/varray[@name="weights"]/v'
+            xml, path='.//calculation/eigenvelocities/' 'kpoints/varray[@name="weights"]/v'
         )
 
         eigenvelocities = self._extract_eigenvelocities(entry_ispin1, entry_ispin2, len(self._data['kpoints']))
@@ -2313,18 +2313,18 @@ class Xml(BaseParser):
 
         """
 
-        data = None
+        data = []
 
-        if entry is not None:
-            data = np.zeros(len(entry), dtype='double')
-        for index, element in enumerate(entry):
-            try:
-                data[index] = np.fromstring(element.text, sep=' ')
-            except ValueError as err:
-                if str(err) == 'setting an array element with a sequence.':
-                    self._logger.error(self.ERROR_MESSAGES[self.ERROR_OVERFLOW])
-                    sys.exit(self.ERROR_OVERFLOW)
+        if entry is None:
+            return None
 
+        for element in entry:
+            if '*' in element.text:
+                self._logger.error(self.ERROR_MESSAGES[self.ERROR_OVERFLOW])
+                sys.exit(self.ERROR_OVERFLOW)
+            data.append(float(element.text))
+
+        data = np.array(data, dtype=float)
         return data
 
     def _convert_array2D_f(self, entry, dim):
@@ -2353,12 +2353,10 @@ class Xml(BaseParser):
             data = np.zeros((len(entry), dim), dtype='double')
 
         for index, element in enumerate(entry):
-            try:
-                data[index] = np.fromstring(element.text, sep=' ')
-            except ValueError as err:
-                if str(err) == 'setting an array element with a sequence.':
-                    self._logger.error(self.ERROR_MESSAGES[self.ERROR_OVERFLOW])
-                    sys.exit(self.ERROR_OVERFLOW)
+            if '*' in element.text:
+                self._logger.error(self.ERROR_MESSAGES[self.ERROR_OVERFLOW])
+                sys.exit(self.ERROR_OVERFLOW)
+            data[index] = np.fromstring(element.text, sep=' ')
 
         return data
 
