@@ -170,7 +170,7 @@ class Incar(BaseParser):
                     final_split = ntry.split('=')
                     if len(final_split) > 2:
                         self._logger.error(
-                            '{} The following line contains the problem:\n\n {}' '\n\nPlease correct. Exiting.'.format(
+                            '{} The following line contains the problem:\n\n {}\n\nPlease correct. Exiting.'.format(
                                 self.ERROR_MESSAGES[self.ERROR_TWO_EQUALS], ntry
                             )
                         )

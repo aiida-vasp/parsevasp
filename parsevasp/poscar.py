@@ -866,7 +866,7 @@ class Poscar(BaseParser):
         # Write unitcell
         for i in range(3):
             file_handler.write(
-                '{:{width}.{prec}f} {:{width}.{prec}f} ' '{:{width}.{prec}f}\n'.format(
+                '{:{width}.{prec}f} {:{width}.{prec}f} {:{width}.{prec}f}\n'.format(
                     unitcell[i][0], unitcell[i][1], unitcell[i][2], prec=self._prec, width=self._width
                 )
             )
@@ -895,7 +895,7 @@ class Poscar(BaseParser):
             else:
                 _site = self._to_cart(site[1][0:3], unitcell)
             file_handler.write(
-                '{:{width}.{prec}f} {:{width}.{prec}f} ' '{:{width}.{prec}f}'.format(
+                '{:{width}.{prec}f} {:{width}.{prec}f} {:{width}.{prec}f}'.format(
                     _site[0], _site[1], _site[2], prec=self._prec, width=self._width
                 )
             )
@@ -920,7 +920,7 @@ class Poscar(BaseParser):
                 else:
                     _site = self._to_cart(site[4][0:3], unitcell)
                 file_handler.write(
-                    '{:{width}.{prec}f} {:{width}.{prec}f} ' '{:{width}.{prec}f}\n'.format(
+                    '{:{width}.{prec}f} {:{width}.{prec}f} {:{width}.{prec}f}\n'.format(
                         _site[0], _site[1], _site[2], prec=self._prec, width=self._width
                     )
                 )
@@ -930,7 +930,7 @@ class Poscar(BaseParser):
             file_handler.write('\n')
             for site in sites:
                 file_handler.write(
-                    '{:{width}.{prec}f} {:{width}.{prec}f} ' '{:{width}.{prec}f}\n'.format(
+                    '{:{width}.{prec}f} {:{width}.{prec}f} {:{width}.{prec}f}\n'.format(
                         site[5][0], site[5][1], site[5][2], prec=self._prec, width=self._width
                     )
                 )

@@ -1021,7 +1021,7 @@ class Xml(BaseParser):
 
         """
 
-        entry = self._findall(xml, './/calculation/array[@name="born_charges"]/' 'set/v')
+        entry = self._findall(xml, './/calculation/array[@name="born_charges"]/set/v')
 
         if entry is None:
             return None
@@ -1230,7 +1230,7 @@ class Xml(BaseParser):
 
         """
 
-        entry = self._findall(xml, './/atominfo/' 'array[@name="atoms"]/set/rc/c')
+        entry = self._findall(xml, './/atominfo/array[@name="atoms"]/set/rc/c')
 
         if entry is None:
             return None
@@ -1255,7 +1255,7 @@ class Xml(BaseParser):
 
         """
 
-        entry = self._findall(xml, './/calculation/dynmat/' 'varray[@name="hessian"]/v')
+        entry = self._findall(xml, './/calculation/dynmat/varray[@name="hessian"]/v')
 
         if entry is None:
             return None
@@ -1289,7 +1289,7 @@ class Xml(BaseParser):
 
         """
 
-        entry = self._find(xml, './/calculation/dynmat/' 'v[@name="eigenvalues"]')
+        entry = self._find(xml, './/calculation/dynmat/v[@name="eigenvalues"]')
 
         if entry is None:
             return None
@@ -1305,7 +1305,7 @@ class Xml(BaseParser):
 
         eigenvalues = self._convert_array_f(entry)
 
-        entry = self._find(xml, './/calculation/dynmat/' 'varray[@name="eigenvectors"]')
+        entry = self._find(xml, './/calculation/dynmat/varray[@name="eigenvectors"]')
 
         if entry is None:
             return None
@@ -1416,10 +1416,10 @@ class Xml(BaseParser):
         """
 
         # Spin 1
-        entry_ispin1 = self._findall(xml, './/calculation/eigenvalues/array/set/' 'set[@comment="spin 1"]/set/r')
+        entry_ispin1 = self._findall(xml, './/calculation/eigenvalues/array/set/set[@comment="spin 1"]/set/r')
 
         # Spin 2
-        entry_ispin2 = self._findall(xml, './/calculation/eigenvalues/array/set/' 'set[@comment="spin 2"]/set/r')
+        entry_ispin2 = self._findall(xml, './/calculation/eigenvalues/array/set/set[@comment="spin 2"]/set/r')
 
         # If we do not find spin 1 entries return right away
         if entry_ispin1 is None:
@@ -1449,20 +1449,20 @@ class Xml(BaseParser):
 
         # Spin 1
         entry_ispin1 = self._findall(
-            xml, './/calculation/eigenvalues/' 'eigenvalues/array/set/' 'set[@comment="spin 1"]/set/r'
+            xml, './/calculation/eigenvalues/eigenvalues/array/set/set[@comment="spin 1"]/set/r'
         )
         # Spin 2
         entry_ispin2 = self._findall(
-            xml, './/calculation/eigenvalues/' 'eigenvalues/array/set/' 'set[@comment="spin 2"]/set/r'
+            xml, './/calculation/eigenvalues/eigenvalues/array/set/set[@comment="spin 2"]/set/r'
         )
         if entry_ispin1 is not None:
             # Also extract the k-point grids
             self._data['kpoints'] = self._fetch_kpointsw(
-                xml, path='.//calculation/eigenvalues/' 'kpoints/varray[@name="kpointlist"]/v'
+                xml, path='.//calculation/eigenvalues/kpoints/varray[@name="kpointlist"]/v'
             )
 
             self._data['kpointsw'] = self._fetch_kpointsww(
-                xml, path='.//calculation/eigenvalues/' 'kpoints/varray[@name="weights"]/v'
+                xml, path='.//calculation/eigenvalues/kpoints/varray[@name="weights"]/v'
             )
 
         # If we do not find spin 1 entries return right away
@@ -1496,12 +1496,12 @@ class Xml(BaseParser):
 
         # Spin 1
         entry_ispin1 = self._findall(
-            xml, './/calculation/eigenvelocities/' 'eigenvalues/array/set/' 'set[@comment="spin 1"]/set/r'
+            xml, './/calculation/eigenvelocities/eigenvalues/array/set/set[@comment="spin 1"]/set/r'
         )
 
         # Spin 2
         entry_ispin2 = self._findall(
-            xml, './/calculation/eigenvelocities/' 'eigenvalues/array/set/' 'set[@comment="spin 2"]/set/r'
+            xml, './/calculation/eigenvelocities/eigenvalues/array/set/set[@comment="spin 2"]/set/r'
         )
 
         # If we do not find spin 1 entries return right away
@@ -1509,11 +1509,11 @@ class Xml(BaseParser):
             return None
 
         self._data['kpoints'] = self._fetch_kpointsw(
-            xml, path='.//calculation/eigenvelocities/' 'kpoints/varray[@name="kpointlist"]/v'
+            xml, path='.//calculation/eigenvelocities/kpoints/varray[@name="kpointlist"]/v'
         )
 
         self._data['kpointsw'] = self._fetch_kpointsww(
-            xml, path='.//calculation/eigenvelocities/' 'kpoints/varray[@name="weights"]/v'
+            xml, path='.//calculation/eigenvelocities/kpoints/varray[@name="weights"]/v'
         )
 
         eigenvelocities = self._extract_eigenvelocities(entry_ispin1, entry_ispin2, len(self._data['kpoints']))
@@ -1538,10 +1538,10 @@ class Xml(BaseParser):
         """
 
         # Projectors spin 1
-        entry_ispin1 = self._findall(xml, './/calculation/projected/array/set/' 'set[@comment="spin1"]/set/set/r')
+        entry_ispin1 = self._findall(xml, './/calculation/projected/array/set/set[@comment="spin1"]/set/set/r')
 
         # Projectors spin 2
-        entry_ispin2 = self._findall(xml, './/calculation/projected/array/set/' 'set[@comment="spin2"]/set/set/r')
+        entry_ispin2 = self._findall(xml, './/calculation/projected/array/set/set[@comment="spin2"]/set/set/r')
 
         # If we do not find spin 1 entries return right away
         if entry_ispin1 is None:
