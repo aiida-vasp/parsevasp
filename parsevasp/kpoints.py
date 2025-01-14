@@ -872,7 +872,7 @@ class Kpoints(BaseParser):
         # Check mode
         mode = entries['mode']
         if mode == 'explicit':
-            file_handler.write(f"{entries['num_kpoints']:6d}\n")
+            file_handler.write(f'{entries["num_kpoints"]:6d}\n')
             # Points should already be direct
             file_handler.write('Direct\n')
             for point in entries['points']:
@@ -889,7 +889,7 @@ class Kpoints(BaseParser):
                     )
                     weight = 1.0
                 file_handler.write(
-                    '{:{width}.{prec}f} {:{width}.{prec}f} ' '{:{width}.{prec}f} {:{width}.{prec}f}\n'.format(
+                    '{:{width}.{prec}f} {:{width}.{prec}f} {:{width}.{prec}f} {:{width}.{prec}f}\n'.format(
                         coordinate[0], coordinate[1], coordinate[2], weight, prec=self._prec, width=self._width
                     )
                 )
@@ -925,26 +925,26 @@ class Kpoints(BaseParser):
             if generating_vectors is not None:
                 for vec in generating_vectors:
                     file_handler.write(
-                        '{:{width}.{prec}f} {:{width}.{prec}f} ' '{:{width}.{prec}f}\n'.format(
+                        '{:{width}.{prec}f} {:{width}.{prec}f} {:{width}.{prec}f}\n'.format(
                             vec[0], vec[1], vec[2], prec=self._prec, width=self._width
                         )
                     )
             shifts = entries['shifts']
             if shifts is not None:
                 file_handler.write(
-                    '{:{width}.{prec}f} {:{width}.{prec}f} ' '{:{width}.{prec}f}\n'.format(
+                    '{:{width}.{prec}f} {:{width}.{prec}f} {:{width}.{prec}f}\n'.format(
                         shifts[0], shifts[1], shifts[2], prec=self._prec, width=self._width
                     )
                 )
             else:
                 file_handler.write(
-                    '{:{width}.{prec}f} {:{width}.{prec}f} ' '{:{width}.{prec}f}\n'.format(
+                    '{:{width}.{prec}f} {:{width}.{prec}f} {:{width}.{prec}f}\n'.format(
                         0.0, 0.0, 0.0, prec=self._prec, width=self._width
                     )
                 )
 
         if mode == 'line':
-            file_handler.write(f"{entries['num_kpoints']:6d}\n")
+            file_handler.write(f'{entries["num_kpoints"]:6d}\n')
             file_handler.write('Line-mode\n')
             # Assume points to be direct
             file_handler.write('Direct\n')
@@ -952,7 +952,7 @@ class Kpoints(BaseParser):
             for _, point in enumerate(entries['points']):
                 coordinate = point.get_point()
                 file_handler.write(
-                    '{:{width}.{prec}f} {:{width}.{prec}f} ' '{:{width}.{prec}f}\n'.format(
+                    '{:{width}.{prec}f} {:{width}.{prec}f} {:{width}.{prec}f}\n'.format(
                         coordinate[0], coordinate[1], coordinate[2], prec=self._prec, width=self._width
                     )
                 )
