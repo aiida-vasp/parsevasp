@@ -376,7 +376,7 @@ class Xml(BaseParser):
                         self._version = element.text
                 except KeyError:
                     pass
-            if extract_parameters and event == 'start':
+            if extract_parameters and event == 'end':
                 if element.tag in ['i', 'v']:
                     name, param_value = self._convert_parameter(element)
                     if self._parameters[name] is not None:
