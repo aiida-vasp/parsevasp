@@ -200,3 +200,45 @@ bandocc:
   recover: false
   regex: "TOO FEW BANDS"
   suggestion: ""
+inconsistent_lattice_types:
+  kind: ERROR
+  location: STDOUT
+  message: "Inconsistent lattice types in real the reciprocal space and reciprocal lattice"
+  recover: false
+  regex: "Inconsistent Bravais lattice types found for crystalline and"
+  suggestion: "Refine the lattice or change symprec"
+gamma_only_misuse:
+  kind: ERROR
+  location: STDOUT
+  regex: "You are using the Gamma-point-only version with more than one"
+  message: "Gamma-only executable used for a none-gamma-only calculation."
+  recover: false
+  suggestion: "Use the non-gamma-only version of VASP"
+ibzkpt_point_group:
+  kind: ERROR
+  location: STDOUT
+  regex: "IBZKPT: not all point group operations associated"
+  message: " not all point group operations associated with the symmetry operators of the crystalline lattice are members of the point group of the reciprocal lattice."
+  recover: false
+  suggestion: "Change symprec, refine structure or turn off symmetry"
+sgrcon_6:
+  kind: ERROR
+  regex: "VERY BAD NEWS! internal error in subroutineSGRCON"
+  location: STDOUT
+  message: "Internal routine SGRCON failed"
+  recover: false
+  suggestion: "Change symprec, refine structure or turn off symmetry"
+pdsyevx:
+  kind: ERROR
+  regex: "ERROR in subspace rotation PDSYEVX/ PZHEEVX"
+  location: STDOUT
+  recover: false
+  suggestion: ""
+  message: "Error in subspace rotation PDSYEVX/ PZHEEVX"
+kset_change:
+  kind: ERROR
+  regex: "VASP internal routines have requested a change of the k-point set"
+  location: STDOUT
+  recover: false
+  suggestion: "Set NCORE to 1"
+  message: "VASP is not able to change the k-point set"
