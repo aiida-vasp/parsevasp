@@ -118,7 +118,7 @@ def test_stream_inconsistent_lattice():
 
 
 def test_generic_box_error():
-    """Check parsing inconsistent lattice type error in VAPS6 style"""
+    """Check parsing error box in VAPS6 style"""
     stream_file = cwd / 'stdout_generic_box_error'
     stream = Stream(file_path=stream_file)
     assert stream.entries[1].kind == 'ERROR'
@@ -126,7 +126,7 @@ def test_generic_box_error():
 
 
 def test_generic_warning_error():
-    """Check parsing inconsistent lattice type error in VAPS6 style"""
+    """Check parsing warning box in VAPS6 style"""
     stream_file = cwd / 'stdout_warning'
     stream = Stream(file_path=stream_file)
     assert stream.entries[0].kind == 'ADVICE'
@@ -134,3 +134,12 @@ def test_generic_warning_error():
     assert stream.entries[0].shortname == 'xc_enforced'
     assert stream.entries[1].kind == 'WARNING'
     assert stream.entries[1].regex.pattern == 'You use a magnetic or noncollinear calculation, but did not specify'
+
+
+def test_generic_bug_error():
+    """Check parsing bug box in VAPS6 style"""
+    stream_file = cwd / 'stdout_bug'
+    stream = Stream(file_path=stream_file)
+    assert any(entry.kind == 'BUG' for entry in stream.entries)
+    bug_entry = next(entry for entry in stream.entries if entry.kind == 'BUG')
+    assert bug_entry.regex.pattern == 'internal error in: radial.F  at line: 844'

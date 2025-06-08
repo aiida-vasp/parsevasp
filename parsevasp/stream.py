@@ -229,8 +229,8 @@ class Stream(BaseParser):
                                 # full history of streams (e.g. multiple stream occurrences recorded)
                                 ignore[kind].append(index)
         # Parse generic error box
-        error_boxes, warning_boxes, advice_boxes = parse_vasp6_box(stream)
-        for boxes, kind in zip([error_boxes, warning_boxes, advice_boxes], ['ERROR', 'WARNING', 'ADVICE']):
+        box_collection = parse_vasp6_box(stream)
+        for boxes, kind in zip(box_collection, ['ERROR', 'WARNING', 'ADVICE', 'BUG']):
             for box in boxes:
                 duplicated = False
                 # Check if we found this error already
@@ -278,7 +278,7 @@ class Stream(BaseParser):
 class VaspStream:
     """Class representing stream elements given by VASP that we want to trigger on."""
 
-    _ALLOWED_STREAMS = ['ERROR', 'WARNING', 'ADVICE']
+    _ALLOWED_STREAMS = ['ERROR', 'WARNING', 'ADVICE', 'BUG']
     _ALLOWED_LOCATIONS = ['STDOUT', 'STDERR']
 
     def __init__(
@@ -473,8 +473,9 @@ def parse_vasp6_box(lines: list) -> tuple:
     :param lines: A list of strings representing the lines to parse.
     :return: A tuple containing three lists:
              - Error boxes (critical=True stops further parsing)
-             - Advice boxes
              - Warning boxes
+             - Advice boxes
+             - Bug boxes
     """
 
     def parse_box(lines: list, start_pattern: str, end_pattern: str, critical: bool = False) -> list:
@@ -493,11 +494,11 @@ def parse_vasp6_box(lines: list) -> tuple:
         all_boxes = []
         for line in lines:
             # Start capturing when encountering the header of the error box
-            if line.startswith(start_pattern):
+            if start_pattern in line:
                 capture = True
                 continue
             # Stop capturing when reaching the closing line of the error box
-            elif capture and line.startswith(end_pattern):
+            elif capture and end_pattern in line:
                 capture = False
                 all_boxes.append(captured)
                 captured = []
@@ -513,22 +514,29 @@ def parse_vasp6_box(lines: list) -> tuple:
 
     error_boxes = parse_box(
         lines,
-        start_pattern=r'|     EEEEEEE  R     R  R     R  OOOOOOO  R     R     ###     ###     ###     |',
-        end_pattern=r'|       ---->  I REFUSE TO CONTINUE WITH THIS SICK JOB ... BYE!!! <----',
+        start_pattern=r'EEEEEEE  R     R  R     R  OOOOOOO  R     R     ###     ###     ###',
+        end_pattern=r'---->  I REFUSE TO CONTINUE WITH THIS SICK JOB ... BYE!!! <----',
         critical=True,
     )
 
     advice_boxes = parse_box(
         lines,
-        start_pattern=r'|               ----> ADVICE to this user running VASP <---',
+        start_pattern=r'----> ADVICE to this user running VASP <---',
         end_pattern=r' -----------------------------------',
         critical=False,
     )
 
     warning_boxes = parse_box(
         lines,
-        start_pattern=r'|           W    W  A    A  R    R  N    N  II  N    N   GGGG   !!!',
+        start_pattern=r'W    W  A    A  R    R  N    N  II  N    N   GGGG   !!!',
         end_pattern=r' -----------------------------------',
         critical=False,
     )
-    return error_boxes, warning_boxes, advice_boxes
+    bug_boxes = parse_box(
+        lines,
+        start_pattern=r'(_)   |____/   \____/   \_____|   (_)',
+        end_pattern=r' -----------------------------------',
+        critical=True,
+    )
+
+    return error_boxes, warning_boxes, advice_boxes, bug_boxes
