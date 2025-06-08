@@ -242,3 +242,10 @@ kset_change:
   recover: false
   suggestion: "Set NCORE to 1"
   message: "VASP is not able to change the k-point set"
+xc_enforced:
+  kind: ADVICE
+  regex: "You enforced a specific xc type in the INCAR file but a different"
+  location: STDOUT
+  recover: true
+  suggestion: ""
+  message: "XC type enforced not a problem if you know what you are doing"

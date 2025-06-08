@@ -229,24 +229,27 @@ class Stream(BaseParser):
                                 # full history of streams (e.g. multiple stream occurrences recorded)
                                 ignore[kind].append(index)
         # Parse generic error box
-        self.captured_error_box = parse_vasp6_error_box(stream)
-        if self.captured_error_box:
-            duplicated = False
-            # Check if we found this error already
-            for item in self._streams:
-                if any(re.match(item.regex, line) for line in self.captured_error_box):
-                    duplicated = True
-                    break
-            if not duplicated:
-                self._streams.append(
-                    VaspStream(
-                        shortname='generic_box_error',
-                        kind='ERROR',
-                        message='\n'.join(self.captured_error_box),
-                        regex=self.captured_error_box[0],  # Set the first line as regex
-                        suggestion='Unidentified critical error - suggest to add this to the stream.yaml in parsevasp',
+        error_boxes, warning_boxes, advice_boxes = parse_vasp6_box(stream)
+        for boxes, kind in zip([error_boxes, warning_boxes, advice_boxes], ['ERROR', 'WARNING', 'ADVICE']):
+            for box in boxes:
+                duplicated = False
+                # Check if we found this error already
+                for item in self._streams:
+                    if any(re.search(item.regex, line) for line in box):
+                        duplicated = True
+                        break
+                if not duplicated:
+                    self._streams.append(
+                        VaspStream(
+                            shortname='generic_box_error',
+                            kind=kind,
+                            message='\n'.join(box),
+                            regex=box[0],  # Set the first line as regex
+                            suggestion=(
+                                f'Unidentified {kind.lower()} - suggest to add this to the stream.yaml in parsevasp'
+                            ),
+                        )
                     )
-                )
 
     def _add_inverse_triggers(self):
         """Adds the triggers that are marked as inverse and are not detected, meaning they should be
@@ -275,7 +278,7 @@ class Stream(BaseParser):
 class VaspStream:
     """Class representing stream elements given by VASP that we want to trigger on."""
 
-    _ALLOWED_STREAMS = ['ERROR', 'WARNING']
+    _ALLOWED_STREAMS = ['ERROR', 'WARNING', 'ADVICE']
     _ALLOWED_LOCATIONS = ['STDOUT', 'STDERR']
 
     def __init__(
@@ -459,32 +462,73 @@ class VaspStream:
         return None
 
 
-def parse_vasp6_error_box(lines: list) -> list:
+def parse_vasp6_box(lines: list) -> tuple:
     """
-    Parse the typical critical error box from VASP6.
+    Parse VASP6-style message boxes (error, advice, warning) from a list of output lines.
 
-    This function scans through the provided lines to identify and capture content within a VASP6-style
-    error message box. The captured content is returned as a list of strings, excluding empty lines.
+    This function identifies and extracts message boxes commonly found in VASP6 standard output,
+    including error boxes, advice boxes, and warning boxes. These are typically enclosed within
+    specific delimiter lines and contain relevant diagnostic or informational messages.
 
     :param lines: A list of strings representing the lines to parse.
-    :return: A list of strings containing the non-empty lines inside the captured error box.
+    :return: A tuple containing three lists:
+             - Error boxes (critical=True stops further parsing)
+             - Advice boxes
+             - Warning boxes
     """
 
-    capture = False
-    captured = []
-    for line_ in lines:
-        line = line_.strip()
-        # Start capturing when encountering the header of the error box
-        if line.startswith(r'|     EEEEEEE  R     R  R     R  OOOOOOO  R     R     ###     ###     ###     |'):
-            capture = True
-            continue
-        # Stop capturing when reaching the closing line of the error box
-        elif capture and line.startswith(r'|       ---->  I REFUSE TO CONTINUE WITH THIS SICK JOB ... BYE!!! <----'):
-            capture = False
-            break
-        # Capture lines inside the error box and process content
-        if capture:
-            content = line[1:-1].strip()  # Remove side borders and strip whitespace
-            if content:
-                captured.append(content)
-    return captured
+    def parse_box(lines: list, start_pattern: str, end_pattern: str, critical: bool = False) -> list:
+        """
+        Internal helper to parse a box section based on start/finish delimiters.
+
+        :param lines: List of lines to parse.
+        :param start_line: The exact line that marks the beginning of a box.
+        :param finish_line: The exact line that marks the end of a box.
+        :param critical: If True, parsing stops immediately after this box is captured.
+        :return: A list of captured non-empty lines inside each box found.
+        """
+
+        capture = False
+        captured = []
+        all_boxes = []
+        for line in lines:
+            # Start capturing when encountering the header of the error box
+            if line.startswith(start_pattern):
+                capture = True
+                continue
+            # Stop capturing when reaching the closing line of the error box
+            elif capture and line.startswith(end_pattern):
+                capture = False
+                all_boxes.append(captured)
+                captured = []
+                if critical:
+                    break
+            # Capture lines inside the error box and process content
+            if capture:
+                line_ = line.strip()
+                content = line_[1:-1].strip()  # Remove side borders and strip whitespace
+                if content:
+                    captured.append(content)
+        return all_boxes
+
+    error_boxes = parse_box(
+        lines,
+        start_pattern=r'|     EEEEEEE  R     R  R     R  OOOOOOO  R     R     ###     ###     ###     |',
+        end_pattern=r'|       ---->  I REFUSE TO CONTINUE WITH THIS SICK JOB ... BYE!!! <----',
+        critical=True,
+    )
+
+    advice_boxes = parse_box(
+        lines,
+        start_pattern=r'|               ----> ADVICE to this user running VASP <---',
+        end_pattern=r' -----------------------------------',
+        critical=False,
+    )
+
+    warning_boxes = parse_box(
+        lines,
+        start_pattern=r'|           W    W  A    A  R    R  N    N  II  N    N   GGGG   !!!',
+        end_pattern=r' -----------------------------------',
+        critical=False,
+    )
+    return error_boxes, warning_boxes, advice_boxes
