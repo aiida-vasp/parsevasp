@@ -113,7 +113,7 @@ def test_stream_inconsistent_lattice():
     stream = Stream(file_path=stream_file)
     assert stream.entries[0].kind == 'ADVICE'
     assert stream.entries[1].kind == 'ERROR'
-    assert stream.entries[1].message == 'Inconsistent lattice types in real the reciprocal space and reciprocal lattice'
+    assert 'Inconsistent Bravais lattice types found for crystalline and' in stream.entries[1].message
     assert len(stream.entries) == 2
 
 

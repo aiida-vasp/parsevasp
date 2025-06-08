@@ -237,6 +237,9 @@ class Stream(BaseParser):
                 for item in self._streams:
                     if any(re.search(item.regex, line) for line in box):
                         duplicated = True
+                        # Try update the message of the known item, as the box pares gives more complete
+                        # information
+                        item.message = '\n'.join(box)
                         break
                 if not duplicated:
                     self._streams.append(
