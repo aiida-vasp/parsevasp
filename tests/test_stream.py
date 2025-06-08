@@ -105,3 +105,19 @@ def test_stream_zbrent():
     stream = Stream(file_path=stream_file)
     assert stream.entries[0].kind == 'ERROR'
     assert stream.entries[0].message == 'Error in ZBRENT'
+
+
+def test_stream_inconsistent_lattice():
+    """Check parsing inconsistent lattice type error in VAPS6 style"""
+    stream_file = cwd / 'stdout_inconsistent_lattice'
+    stream = Stream(file_path=stream_file)
+    assert stream.entries[0].kind == 'ERROR'
+    assert stream.entries[0].message == 'Inconsistent lattice types in real the reciprocal space and reciprocal lattice'
+
+
+def test_generic_box_error():
+    """Check parsing inconsistent lattice type error in VAPS6 style"""
+    stream_file = cwd / 'stdout_generic_box_error'
+    stream = Stream(file_path=stream_file)
+    assert stream.entries[0].kind == 'ERROR'
+    assert stream.entries[0].regex.pattern == 'Bla bla bla'

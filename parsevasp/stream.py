@@ -228,6 +228,25 @@ class Stream(BaseParser):
                                 # Add index to avoid storing same trigger multiple times if we do not want the
                                 # full history of streams (e.g. multiple stream occurrences recorded)
                                 ignore[kind].append(index)
+        # Parse generic error box
+        self.captured_error_box = parse_vasp6_error_box(stream)
+        if self.captured_error_box:
+            duplicated = False
+            # Check if we found this error already
+            for item in self._streams:
+                if any(re.match(item.regex, line) for line in self.captured_error_box):
+                    duplicated = True
+                    break
+            if not duplicated:
+                self._streams.append(
+                    VaspStream(
+                        shortname='generic_box_error',
+                        kind='ERROR',
+                        message='\n'.join(self.captured_error_box),
+                        regex=self.captured_error_box[0],  # Set the first line as regex
+                        suggestion='Unidentified critical error - suggest to add this to the stream.yaml in parsevasp',
+                    )
+                )
 
     def _add_inverse_triggers(self):
         """Adds the triggers that are marked as inverse and are not detected, meaning they should be
@@ -438,3 +457,34 @@ class VaspStream:
             )
 
         return None
+
+
+def parse_vasp6_error_box(lines: list) -> list:
+    """
+    Parse the typical critical error box from VASP6.
+
+    This function scans through the provided lines to identify and capture content within a VASP6-style
+    error message box. The captured content is returned as a list of strings, excluding empty lines.
+
+    :param lines: A list of strings representing the lines to parse.
+    :return: A list of strings containing the non-empty lines inside the captured error box.
+    """
+
+    capture = False
+    captured = []
+    for line_ in lines:
+        line = line_.strip()
+        # Start capturing when encountering the header of the error box
+        if line.startswith(r'|     EEEEEEE  R     R  R     R  OOOOOOO  R     R     ###     ###     ###     |'):
+            capture = True
+            continue
+        # Stop capturing when reaching the closing line of the error box
+        elif capture and line.startswith(r'|       ---->  I REFUSE TO CONTINUE WITH THIS SICK JOB ... BYE!!! <----'):
+            capture = False
+            break
+        # Capture lines inside the error box and process content
+        if capture:
+            content = line[1:-1].strip()  # Remove side borders and strip whitespace
+            if content:
+                captured.append(content)
+    return captured
