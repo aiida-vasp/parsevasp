@@ -228,6 +228,31 @@ class Stream(BaseParser):
                                 # Add index to avoid storing same trigger multiple times if we do not want the
                                 # full history of streams (e.g. multiple stream occurrences recorded)
                                 ignore[kind].append(index)
+        # Parse generic error box
+        box_collection = parse_vasp6_box(stream)
+        for boxes, kind in zip(box_collection, ['ERROR', 'WARNING', 'ADVICE', 'BUG']):
+            for box in boxes:
+                duplicated = False
+                # Check if we found this error already
+                for item in self._streams:
+                    if any(re.search(item.regex, line) for line in box):
+                        duplicated = True
+                        # Try update the message of the known item, as the box pares gives more complete
+                        # information
+                        item.message = '\n'.join(box)
+                        break
+                if not duplicated:
+                    self._streams.append(
+                        VaspStream(
+                            shortname='generic_box_error',
+                            kind=kind,
+                            message='\n'.join(box),
+                            regex=box[0],  # Set the first line as regex
+                            suggestion=(
+                                f'Unidentified {kind.lower()} - suggest to add this to the stream.yaml in parsevasp'
+                            ),
+                        )
+                    )
 
     def _add_inverse_triggers(self):
         """Adds the triggers that are marked as inverse and are not detected, meaning they should be
@@ -256,7 +281,7 @@ class Stream(BaseParser):
 class VaspStream:
     """Class representing stream elements given by VASP that we want to trigger on."""
 
-    _ALLOWED_STREAMS = ['ERROR', 'WARNING']
+    _ALLOWED_STREAMS = ['ERROR', 'WARNING', 'ADVICE', 'BUG']
     _ALLOWED_LOCATIONS = ['STDOUT', 'STDERR']
 
     def __init__(
@@ -438,3 +463,83 @@ class VaspStream:
             )
 
         return None
+
+
+def parse_vasp6_box(lines: list) -> tuple:
+    """
+    Parse VASP6-style message boxes (error, advice, warning) from a list of output lines.
+
+    This function identifies and extracts message boxes commonly found in VASP6 standard output,
+    including error boxes, advice boxes, and warning boxes. These are typically enclosed within
+    specific delimiter lines and contain relevant diagnostic or informational messages.
+
+    :param lines: A list of strings representing the lines to parse.
+    :return: A tuple containing three lists:
+             - Error boxes (critical=True stops further parsing)
+             - Warning boxes
+             - Advice boxes
+             - Bug boxes
+    """
+
+    def parse_box(lines: list, start_pattern: str, end_pattern: str, critical: bool = False) -> list:
+        """
+        Internal helper to parse a box section based on start/finish delimiters.
+
+        :param lines: List of lines to parse.
+        :param start_line: The exact line that marks the beginning of a box.
+        :param finish_line: The exact line that marks the end of a box.
+        :param critical: If True, parsing stops immediately after this box is captured.
+        :return: A list of captured non-empty lines inside each box found.
+        """
+
+        capture = False
+        captured = []
+        all_boxes = []
+        for line in lines:
+            # Start capturing when encountering the header of the error box
+            if start_pattern in line:
+                capture = True
+                continue
+            # Stop capturing when reaching the closing line of the error box
+            elif capture and end_pattern in line:
+                capture = False
+                all_boxes.append(captured)
+                captured = []
+                if critical:
+                    break
+            # Capture lines inside the error box and process content
+            if capture:
+                line_ = line.strip()
+                content = line_[1:-1].strip()  # Remove side borders and strip whitespace
+                if content:
+                    captured.append(content)
+        return all_boxes
+
+    error_boxes = parse_box(
+        lines,
+        start_pattern=r'EEEEEEE  R     R  R     R  OOOOOOO  R     R     ###     ###     ###',
+        end_pattern=r'---->  I REFUSE TO CONTINUE WITH THIS SICK JOB ... BYE!!! <----',
+        critical=True,
+    )
+
+    advice_boxes = parse_box(
+        lines,
+        start_pattern=r'----> ADVICE to this user running VASP <---',
+        end_pattern=r' -----------------------------------',
+        critical=False,
+    )
+
+    warning_boxes = parse_box(
+        lines,
+        start_pattern=r'W    W  A    A  R    R  N    N  II  N    N   GGGG   !!!',
+        end_pattern=r' -----------------------------------',
+        critical=False,
+    )
+    bug_boxes = parse_box(
+        lines,
+        start_pattern=r'(_)   |____/   \____/   \_____|   (_)',
+        end_pattern=r' -----------------------------------',
+        critical=True,
+    )
+
+    return error_boxes, warning_boxes, advice_boxes, bug_boxes

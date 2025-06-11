@@ -1,0 +1,45 @@
+ running on   32 total cores
+ distrk:  each k-point on    8 cores,    4 groups
+ distr:  one band on    8 cores,    1 groups
+ vasp.6.3.2 27Jun22 (build Mar 13 2023 21:34:04) complex
+
+ POSCAR found type information on POSCAR InCuSe
+ POSCAR found :  3 types and       8 ions
+ scaLAPACK will be used
+ -----------------------------------------------------------------------------
+|                                                                             |
+|               ----> ADVICE to this user running VASP <----                  |
+|                                                                             |
+|     You enforced a specific xc type in the INCAR file but a different       |
+|     type was found in the POTCAR file.                                      |
+|     I HOPE YOU KNOW WHAT YOU ARE DOING!                                     |
+|                                                                             |
+ -----------------------------------------------------------------------------
+
+ -----------------------------------------------------------------------------
+|                                                                             |
+|     EEEEEEE  RRRRRR   RRRRRR   OOOOOOO  RRRRRR      ###     ###     ###     |
+|     E        R     R  R     R  O     O  R     R     ###     ###     ###     |
+|     E        R     R  R     R  O     O  R     R     ###     ###     ###     |
+|     EEEEE    RRRRRR   RRRRRR   O     O  RRRRRR       #       #       #      |
+|     E        R   R    R   R    O     O  R   R                               |
+|     E        R    R   R    R   O     O  R    R      ###     ###     ###     |
+|     EEEEEEE  R     R  R     R  OOOOOOO  R     R     ###     ###     ###     |
+|                                                                             |
+|     Inconsistent Bravais lattice types found for crystalline and            |
+|     reciprocal lattice:                                                     |
+|                                                                             |
+|        Crystalline: triclinic                                               |
+|        Reciprocal : base-centered monoclinic                                |
+|                    (instead of triclinic)                                   |
+|                                                                             |
+|     In most cases this is due to inaccuracies in the specification of       |
+|     the crytalline lattice vectors.                                         |
+|                                                                             |
+|     Suggested SOLUTIONS:                                                    |
+|      ) Refine the lattice parameters of your structure,                     |
+|      ) and/or try changing SYMPREC.                                         |
+|                                                                             |
+|       ---->  I REFUSE TO CONTINUE WITH THIS SICK JOB ... BYE!!! <----       |
+|                                                                             |
+ -----------------------------------------------------------------------------

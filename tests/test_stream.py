@@ -105,3 +105,41 @@ def test_stream_zbrent():
     stream = Stream(file_path=stream_file)
     assert stream.entries[0].kind == 'ERROR'
     assert stream.entries[0].message == 'Error in ZBRENT'
+
+
+def test_stream_inconsistent_lattice():
+    """Check parsing inconsistent lattice type error in VAPS6 style"""
+    stream_file = cwd / 'stdout_inconsistent_lattice'
+    stream = Stream(file_path=stream_file)
+    assert stream.entries[0].kind == 'ADVICE'
+    assert stream.entries[1].kind == 'ERROR'
+    assert 'Inconsistent Bravais lattice types found for crystalline and' in stream.entries[1].message
+    assert len(stream.entries) == 2
+
+
+def test_generic_box_error():
+    """Check parsing error box in VAPS6 style"""
+    stream_file = cwd / 'stdout_generic_box_error'
+    stream = Stream(file_path=stream_file)
+    assert stream.entries[1].kind == 'ERROR'
+    assert stream.entries[1].regex.pattern == 'Bla bla bla'
+
+
+def test_generic_warning_error():
+    """Check parsing warning box in VAPS6 style"""
+    stream_file = cwd / 'stdout_warning'
+    stream = Stream(file_path=stream_file)
+    assert stream.entries[0].kind == 'ADVICE'
+    assert stream.entries[0].regex.pattern == 'You enforced a specific xc type in the INCAR file but a different'
+    assert stream.entries[0].shortname == 'xc_enforced'
+    assert stream.entries[1].kind == 'WARNING'
+    assert stream.entries[1].regex.pattern == 'You use a magnetic or noncollinear calculation, but did not specify'
+
+
+def test_generic_bug_error():
+    """Check parsing bug box in VAPS6 style"""
+    stream_file = cwd / 'stdout_bug'
+    stream = Stream(file_path=stream_file)
+    assert any(entry.kind == 'BUG' for entry in stream.entries)
+    bug_entry = next(entry for entry in stream.entries if entry.kind == 'BUG')
+    assert bug_entry.regex.pattern == 'internal error in: radial.F  at line: 844'
