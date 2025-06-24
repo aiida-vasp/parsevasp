@@ -40,8 +40,6 @@ def test_xml_energies_gw(xml_parser):
 @pytest.mark.parametrize('xml_parser', ['basic.xml'], indirect=True)
 def test_xml_energies(xml_parser):
     """Check total energies for runs with no ionic steps."""
-    import numpy as np
-
     energies_data = xml_parser.get_energies('initial')
     test_array_energies = np.array([-43.312106219999997])
     test_array_steps = np.array([1], dtype=int)
@@ -61,8 +59,6 @@ def test_xml_energies(xml_parser):
 @pytest.mark.parametrize('xml_parser', ['basicrelax.xml'], indirect=True)
 def test_xml_energies_ionic(xml_parser):
     """Check total energies for runs with ionic steps."""
-    import numpy as np
-
     energies_data = xml_parser.get_energies('initial')
     test_array_steps = np.array([1], dtype=int)
     test_array_energies = np.array([-42.91113348])
@@ -131,8 +127,6 @@ def test_xml_energies_ionic(xml_parser):
 @pytest.mark.parametrize('xml_parser', ['basic.xml'], indirect=True)
 def test_xml_energies_electronic(xml_parser):
     """Check total energies for runs without ionic steps, for each electronic step."""
-    import numpy as np
-
     energies_data = xml_parser.get_energies('all', nosc=False)
     test_array_energies = np.array(
         [
@@ -166,8 +160,6 @@ def test_xml_energies_electronic(xml_parser):
 @pytest.mark.parametrize('xml_parser', ['basicrelax.xml'], indirect=True)
 def test_xml_energies_ionic_sc(xml_parser):
     """Check total energies for runs with ionic steps, for each electronic step."""
-    import numpy as np
-
     energies_data = xml_parser.get_energies('initial', nosc=False)
     test_array_energies = np.array(
         [
