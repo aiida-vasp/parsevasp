@@ -2,6 +2,7 @@
 
 import os
 import pathlib
+import re
 
 import pytest
 
@@ -73,8 +74,6 @@ def test_executed(stream_parser):
 
 def test_stream_override(stream_parser):
     """Check that the stream override works."""
-    import re
-
     testdir = os.path.dirname(__file__)
     stream_file = testdir + '/stdout'
     stream = Stream(

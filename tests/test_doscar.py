@@ -5,7 +5,7 @@ import os
 import numpy as np
 import pytest
 
-from parsevasp.doscar import Doscar
+from parsevasp.doscar import DTYPES_PDOS_COLLINEAR, DTYPES_PDOS_NONCOLLINEAR, Doscar
 
 compare_total_dos = np.array([(-3.44, -1.10400000e-43, -2.09900000e-43),
                       (-1.539, 1.40000000e-01, 2.66100000e-01),
@@ -212,8 +212,6 @@ def test_doscar_non_collinear(doscar_parser):
 
 
 def test_dtypes_pdos():
-    from parsevasp.doscar import DTYPES_PDOS_COLLINEAR, DTYPES_PDOS_NONCOLLINEAR
-
     def _check(dtype_pdos):
         count = 0
         for name in dtype_pdos.names:

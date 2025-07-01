@@ -3,6 +3,7 @@
 import copy
 import logging
 import os
+import re
 import sys
 from collections import defaultdict
 from typing import Tuple, Union
@@ -3207,8 +3208,6 @@ class Xml(BaseParser):
             A string containing the VASP version.
 
         """
-
-        import re
 
         version = self._version.strip()
         # The version entry in the xml file is typically of the form

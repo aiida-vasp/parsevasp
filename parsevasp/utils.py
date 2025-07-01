@@ -8,7 +8,7 @@ import sys
 
 import numpy as np
 
-from parsevasp.base import open_close_file_handler
+from parsevasp.base import BaseParser, open_close_file_handler
 
 
 def read_from_file(file_name, input_file_handler, contains=None, lines=True, encoding='utf8', logger=None):
@@ -99,8 +99,6 @@ def file_exists(file_path, logger=None):
     status : bool
         If file does not exists or `file_path` empty, else False.
     """
-    from parsevasp.base import BaseParser
-
     if logger is None:
         logger = logging.getLogger(sys._getframe().f_code.co_name)
 
