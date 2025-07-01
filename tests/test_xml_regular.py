@@ -79,8 +79,6 @@ def test_xml_exist(xml_parser):
 
 def test_xml_energies(xml_parser):
     """Check total energies."""
-    import numpy as np
-
     # Only one ionic step
     xml_data = xml_parser()
     energies_data = xml_data.get_energies('initial')
@@ -176,8 +174,6 @@ def test_xml_energies_gw(xml_parser):
 
 def test_xml_energies_electronic(xml_parser):
     """Check total energies per electronic step."""
-    import numpy as np
-
     # Only one ionic step
     xml_data = xml_parser(filename='basic.xml')
     energies_data = xml_data.get_energies('all', nosc=False)
@@ -321,8 +317,6 @@ def test_xml_energies_electronic(xml_parser):
 
 def test_xml_energies_file_object(xml_parser):
     """Check total energies using file object."""
-    import numpy as np
-
     # Only one ionic step
     xml_data = xml_parser()
     energies_data = xml_data.get_energies('initial')
