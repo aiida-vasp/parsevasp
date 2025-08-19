@@ -189,7 +189,7 @@ def test_kpoints_write_auto(kpoints_parser_auto, tmpdir):
     verify_kpoints_content(kpoints_temp)
     with open(temp_file, 'w') as handler:
         kpoints_parser_auto.write(file_handler=handler)
-    with open(temp_file, 'r') as handler:
+    with open(temp_file) as handler:
         kpoints_parser_auto_temp = Kpoints(file_handler=handler)
     kpoints_temp = kpoints_parser_auto_temp.get_dict()
     verify_kpoints_content(kpoints_temp)

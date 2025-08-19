@@ -249,7 +249,7 @@ class Kpoints(BaseParser):
             if not direct:
                 self._logger.error(self.ERROR_MESSAGES[self.ERROR_KPOINTS_NOT_DIRECT])
                 sys.exit(self.ERROR_KPOINTS_NOT_DIRECT)
-            for index in range((len(kpoints) - 4)):
+            for index in range(len(kpoints) - 4):
                 true_index = index + 4
                 if kpoints[true_index] != '\n':
                     entry = kpoints[true_index].split()[0:3]

@@ -168,7 +168,7 @@ def open_close_file_handler(file_name='', file_handler=None, status=None, encodi
         try:
             file_handler = open(file_name, status, encoding=encoding)
             return file_handler
-        except IOError:
+        except OSError:
             logger.error(
                 f'{BaseParser.ERROR_MESSAGES[BaseParser.ERROR_FILE_NOT_FOUND]} The file in question is: {file_name}'
             )
