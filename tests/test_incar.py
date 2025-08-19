@@ -44,7 +44,7 @@ def incar_parser_file_object(request, tmpdir_factory):
 def incar_truncate(index, original, tmp):
     """Truncate the INCAR file."""
 
-    with open(original, 'r') as incarfile:
+    with open(original) as incarfile:
         content = incarfile.read().splitlines()
     truncated_content = '\n'.join(content[: -index or None])
     with open(tmp, 'w') as incarfile:
@@ -85,7 +85,7 @@ def test_incar_parser_write(incar_parser, tmp_path):
     with open(incar_write_path, 'w') as handler:
         incar_parser.write(file_handler=handler)
     # Then reload again and compare
-    with open(incar_write_path, 'r') as handler:
+    with open(incar_write_path) as handler:
         incar_reloaded = Incar(file_handler=handler).get_dict()
     assert incar == incar_reloaded
 

@@ -128,7 +128,7 @@ class Stream(BaseParser):
         stream_config = None
         fname = Path(__file__).parent / 'stream.yml'
         # Read the config file
-        with open(fname, 'r', encoding='utf8') as file_handler:
+        with open(fname, encoding='utf8') as file_handler:
             stream_config = yaml.safe_load(file_handler)
 
         return stream_config

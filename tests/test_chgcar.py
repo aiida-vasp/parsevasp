@@ -93,6 +93,6 @@ def test_magnetization_density_ncl(chgcar_parser):
     charge_density = chgcar_parser.charge_density
     magnetization_density = chgcar_parser.magnetization_density
     assert np.allclose(charge_density, compare_charge_density)
-    assert set(['x', 'y', 'z']) == set(magnetization_density.keys())
+    assert {'x', 'y', 'z'} == set(magnetization_density.keys())
     for key, item in magnetization_density.items():
         assert np.allclose(item, compare_charge_density)

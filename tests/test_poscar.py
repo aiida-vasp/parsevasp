@@ -81,7 +81,7 @@ def test_poscar_write(tmp_path, poscar_parser):
     # Check that handler also works for write by yet again writing a new POSCAR and comparing
     with open(poscar_write_path, 'w') as handler:
         poscar_parser.write(file_handler=handler)
-    with open(poscar_write_path, 'r') as handler:
+    with open(poscar_write_path) as handler:
         poscar_reloaded = Poscar(file_handler=handler).get_dict()
     compare_poscars(poscar, poscar_reloaded)
 
@@ -148,7 +148,7 @@ def test_poscar_scaling(tmp_path, poscar_parser):
     # Create a new Poscar instance where the write is in cartesian coordinates
     poscar_parser_temp = Poscar(poscar_string=poscar, write_direct=False)
     poscar_parser_temp.write(file_path=poscar_write_path)
-    with open(poscar_write_path, 'r') as file_object:
+    with open(poscar_write_path) as file_object:
         poscar_cart_unscaled = file_object.readlines()
     poscar_cart_unscaled[1] = str(scaling) + '\n'
     # Scale unitcell

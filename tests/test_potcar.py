@@ -56,7 +56,7 @@ def potcar_parser_file_object():
     testdir = os.path.dirname(__file__)
     potcarfile = os.path.join(testdir, 'POTCAR')
     potcar = None
-    with open(potcarfile, 'r', encoding='utf8') as file_handler:
+    with open(potcarfile, encoding='utf8') as file_handler:
         potcar = Potcar(file_handler=file_handler)
 
     return potcar

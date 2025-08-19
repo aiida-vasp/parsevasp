@@ -57,7 +57,7 @@ def xml_parser_file_object(request, tmpdir_factory):
 def xml_truncate(index, original, tmp):
     """Truncate the XML file."""
 
-    with open(original, 'r') as xmlfile:
+    with open(original) as xmlfile:
         content = xmlfile.read().splitlines()
     truncated_content = '\n'.join(content[: -index or None])
     with open(tmp, 'w') as xmlfile:
