@@ -130,6 +130,8 @@ def test_incar_parser_from_string_complexr():
     ISMEAR = THIS ; SIGMA = THAT
     NBANDS = 45  # endline comment; may contain '#' and ';' NOPARAM = this is not a parameter
     DIPOL = 1 2 -33 5
+# A comment line
+  # Another comment line
     """
     parsed = Incar(incar_string=test_string)
     incar_dict = parsed.get_dict()
