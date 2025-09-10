@@ -130,8 +130,21 @@ def test_incar_parser_from_string_complexr():
     ISMEAR = THIS ; SIGMA = THAT
     NBANDS = 45  # endline comment; may contain '#' and ';' NOPARAM = this is not a parameter
     DIPOL = 1 2 -33 5
+# A comment line
+  # Another comment line
     """
     parsed = Incar(incar_string=test_string)
+    incar_dict = parsed.get_dict()
+    assert incar_dict['loptics'] is True
+    assert incar_dict['evenonly'] is False
+    assert incar_dict['ismear'] == 'THIS'
+    assert incar_dict['sigma'] == 'THAT'
+    assert incar_dict['dipol'] == [1, 2, -33, 5]
+    assert incar_dict['nbands'] == 45
+    assert 'noparam' not in incar_dict
+    assert 'float' not in incar_dict
+
+    parsed = Incar(incar_string=test_string.replace('#', '!'))
     incar_dict = parsed.get_dict()
     assert incar_dict['loptics'] is True
     assert incar_dict['evenonly'] is False

@@ -2,6 +2,7 @@
 
 import io
 import logging
+import re
 import sys
 
 from parsevasp import constants, utils
@@ -19,7 +20,7 @@ class Incar(BaseParser):
         {
             ERROR_TWO_EQUALS: 'Detected two equal signs for an entry in the INCAR file.',
             ERROR_INVALID_COMMENT_SIGN: 'Detected a comment line that does not start '
-            'with a #. Please correct and be consistent.',
+            'with a # or !. Please correct and be consistent.',
             ERROR_MULTIPLE_COMMENTS: 'Multiple comment tags detected.',
             ERROR_UNSUPPORTED_TAG: 'The supplied INCAR tag is not '
             'officially supported. Please consult the VASP manual or '
@@ -151,43 +152,45 @@ class Incar(BaseParser):
         incar_dict = {}
         for line in incar:
             # Check for comment at the start of a line, if so skip
-            comment = not line.split('#')[0].split()
-            if not comment:
-                # Now check if a line contains a comment, if so, only take
-                # what is in front of this, truly...
-                splitted = line.split('#', 1)
-                if len(splitted) > 1:
-                    comment = splitted[1]
-                else:
-                    comment = None
-                # Now split on ; as we could have combined entries
-                splitted = splitted[0].split(';')
-                for ntry in splitted:
-                    if ntry == '\n':
-                        # Skip if the user used ; at the end of a line
-                        continue
-                    # Then split on = and analyze each entry
-                    final_split = ntry.split('=')
-                    if len(final_split) > 2:
-                        self._logger.error(
-                            '{} The following line contains the problem:\n\n {}\n\nPlease correct. Exiting.'.format(
-                                self.ERROR_MESSAGES[self.ERROR_TWO_EQUALS], ntry
-                            )
+            if re.match(r'^\s*(#|\!)', line):
+                continue
+            # Skip an empty line
+            if not line.strip():
+                continue
+
+            # Now check if a line contains a comment, if so, only take
+            # what is in front of this, truly...
+            splitted = re.split(r'(#|\!)', line, maxsplit=1)
+            if len(splitted) > 1:
+                comment = splitted[-1]
+            else:
+                comment = None
+            # Now split on ; as we could have combined entries
+            splitted = splitted[0].split(';')
+            for ntry in splitted:
+                if ntry == '\n':
+                    # Skip if the user used ; at the end of a line
+                    continue
+                # Then split on = and analyze each entry
+                final_split = ntry.split('=')
+                if len(final_split) > 2:
+                    self._logger.error(
+                        '{} The following line contains the problem:\n\n {}\n\nPlease correct. Exiting.'.format(
+                            self.ERROR_MESSAGES[self.ERROR_TWO_EQUALS], ntry
                         )
-                        sys.exit(self.ERROR_TWO_EQUALS)
-                    if len(final_split) == 1:
-                        self._logger.error(self.ERROR_MESSAGES[self.ERROR_INVALID_COMMENT_SIGN])
-                        sys.exit(self.ERROR_INVALID_COMMENT_SIGN)
-                    tag = final_split[0]
-                    value = final_split[1]
-                    # Create new instance of entry
-                    entry = IncarItem(tag, value, comment, logger=self._logger)
-                    clean_tag = entry.get_tag()
-                    if clean_tag in incar_dict:
-                        self._logger.info(
-                            f'Tag {entry.get_tag()} already found in the INCAR dictionary, overwriting it.'
-                        )
-                    incar_dict[clean_tag] = entry
+                    )
+                    sys.exit(self.ERROR_TWO_EQUALS)
+                if len(final_split) == 1:
+                    self._logger.error(self.ERROR_MESSAGES[self.ERROR_INVALID_COMMENT_SIGN])
+                    sys.exit(self.ERROR_INVALID_COMMENT_SIGN)
+                tag = final_split[0]
+                value = final_split[1]
+                # Create new instance of entry
+                entry = IncarItem(tag, value, comment, logger=self._logger)
+                clean_tag = entry.get_tag()
+                if clean_tag in incar_dict:
+                    self._logger.info(f'Tag {entry.get_tag()} already found in the INCAR dictionary, overwriting it.')
+                incar_dict[clean_tag] = entry
 
         return incar_dict
 
