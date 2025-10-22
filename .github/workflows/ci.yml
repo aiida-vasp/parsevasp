@@ -20,6 +20,8 @@ jobs:
       - name: Install parsevasp
         run: pip install -e . -vvv
       - name: Run pytest
+        env:
+          COVERAGE_CORE: ${{ matrix.python >= '3.12' && 'sysmon' || '' }}
         run: pytest --cov=./ --cov-report=xml tests
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
